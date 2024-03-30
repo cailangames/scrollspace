@@ -16,12 +16,13 @@ void main(void){
 
   // Load font tiles to background map
   font_t min_font;
+  uint8_t font_offset = 36;
   font_init();
   min_font = font_load(font_min);
   font_set(min_font);
 
   // Load background tiles
-  set_bkg_data(0,1,block_tiles);
+  set_bkg_data(font_offset,1,block_tiles);
 
   // Load sprite data
   set_sprite_data(0,1,player_data);
