@@ -1,0 +1,28 @@
+# Platform specific flags
+ifneq ($(strip $(PORT)),)
+ifneq ($(strip $(PLAT)),)
+CFLAGS += -m$(PORT):$(PLAT)
+endif
+endif
+
+VERSION = 0.1
+
+# Called by the individual targets below to build a ROM
+build-target: $(BINS)
+
+clean-target:
+	rm -rf $(OBJDIR)
+	rm -rf $(BINDIR)
+
+gb-clean:
+	${MAKE} clean-target EXT=gb
+
+gb:
+	${MAKE} build-target PORT=sm83 PLAT=gb EXT=gb VERSION=$(VERSION)
+
+pocket-clean:
+	${MAKE} clean-target EXT=pocket
+
+pocket:
+	${MAKE} build-target PORT=sm83 PLAT=ap EXT=pocket VERSION=$(VERSION)
+
