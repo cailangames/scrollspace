@@ -213,7 +213,7 @@ void main(void){
   font_set(min_font);
 
   // Load background tiles
-  set_bkg_data(FONT_OFFSET,3,block_tiles);
+  set_bkg_data(FONT_OFFSET,1,block_tiles);
 
   // Load sprite data
   set_sprite_data(0,3,player_data);
