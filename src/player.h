@@ -24,5 +24,6 @@ struct Player {
   uint8_t cb_y_offset;
   enum direction dir; 
   struct CollisionBox cb;
+  int8_t health;
 };
 

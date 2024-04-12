@@ -9,12 +9,13 @@
 #include "title_screens.h"
 #include "player_py.h"
 #include "block_tiles_py.h"
+#include "progressbar_tiles_tiles_py.h"
 
 #define KEY_PRESSED(K) (current_input & (K))
 #define FONT_OFFSET 36
 #define MAPBLOCK_IDX  FONT_OFFSET
 #define SCREEN_T  16
-#define SCREEN_B 152
+#define SCREEN_B 152-8
 #define SCREEN_L 8
 #define SCREEN_R 160
 
@@ -88,6 +89,7 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
   int8_t tmp_gap_row_idx;
   int8_t idx_offset = 0;
   int8_t w_offset = 0;
+  uint8_t tmp_col_idx;
   
   // Generate a random number to determine if we are going to 
   // update both idx and w, or just one of them
@@ -146,7 +148,7 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
     uint8_t idx = new_obstacle_idx(*gap_w, *gap_row_idx);
     if ((idx > *gap_row_idx) && (idx < *gap_row_idx + *gap_w)){
       for (i=0; i<obs_w_max; i++){
-        new_column[idx+i] = MAPBLOCK_IDX; // + 1;
+        new_column[idx+i] = MAPBLOCK_IDX + 2;
         coll_map[(*col_idx)*18 + idx + i] = 2;
       }
     }
@@ -156,13 +158,16 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
   set_bkg_tiles(*col_idx, 0, 1, 18, new_column);
 
   // Increment col_idx
-  *col_idx = *col_idx + 1;
-  if (*col_idx > 31){
+  tmp_col_idx = *col_idx + 1;
+  if (tmp_col_idx > 31){
     *col_idx = 0;
+  }
+  else{
+    *col_idx = tmp_col_idx;
   }
 }
 
-bool check_collisions(struct Player player, uint8_t *coll_map){
+uint8_t check_collisions(struct Player player, uint8_t *coll_map){
   /*
    * The player sprite can collide with up to 4 tiles.
    * Check the collision map on the top_left, top_right
@@ -177,19 +182,19 @@ bool check_collisions(struct Player player, uint8_t *coll_map){
   uint8_t col_botl, col_botr;
 
   row_topl = (player.cb.y - 16) / 8;
-  col_topl = (SCX_REG + player.cb.x - 8) / 8;
+  col_topl = ((SCX_REG + player.cb.x - 8) %256) / 8;
   cm_idx_topl = col_topl*18 + row_topl;
 
-  row_topr = (player.cb.y - 16) / 8;
-  col_topr = (SCX_REG + player.cb.x + player.cb.w - 8) / 8;
+  row_topr = row_topl;
+  col_topr = ((SCX_REG + player.cb.x + player.cb.w - 8)%256) / 8;
   cm_idx_topr = col_topr*18 + row_topr;
 
-  row_botl = (player.cb.y + player.cb.h - 16) / 8;
-  col_botl = (SCX_REG + player.cb.x - 8) / 8;
+  row_botl = ((player.cb.y + player.cb.h - 16)%256) / 8;
+  col_botl = col_topl; 
   cm_idx_botl = col_botl*18 + row_botl;
 
-  row_botr = (player.cb.y + player.cb.h - 16) / 8;
-  col_botr = (SCX_REG + player.cb.x + player.cb.w - 8) / 8;
+  row_botr = row_botl;
+  col_botr = col_topr; 
   cm_idx_botr = col_botr*18 + row_botr;
 
   if ((coll_map[cm_idx_topl] > 0) || (coll_map[cm_idx_topr] > 0) || \
@@ -213,13 +218,27 @@ void main(void){
   font_set(min_font);
 
   // Load background tiles
-  set_bkg_data(FONT_OFFSET,1,block_tiles);
+  uint8_t blocks_tilemap_offset = FONT_OFFSET;
+  uint8_t plane_tilemap_offset = blocks_tilemap_offset + 3;
+  uint8_t progressbar_tilemap_offset = plane_tilemap_offset + 3;
+  set_bkg_data(FONT_OFFSET,3,block_tiles);
+  set_bkg_data(progressbar_tilemap_offset, 7, progressbar_tiles_tiles);
 
   // Load sprite data
   set_sprite_data(0,3,player_data);
 
   // Load title screen
   set_bkg_tiles(0,0,20,18,game_titlescreen);
+
+  // Load Window
+  move_win(7,128+8);
+  uint8_t progressbar_tiles[10];
+  progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
+  for (uint8_t i = 1; i < 9; i++){
+    progressbar_tiles[i] = progressbar_tilemap_offset + 2; // center of bar
+  }
+  progressbar_tiles[9] = progressbar_tilemap_offset + 3; // right edge of bar
+  set_win_tiles(5, 0, 10, 1, progressbar_tiles);
 
   /*
    * Create a player and display the sprite 
@@ -237,6 +256,7 @@ void main(void){
   player.cb.y = player.y + player.cb_y_offset;
   player.cb.w = 5;
   player.cb.h = 4;
+  player.health = 100;
   move_sprite(player.sprite_id, player.x, player.y);
 
   /*
@@ -245,13 +265,14 @@ void main(void){
   DISPLAY_ON;
   SHOW_SPRITES;
   SHOW_BKG;
+  SHOW_WIN;
 
   /*
    * Initialize map by filling in the remaining tiles in the 
    * 32x32 memory space
    */
-  uint8_t gap_w_min = 4;    // Minimum gap width
-  uint8_t gap_w_start = 8;
+  uint8_t gap_w_min = 6;    // Minimum gap width
+  uint8_t gap_w_start = 10;
   uint8_t obs_w_max = update_obstacle_max_width(gap_w_min);  // Maximum width of obstacles
   uint8_t gap_row_idx = 4;   // Start of gap
   uint8_t gap_w = gap_w_start; // Gap width
@@ -284,6 +305,7 @@ void main(void){
   uint8_t scroll_thresh = 0x3; // Scroll when this is set
   uint8_t col_count = 0;  // counter for number of columns scrolled. Used to calculate screen_count
   uint16_t screen_count = 0; // number of screens scrolled
+  uint8_t coll = 0;
   bool damage_hidden = false; // Used during the damage recovery to toggle between showing and hidding the player sprite
 
   waitpad(J_START);
@@ -295,8 +317,14 @@ void main(void){
 
   while(1) {
     current_input = joypad();
+    coll = 0;
 
     // D-PAD
+    if (KEY_PRESSED(J_START)){
+      waitpadup();
+      waitpad(J_START);
+      waitpadup();
+    }
 
     if (!KEY_PRESSED(J_UP) && !KEY_PRESSED(J_DOWN) && \
         !KEY_PRESSED(J_LEFT) && !KEY_PRESSED(J_RIGHT)) 
@@ -345,7 +373,6 @@ void main(void){
         player.cb.w = 3;
       }
     }
-    
 
     // Update player position
     // Bound check
@@ -387,8 +414,19 @@ void main(void){
         SHOW_SPRITES;
         damage_hidden = false;
       }
-      if (check_collisions(player, coll_map)){
+      coll = check_collisions(player, coll_map);
+      if (coll == 1) {
+        player.health -= 5;
         damage_reecovery_count = 16;
+      }
+      else if (coll == 2) {
+        player.health -= 2;
+        damage_reecovery_count = 16;
+      }
+      if (player.health <= 0){
+        // End game in the future
+        // For now, reset to full health
+        player.health = 100;
       }
     }
     else{
@@ -426,6 +464,32 @@ void main(void){
     if (screen_count == (scroll_thresh*20)){
       screen_count = 0;
       scroll_thresh = (scroll_thresh << 1) + 1;
+    }
+
+    // Update health bar after a collision
+    if (coll){
+      if (player.health == 100){
+        progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
+        for (uint8_t i = 1; i < 9; i++){
+          progressbar_tiles[i] = progressbar_tilemap_offset + 2; // center of bar
+        }
+        progressbar_tiles[9] = progressbar_tilemap_offset + 3; // right edge of bar
+      }
+      else if (player.health >= 90){
+        progressbar_tiles[9] = progressbar_tilemap_offset + 6;
+      }
+      else if (player.health >= 10){
+        uint8_t idx = (player.health + 10)/10;
+        for (uint8_t i=idx; i < 9; i++){
+          progressbar_tiles[i] = progressbar_tilemap_offset + 5;
+        }
+      }
+      else {
+        progressbar_tiles[1] = progressbar_tilemap_offset + 5;
+        progressbar_tiles[0] = progressbar_tilemap_offset + 4;
+      }
+
+      set_win_tiles(5, 0, 10, 1, progressbar_tiles);
     }
 
     // Wait for frame to finish drawing
