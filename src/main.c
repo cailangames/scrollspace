@@ -219,13 +219,12 @@ void main(void){
 
   // Load background tiles
   uint8_t blocks_tilemap_offset = FONT_OFFSET;
-  uint8_t plane_tilemap_offset = blocks_tilemap_offset + 3;
-  uint8_t progressbar_tilemap_offset = plane_tilemap_offset + 3;
+  uint8_t progressbar_tilemap_offset = blocks_tilemap_offset + 3;
   set_bkg_data(FONT_OFFSET,3,block_tiles);
   set_bkg_data(progressbar_tilemap_offset, 7, progressbar_tiles_tiles);
 
   // Load sprite data
-  set_sprite_data(0,3,player_data);
+  set_sprite_data(0,10,player_data);
 
   // Load title screen
   set_bkg_tiles(0,0,20,18,game_titlescreen);
@@ -315,6 +314,7 @@ void main(void){
     generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map);
   }
 
+  uint8_t sprite_base_id = 0;
   while(1) {
     current_input = joypad();
     coll = 0;
@@ -331,7 +331,7 @@ void main(void){
     {
       dx = 0;
       dy = 0;
-      player.sprite_tile_id = 0;
+      player.sprite_tile_id = sprite_base_id;
       player.cb_x_offset = 1;
       player.cb_y_offset = 2;
       player.cb.h = 4;
@@ -341,17 +341,17 @@ void main(void){
       if (KEY_PRESSED(J_RIGHT)){
         dx = player.speed;
         // dy = 0;  // Keep in case i want to disable diagonal movement
-        player.sprite_tile_id = 0;
+        player.sprite_tile_id = sprite_base_id;
       }
       if (KEY_PRESSED(J_LEFT)){
         dx = -player.speed;
         // dy = 0;  // Keep in case i want to disable diagonal movement
-        player.sprite_tile_id = 0;
+        player.sprite_tile_id = sprite_base_id;
       }
       if (KEY_PRESSED(J_UP)){
         // dx = 0;  // Keep in case i want to disable diagonal movement
         dy = -player.speed;
-        player.sprite_tile_id = 1;
+        player.sprite_tile_id = sprite_base_id + 1;
         
         // Make collision box smaller when plane is "tilted"
         // 3 wide x 1 high
@@ -363,7 +363,7 @@ void main(void){
       if (KEY_PRESSED(J_DOWN)){
         // dx = 0;  // Keep in case i want to disable diagonal movement
         dy = player.speed;
-        player.sprite_tile_id = 2;
+        player.sprite_tile_id = sprite_base_id + 2;
 
         // Make collision box smaller when plane is "tilted"
         // 5 wide x 1 high
@@ -426,6 +426,9 @@ void main(void){
       if (player.health <= 0){
         // End game in the future
         // For now, reset to full health
+        player.sprite_tile_id = 9;
+        set_sprite_tile(player.sprite_id, player.sprite_tile_id);
+        wait(120);
         player.health = 100;
       }
     }
@@ -488,8 +491,17 @@ void main(void){
         progressbar_tiles[1] = progressbar_tilemap_offset + 5;
         progressbar_tiles[0] = progressbar_tilemap_offset + 4;
       }
-
       set_win_tiles(5, 0, 10, 1, progressbar_tiles);
+
+      if (player.health > 70){
+        sprite_base_id = 0;
+      }
+      else if (player.health > 30){
+        sprite_base_id = 3;
+      }
+      else if (player.health > 0){
+        sprite_base_id = 6;
+      }
     }
 
     // Wait for frame to finish drawing
