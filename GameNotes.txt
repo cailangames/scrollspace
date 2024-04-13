@@ -1,0 +1,68 @@
+Game Idea: PGIS
+
+Gameplay:
+* Infinite side scrolling
+    * Smooth scrolling
+    * Right to left
+
+* Obstacles like Flappy bird (coming from the right side of the screen)
+* Flying game feeling (smooth character movement as if maneuvering in air)
+* Procedurally generated obstacles
+
+* Points accumulate when an entire screen passes by
+    * Levels increase
+
+* Scroll speed increases with Level
+* Collect power ups that appear
+* Select power up by pressing A
+    * HUD selection will cycle through available power ups
+
+* For the higher up levels, the scroll direction can randomly change 
+    * Before changing, all obstacles in a level must clear and no new ones be generated so the player will see and empty background before changing direction.
+    * During the blank background, recenter the player and rotate its sprite into the new direction
+    * Directions:
+        * Right to left (default) — player “moving” right
+        * Down to up — player “moving” down
+        * Left to right — player “moving” left
+        * Up to down — player “moving” up
+
+Power Ups:
+* Slow-mo
+    * Scrolling slows to a crawl, choppy scrolling like my current snake game
+    * Power up turns off after a full screen went by
+    * Game speed ramps up to value before enabling power up
+    * The feeling of this power up should be like slamming on the breaks at the beginning and then pressing the gas pedal all the way at the end.
+
+* Invisibility/transparency/shield
+    * Sprite change to dotted lines if invisible or bubble-like enclosure if shield
+    * The power essentially disables collisions so character goes over obstacles unharmed
+    * Power up lasts one screen
+    * Reuse the damage recovery counter for this. This will cause the sprite to blink really quickly, which makes it look semi-transparent.
+    * Set the damage_recovery_count to the equivalent number of frames to cover 1 screen at the current speed.
+
+* Bomb 
+    * Blast obstacles and walls in a radius around the player.
+    * Shake screen
+
+* Laser
+    * Shoots a laser that blasts all obstacles from the current position to the end of the screen
+    * Animation steps
+        1. Stop scroll
+        2. Draw N laser sprites in front of plane 
+        3. Remove blocks and colliders in the laser path
+        4. Flash the laser sprites 3 times
+        5. Hide laser sprites
+        6. Resume scrolling
+
+HUD:
+    * 2 sprites tall
+        * Top:
+            * Plane sprite (1 tile)
+            * Health bar (reuse the GBSnake timer) to the left (this takes up 10 tiles)
+            * 2 tiles white space (leaving 7 tiles)
+            * Power ups accumulated (use A to cycle through them, B to use)
+        * Bottom:
+            * Left justified score (Start with 3 digits, e.g, 000 and as the next digit is needed, we add it.)
+            * Max. Score possible is 20 9s
+            * 99,999,999,999,999,999,999 = 100 Quintillion - 1
+
