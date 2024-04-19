@@ -11,19 +11,33 @@
 #include "block_tiles_py.h"
 #include "progressbar_tiles_tiles_py.h"
 
-#define KEY_PRESSED(K) (current_input & (K))
+#define KEY_PRESSED(K) (current_input & K)
+#define KEY_HELD(K) ((current_input & K) & (old_input & K))
 #define FONT_OFFSET 36
 #define MAPBLOCK_IDX  FONT_OFFSET
 #define SCREEN_T  16
 #define SCREEN_B 152-8
 #define SCREEN_L 8
 #define SCREEN_R 160
+#define COLUMN_HEIGHT 16
 
 void wait(uint8_t n){
   uint8_t i;
   for (i=0; i < n; i++){
     wait_vbl_done();
   }
+}
+
+void score2tile(uint16_t score_msb, uint16_t score_lsb, uint8_t* score_tiles){
+  // Max score is 4294967296, which is 10 digits total
+  // score_lsb covers from 0 - 65535
+  // score_msb covers from 65536 - 4294967296
+  score_tiles[0] = (score_lsb / 10000) + 0x01;
+  score_tiles[1] = (score_lsb - (score_lsb/10000)*10000)/1000 + 0x01;
+  score_tiles[2] = (score_lsb - (score_lsb/1000)*1000)/100 + 0x01;
+  score_tiles[3] = (score_lsb - (score_lsb/100)*100)/10 + 0x01;
+  score_tiles[4] = (score_lsb - (score_lsb/10)*10) + 0x01;
+
 }
 
 uint8_t update_obstacle_max_width(uint8_t new_gap_w_min){
@@ -82,7 +96,7 @@ uint8_t new_obstacle_idx(uint8_t gap_w, uint8_t gap_row_idx){
 void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx, 
                          uint8_t *gap_w, uint8_t *new_column, 
                          uint8_t gap_w_min, uint8_t obs_w_max,
-                         uint8_t *coll_map){
+                         uint8_t *coll_map, uint8_t *bkg_map){
   // initrand(DIV_REG);
   uint8_t n;  // random number
   uint8_t i;  // Loop counter
@@ -114,8 +128,8 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
   if (tmp_gap_row_idx < 1){
     *gap_row_idx = 1; // leave 1 row at top
   }
-  else if (tmp_gap_row_idx > (16 - gap_w_min)) {
-    *gap_row_idx = (16 - gap_w_min);  // leave 1 row at bottom
+  else if (tmp_gap_row_idx > (COLUMN_HEIGHT - 2 - gap_w_min)) {
+    *gap_row_idx = (COLUMN_HEIGHT - 2 - gap_w_min);  // leave 1 row at bottom
   }
   else {
     *gap_row_idx = (uint8_t) tmp_gap_row_idx;
@@ -124,20 +138,22 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
   if (*gap_w < gap_w_min){
     *gap_w = gap_w_min;
   }
-  else if (*gap_w > 18) {
-    *gap_w = 18;
+  else if (*gap_w > COLUMN_HEIGHT) {
+    *gap_w = COLUMN_HEIGHT;
   }
   obs_w_max = update_obstacle_max_width(*gap_w);
 
   // Generate new column
-  for (i=0; i<18;i++){
+  for (i=0; i<COLUMN_HEIGHT;i++){
     if ((i >= *gap_row_idx) && (i < *gap_row_idx+*gap_w)){
       new_column[i] = 0;
-      coll_map[(*col_idx)*18 + i] = 0;
+      bkg_map[(*col_idx) + i*32] = 0;
+      coll_map[(*col_idx)*COLUMN_HEIGHT + i] = 0;
     }
     else{
       new_column[i] = MAPBLOCK_IDX;
-      coll_map[(*col_idx)*18 + i] = 1;
+      bkg_map[(*col_idx) + i*32] = MAPBLOCK_IDX;
+      coll_map[(*col_idx)*COLUMN_HEIGHT + i] = 1;
     }
   }
 
@@ -149,13 +165,14 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
     if ((idx > *gap_row_idx) && (idx < *gap_row_idx + *gap_w)){
       for (i=0; i<obs_w_max; i++){
         new_column[idx+i] = MAPBLOCK_IDX + 2;
-        coll_map[(*col_idx)*18 + idx + i] = 2;
+        bkg_map[(*col_idx) + (idx+i)*32] = MAPBLOCK_IDX + 2;
+        coll_map[(*col_idx)*COLUMN_HEIGHT + idx + i] = 2;
       }
     }
   }
 
   // Write new column to tile map
-  set_bkg_tiles(*col_idx, 0, 1, 18, new_column);
+  set_bkg_tiles(*col_idx, 0, 1, COLUMN_HEIGHT, new_column);
 
   // Increment col_idx
   tmp_col_idx = *col_idx + 1;
@@ -167,7 +184,7 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
   }
 }
 
-uint8_t check_collisions(struct Player player, uint8_t *coll_map){
+uint8_t check_collisions(struct Player player, uint8_t *coll_map, uint8_t *bkg_map){
   /*
    * The player sprite can collide with up to 4 tiles.
    * Check the collision map on the top_left, top_right
@@ -176,6 +193,8 @@ uint8_t check_collisions(struct Player player, uint8_t *coll_map){
 
   uint16_t cm_idx_topl, cm_idx_topr; 
   uint16_t cm_idx_botl, cm_idx_botr; 
+  uint16_t bkg_idx_topl, bkg_idx_topr; 
+  uint16_t bkg_idx_botl, bkg_idx_botr; 
   uint8_t row_topl, row_topr;
   uint8_t row_botl, row_botr;
   uint8_t col_topl, col_topr;
@@ -183,22 +202,54 @@ uint8_t check_collisions(struct Player player, uint8_t *coll_map){
 
   row_topl = (player.cb.y - 16) / 8;
   col_topl = ((SCX_REG + player.cb.x - 8) %256) / 8;
-  cm_idx_topl = col_topl*18 + row_topl;
+  cm_idx_topl = col_topl*COLUMN_HEIGHT + row_topl;
+  bkg_idx_topl = col_topl + row_topl*32;
 
   row_topr = row_topl;
   col_topr = ((SCX_REG + player.cb.x + player.cb.w - 8)%256) / 8;
-  cm_idx_topr = col_topr*18 + row_topr;
+  cm_idx_topr = col_topr*COLUMN_HEIGHT + row_topr;
+  bkg_idx_topr = col_topr + row_topr*32;
 
   row_botl = ((player.cb.y + player.cb.h - 16)%256) / 8;
   col_botl = col_topl; 
-  cm_idx_botl = col_botl*18 + row_botl;
+  cm_idx_botl = col_botl*COLUMN_HEIGHT + row_botl;
+  bkg_idx_botl = col_botl + row_botl*32;
 
   row_botr = row_botl;
   col_botr = col_topr; 
-  cm_idx_botr = col_botr*18 + row_botr;
+  cm_idx_botr = col_botr*COLUMN_HEIGHT + row_botr;
+  bkg_idx_botr = col_botr + row_botr*32;
 
-  if ((coll_map[cm_idx_topl] > 0) || (coll_map[cm_idx_topr] > 0) || \
-      (coll_map[cm_idx_botl] > 0) || (coll_map[cm_idx_botr] > 0)){
+  if (coll_map[cm_idx_topl] > 0){
+    if (coll_map[cm_idx_topl] > 1){
+      // Replace obstacle tile
+      bkg_map[bkg_idx_topl] = 0;
+      set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+    }
+    return true;
+  }
+  else if (coll_map[cm_idx_topr] > 0) {
+    if (coll_map[cm_idx_topr] > 1) {
+      // Replace obstacle tile
+      bkg_map[bkg_idx_topr] = 0;
+      set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+    }
+    return true;
+  }
+  else if(coll_map[cm_idx_botl] > 0){
+    if(coll_map[cm_idx_botl] > 1){
+      // Replace obstacle tile
+      bkg_map[bkg_idx_botl] = 0;
+      set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+    }
+    return true;
+  } 
+  else if (coll_map[cm_idx_botr] > 0){
+    if (coll_map[cm_idx_botr] > 1){
+      // Replace obstacle tile
+      bkg_map[bkg_idx_botr] = 0;
+      set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+    }
     return true;
   }
   else{
@@ -227,7 +278,7 @@ void main(void){
   set_sprite_data(0,10,player_data);
 
   // Load title screen
-  set_bkg_tiles(0,0,20,18,game_titlescreen);
+  set_bkg_tiles(0,0,20,COLUMN_HEIGHT,game_titlescreen);
 
   // Load Window
   move_win(7,128+8);
@@ -279,24 +330,28 @@ void main(void){
     uint8_t col_idx = 20;   // First column to populate
   
     // Collision map. The first 18 elements correspond to the first col in background tile map
-    uint8_t *coll_map = calloc(18*32, sizeof(uint8_t));
-    uint8_t new_column[18];  // Placeholder for new column array
-    for (int i=0; i<18;i++){
+    uint8_t *coll_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));
+    uint8_t *bkg_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));
+    uint8_t new_column[COLUMN_HEIGHT];  // Placeholder for new column array
+    for (int i=0; i<COLUMN_HEIGHT;i++){
       if ((i >= gap_row_idx) & (i < gap_row_idx+gap_w)){
         new_column[i] = 0;
-        coll_map[col_idx*18 + i] = 0;
+        bkg_map[col_idx + i*32] = 0;
+        coll_map[col_idx*COLUMN_HEIGHT + i] = 0;
       }
       else{
         new_column[i] = MAPBLOCK_IDX;
-        coll_map[col_idx*18 + i] = 1;
+        bkg_map[col_idx + i*32] = MAPBLOCK_IDX;
+        coll_map[col_idx*COLUMN_HEIGHT + i] = 1;
       }
     }
-    set_bkg_tiles(col_idx, 0, 1, 18, new_column);
+    set_bkg_tiles(col_idx, 0, 1, COLUMN_HEIGHT, new_column);
 
     /*
     * Game Looop
     */
     uint8_t current_input;
+    uint8_t old_input=0;
     uint8_t dx = 0;
     uint8_t dy = 0;
     uint8_t frame_count = 0;
@@ -305,6 +360,8 @@ void main(void){
     uint8_t scroll_thresh = 0x3; // Scroll when this is set
     uint8_t col_count = 0;  // counter for number of columns scrolled. Used to calculate screen_count
     uint16_t screen_count = 0; // number of screens scrolled
+    uint16_t score_lsb = 0; // lower part of 32-bit score (max score 4,294,967,296)
+    uint16_t score_msb = 0; // upper part of 32-bit score (max score 4,294,967,296)
     uint8_t coll = 0;
     bool damage_hidden = false; // Used during the damage recovery to toggle between showing and hidding the player sprite
 
@@ -315,7 +372,7 @@ void main(void){
     SHOW_WIN;
     initrand(DIV_REG);
     for (int i=0; i<12; i++){
-      generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map);
+      generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map, bkg_map);
     }
 
     uint8_t sprite_base_id = 0;
@@ -378,6 +435,8 @@ void main(void){
         }
       }
 
+      old_input = current_input;
+
       // Update player position
       // Bound check
       uint8_t tmpx = player.x + dx; 
@@ -418,7 +477,7 @@ void main(void){
           SHOW_SPRITES;
           damage_hidden = false;
         }
-        coll = check_collisions(player, coll_map);
+        coll = check_collisions(player, coll_map, bkg_map);
         if (coll == 1) {
           player.health -= 5;
           damage_reecovery_count = 16;
@@ -437,7 +496,7 @@ void main(void){
           HIDE_SPRITES;
           HIDE_WIN;
           // Load title screen
-          set_bkg_tiles(0,0,20,18,game_titlescreen);
+          set_bkg_tiles(0,0,20,COLUMN_HEIGHT,game_titlescreen);
           move_bkg(0,0);
           break;
         }
@@ -461,11 +520,18 @@ void main(void){
 
       if (scroll_count == 8){
         scroll_count = 0;
-        generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map);
+        generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map, bkg_map);
         col_count++;
         if (col_count > 20){
           col_count = 0;
           screen_count++;
+
+          // Increment score
+          score_lsb++;
+          if (score_lsb == 0){
+            // rollover so increment msb
+            score_msb++;
+          }
         }
       }
       frame_count++;
