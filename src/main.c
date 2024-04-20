@@ -7,9 +7,10 @@
 
 #include "player.h"
 #include "title_screens.h"
-#include "player_py.h"
-#include "block_tiles_py.h"
-#include "progressbar_tiles_tiles_py.h"
+#include "player_sprites.h"
+#include "block_tiles.h"
+#include "progressbar_tiles.h"
+#include "bullets_sprites.h"
 
 #define KEY_PRESSED(K) (current_input & K)
 #define KEY_HELD(K) ((current_input & K) & (old_input & K))
@@ -272,10 +273,11 @@ void main(void){
   uint8_t blocks_tilemap_offset = FONT_OFFSET;
   uint8_t progressbar_tilemap_offset = blocks_tilemap_offset + 3;
   set_bkg_data(FONT_OFFSET,3,block_tiles);
-  set_bkg_data(progressbar_tilemap_offset, 7, progressbar_tiles_tiles);
+  set_bkg_data(progressbar_tilemap_offset, 7, progressbar_tiles);
 
   // Load sprite data
   set_sprite_data(0,10,player_data);
+  set_sprite_data(10,3,bullets_data);
 
   // Load title screen
   set_bkg_tiles(0,0,20,COLUMN_HEIGHT,game_titlescreen);
@@ -581,7 +583,7 @@ void main(void){
       }
 
       // Wait for frame to finish drawing
-      wait_vbl_done();
+      vsync();
     }
   }
 }

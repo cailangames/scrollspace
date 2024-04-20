@@ -220,8 +220,10 @@ def get_background_data_and_map(im, name, gb_code, offset=37, debug=False):
 
     return tile_data_array, tilemap_array
 
-fn_path = "../assets/player.png"
 #fn_path = "../assets/block.png"
+#fn_path = "../assets/bullets.png"
+fn_path = "../assets/player.png"
+fn_path = "../assets/progressbar.png"
 
 filename = os.path.splitext(os.path.split(fn_path)[-1])[0].lower()
 filename = filename.replace("-","_")
@@ -263,7 +265,7 @@ if image_type == "sprite":
     header = array_string.split("\n")[0].replace(" =", ";")
     print(header, array_string)
     
-    with open(f"../src/{filename}_py.h", "w") as f:
+    with open(f"../src/{filename}_sprites.h", "w") as f:
         f.write(array_string)
 
 else:
@@ -272,9 +274,9 @@ else:
     map_header = background_map.split("\n")[0].replace(" =", ";")
     print(tiles_header, background_tiles, map_header, background_map)
 
-    with open(f"../src/{filename}_tiles_py.h", "w") as f:
+    with open(f"../src/{filename}_tiles.h", "w") as f:
         f.write(background_tiles)
-    with open(f"../src/{filename}_map_py.h", "w") as f:
+    with open(f"../src/{filename}_map.h", "w") as f:
         f.write(background_map)
 
 # ntiles = int(im.size/(8*8))  # Total number of 8x8 tiles = npixels/64
