@@ -1,10 +1,10 @@
 #include <stdint.h>
 
 enum direction{
-  UP,
-  RIGHT,
-  DOWN,
-  LEFT,
+  UP=1,
+  RIGHT=2,
+  DOWN=4,
+  LEFT=8,
 };
 
 struct CollisionBox {

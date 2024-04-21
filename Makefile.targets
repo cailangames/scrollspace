@@ -1,7 +1,7 @@
 # Platform specific flags
 ifneq ($(strip $(PORT)),)
 ifneq ($(strip $(PLAT)),)
-CFLAGS += -m$(PORT):$(PLAT)
+CFLAGS += -m$(PORT):$(PLAT) -debug
 endif
 endif
 

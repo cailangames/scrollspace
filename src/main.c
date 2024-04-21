@@ -13,7 +13,8 @@
 #include "bullets_sprites.h"
 
 #define KEY_PRESSED(K) (current_input & K)
-#define KEY_HELD(K) ((current_input & K) & (old_input & K))
+#define KEY_HELD(K) ((current_input & K) && (old_input & K))
+#define KEY_FIRST_PRESS(K) ((current_input & K) && !(old_input & K))
 #define FONT_OFFSET 36
 #define MAPBLOCK_IDX  FONT_OFFSET
 #define SCREEN_T  16
@@ -21,6 +22,7 @@
 #define SCREEN_L 8
 #define SCREEN_R 160
 #define COLUMN_HEIGHT 16
+#define MAX_BULLETS 3
 
 void wait(uint8_t n){
   uint8_t i;
@@ -185,7 +187,7 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
   }
 }
 
-uint8_t check_collisions(struct Player player, uint8_t *coll_map, uint8_t *bkg_map){
+uint8_t check_collisions(struct Player *sprite, uint8_t *coll_map, uint8_t *bkg_map, bool bullet){
   /*
    * The player sprite can collide with up to 4 tiles.
    * Check the collision map on the top_left, top_right
@@ -201,17 +203,17 @@ uint8_t check_collisions(struct Player player, uint8_t *coll_map, uint8_t *bkg_m
   uint8_t col_topl, col_topr;
   uint8_t col_botl, col_botr;
 
-  row_topl = (player.cb.y - 16) / 8;
-  col_topl = ((SCX_REG + player.cb.x - 8) %256) / 8;
+  row_topl = (sprite->cb.y - 16) / 8;
+  col_topl = ((SCX_REG + sprite->cb.x - 8) %256) / 8;
   cm_idx_topl = col_topl*COLUMN_HEIGHT + row_topl;
   bkg_idx_topl = col_topl + row_topl*32;
 
   row_topr = row_topl;
-  col_topr = ((SCX_REG + player.cb.x + player.cb.w - 8)%256) / 8;
+  col_topr = ((SCX_REG + sprite->cb.x + sprite->cb.w - 8)%256) / 8;
   cm_idx_topr = col_topr*COLUMN_HEIGHT + row_topr;
   bkg_idx_topr = col_topr + row_topr*32;
 
-  row_botl = ((player.cb.y + player.cb.h - 16)%256) / 8;
+  row_botl = ((sprite->cb.y + sprite->cb.h - 16)%256) / 8;
   col_botl = col_topl; 
   cm_idx_botl = col_botl*COLUMN_HEIGHT + row_botl;
   bkg_idx_botl = col_botl + row_botl*32;
@@ -222,12 +224,12 @@ uint8_t check_collisions(struct Player player, uint8_t *coll_map, uint8_t *bkg_m
   bkg_idx_botr = col_botr + row_botr*32;
 
   if (coll_map[cm_idx_topl] > 0){
-    if (coll_map[cm_idx_topl] > 1){
+    if (coll_map[cm_idx_topl] > 1) {
       // Replace obstacle tile
       bkg_map[bkg_idx_topl] = 0;
       set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
-    return true;
+   return true;
   }
   else if (coll_map[cm_idx_topr] > 0) {
     if (coll_map[cm_idx_topr] > 1) {
@@ -238,7 +240,7 @@ uint8_t check_collisions(struct Player player, uint8_t *coll_map, uint8_t *bkg_m
     return true;
   }
   else if(coll_map[cm_idx_botl] > 0){
-    if(coll_map[cm_idx_botl] > 1){
+    if (coll_map[cm_idx_botl] > 1) {
       // Replace obstacle tile
       bkg_map[bkg_idx_botl] = 0;
       set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
@@ -246,7 +248,7 @@ uint8_t check_collisions(struct Player player, uint8_t *coll_map, uint8_t *bkg_m
     return true;
   } 
   else if (coll_map[cm_idx_botr] > 0){
-    if (coll_map[cm_idx_botr] > 1){
+    if (coll_map[cm_idx_botr] > 1) {
       // Replace obstacle tile
       bkg_map[bkg_idx_botr] = 0;
       set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
@@ -291,11 +293,58 @@ void main(void){
   DISPLAY_ON;
   SHOW_BKG;
 
+  uint8_t progressbar_tiles[10];
+  struct Player player;
+  /**
+   * Create bullet sprite array 
+   */
+  struct Player bullets[MAX_BULLETS];
+  uint8_t bullets_arr_idx;
+  int8_t bullets_active;
+  bool bullets_fired;
+
+  uint8_t gap_w_min;    // Minimum gap width
+  uint8_t gap_w_start;
+  uint8_t obs_w_max;  // Maximum width of obstacles
+  uint8_t gap_row_idx;   // Start of gap
+  uint8_t gap_w; // Gap width
+  uint8_t col_idx;   // First column to populate
+
+  // Collision map. The first 18 elements correspond to the first col in background tile map
+  uint8_t *coll_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));
+  uint8_t *bkg_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));
+  uint8_t new_column[COLUMN_HEIGHT];  // Placeholder for new column array
+
+  uint8_t current_input;
+  uint8_t old_input;
+  uint8_t dx;
+  uint8_t dy;
+  uint8_t frame_count;
+  uint8_t scroll_count;
+  uint8_t damage_recovery_count; // When hit, skip checking collisions for this long
+  uint8_t scroll_thresh; // Scroll when this is set
+  uint8_t col_count;  // counter for number of columns scrolled. Used to calculate screen_count
+  uint16_t screen_count; // number of screens scrolled
+  uint16_t score_lsb; // lower part of 32-bit score (max score 4,294,967,296)
+  uint16_t score_msb; // upper part of 32-bit score (max score 4,294,967,296)
+  uint8_t coll;
+  bool damage_hidden; // Used during the damage recovery to toggle between showing and hidding the player sprite
+
+  uint8_t player_sprite_base_id;
+  uint8_t bullet_sprite_base_id;
+
+  struct Player b;
+  struct Player *b_ptr;
+
+  uint8_t tmpx; 
+  uint8_t tmpy; 
+  uint8_t i, idx;
+  uint16_t ii;
+
   while (1){
     // Load the window contents
-    uint8_t progressbar_tiles[10];
     progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
-    for (uint8_t i = 1; i < 9; i++){
+    for (i = 1; i < 9; i++){
       progressbar_tiles[i] = progressbar_tilemap_offset + 2; // center of bar
     }
     progressbar_tiles[9] = progressbar_tilemap_offset + 3; // right edge of bar
@@ -304,13 +353,12 @@ void main(void){
     /*
     * Create a player and display the sprite 
     */
-    struct Player player;
     player.sprite_id = 0;
     player.sprite_tile_id = 0;
     player.x = 20;
     player.y = 72 + 8;
     player.speed = 1;
-    player.dir = LEFT;
+    player.dir = RIGHT;
     player.cb_x_offset = 1;
     player.cb_y_offset = 2;
     player.cb.x = player.x + player.cb_x_offset;
@@ -320,22 +368,31 @@ void main(void){
     player.health = 100;
     move_sprite(player.sprite_id, player.x, player.y);
 
+    /**
+     * Create bullet sprite array 
+     */
+    bullets_arr_idx = 0;
+    bullets_active = 0;
+    bullets_fired = false;
+
     /*
     * Initialize map by filling in the remaining tiles in the 
     * 32x32 memory space
     */
-    uint8_t gap_w_min = 6;    // Minimum gap width
-    uint8_t gap_w_start = 10;
-    uint8_t obs_w_max = update_obstacle_max_width(gap_w_min);  // Maximum width of obstacles
-    uint8_t gap_row_idx = 4;   // Start of gap
-    uint8_t gap_w = gap_w_start; // Gap width
-    uint8_t col_idx = 20;   // First column to populate
+    gap_w_min = 6;    // Minimum gap width
+    gap_w_start = 10;
+    obs_w_max = update_obstacle_max_width(gap_w_min);  // Maximum width of obstacles
+    gap_row_idx = 4;   // Start of gap
+    gap_w = gap_w_start; // Gap width
+    col_idx = 20;   // First column to populate
   
+    // Clear collision map
+    for (ii=0; ii<32*COLUMN_HEIGHT;ii++){
+      coll_map[ii] = 0;
+    }
+
     // Collision map. The first 18 elements correspond to the first col in background tile map
-    uint8_t *coll_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));
-    uint8_t *bkg_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));
-    uint8_t new_column[COLUMN_HEIGHT];  // Placeholder for new column array
-    for (int i=0; i<COLUMN_HEIGHT;i++){
+    for (i=0; i<COLUMN_HEIGHT;i++){
       if ((i >= gap_row_idx) & (i < gap_row_idx+gap_w)){
         new_column[i] = 0;
         bkg_map[col_idx + i*32] = 0;
@@ -352,20 +409,20 @@ void main(void){
     /*
     * Game Looop
     */
-    uint8_t current_input;
-    uint8_t old_input=0;
-    uint8_t dx = 0;
-    uint8_t dy = 0;
-    uint8_t frame_count = 0;
-    uint8_t scroll_count = 0;
-    uint8_t damage_reecovery_count = 0; // When hit, skip checking collisions for this long
-    uint8_t scroll_thresh = 0x3; // Scroll when this is set
-    uint8_t col_count = 0;  // counter for number of columns scrolled. Used to calculate screen_count
-    uint16_t screen_count = 0; // number of screens scrolled
-    uint16_t score_lsb = 0; // lower part of 32-bit score (max score 4,294,967,296)
-    uint16_t score_msb = 0; // upper part of 32-bit score (max score 4,294,967,296)
-    uint8_t coll = 0;
-    bool damage_hidden = false; // Used during the damage recovery to toggle between showing and hidding the player sprite
+    current_input;
+    old_input=0;
+    dx = 0;
+    dy = 0;
+    frame_count = 0;
+    scroll_count = 0;
+    damage_recovery_count = 0; // When hit, skip checking collisions for this long
+    scroll_thresh = 0x3; // Scroll when this is set
+    col_count = 0;  // counter for number of columns scrolled. Used to calculate screen_count
+    screen_count = 0; // number of screens scrolled
+    score_lsb = 0; // lower part of 32-bit score (max score 4,294,967,296)
+    score_msb = 0; // upper part of 32-bit score (max score 4,294,967,296)
+    coll = 0;
+    damage_hidden = false; // Used during the damage recovery to toggle between showing and hidding the player sprite
 
     waitpad(J_START);
     waitpadup();
@@ -377,7 +434,9 @@ void main(void){
       generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map, bkg_map);
     }
 
-    uint8_t sprite_base_id = 0;
+    player_sprite_base_id = 0;
+    bullet_sprite_base_id = 10;
+
     while(1) {
       current_input = joypad();
       coll = 0;
@@ -394,27 +453,31 @@ void main(void){
       {
         dx = 0;
         dy = 0;
-        player.sprite_tile_id = sprite_base_id;
+        player.sprite_tile_id = player_sprite_base_id;
         player.cb_x_offset = 1;
         player.cb_y_offset = 2;
         player.cb.h = 4;
+        player.dir = RIGHT;
       }
       else {
         // At least one key pressed
         if (KEY_PRESSED(J_RIGHT)){
           dx = player.speed;
           // dy = 0;  // Keep in case i want to disable diagonal movement
-          player.sprite_tile_id = sprite_base_id;
+          player.sprite_tile_id = player_sprite_base_id;
+          player.dir |= RIGHT;
         }
         if (KEY_PRESSED(J_LEFT)){
           dx = -player.speed;
           // dy = 0;  // Keep in case i want to disable diagonal movement
-          player.sprite_tile_id = sprite_base_id;
+          player.sprite_tile_id = player_sprite_base_id;
+          player.dir |= LEFT;
         }
         if (KEY_PRESSED(J_UP)){
           // dx = 0;  // Keep in case i want to disable diagonal movement
           dy = -player.speed;
-          player.sprite_tile_id = sprite_base_id + 1;
+          player.sprite_tile_id = player_sprite_base_id + 1;
+          player.dir |= UP;
           
           // Make collision box smaller when plane is "tilted"
           // 3 wide x 1 high
@@ -426,7 +489,8 @@ void main(void){
         if (KEY_PRESSED(J_DOWN)){
           // dx = 0;  // Keep in case i want to disable diagonal movement
           dy = player.speed;
-          player.sprite_tile_id = sprite_base_id + 2;
+          player.sprite_tile_id = player_sprite_base_id + 2;
+          player.dir |= DOWN;
 
           // Make collision box smaller when plane is "tilted"
           // 5 wide x 1 high
@@ -437,11 +501,48 @@ void main(void){
         }
       }
 
+      if (KEY_FIRST_PRESS(J_A)){
+        if (bullets_arr_idx < MAX_BULLETS){
+          bullets_fired = true;
+
+          b.sprite_id = bullets_arr_idx + 1;
+          b.speed = 4;
+          b.x = player.x;
+          b.y = player.y;
+
+          // Collision box
+          b.cb.x = b.x;
+          b.cb.y = b.y;
+          b.cb.h = 8;
+          b.cb.w = 8;
+
+          b.sprite_tile_id = bullet_sprite_base_id;
+          if (player.dir & UP){
+            b.sprite_tile_id = bullet_sprite_base_id + 1;
+          }
+          else if (player.dir & DOWN){
+            b.sprite_tile_id = bullet_sprite_base_id + 2;
+          }
+          set_sprite_tile(b.sprite_id, b.sprite_tile_id);
+          move_sprite(b.sprite_id, b.x, b.y);
+
+          *(bullets+bullets_arr_idx) = b;
+
+          bullets_arr_idx++;
+          bullets_active++;
+
+          if (bullets_arr_idx > MAX_BULLETS){
+            bullets_arr_idx = MAX_BULLETS;
+            bullets_active = MAX_BULLETS;
+          }
+        }
+      }
+
       old_input = current_input;
 
       // Update player position
       // Bound check
-      uint8_t tmpx = player.x + dx; 
+      tmpx = player.x + dx; 
       if (tmpx <= SCREEN_L){
         player.x = SCREEN_L;
         // dx = (player.x - SCREEN_L);
@@ -454,7 +555,7 @@ void main(void){
         player.x += dx;
       }
       
-      uint8_t tmpy = player.y + dy; 
+      tmpy = player.y + dy; 
       if (tmpy <= SCREEN_T){
         player.y = SCREEN_T;
         // dy = (player.y - SCREEN_T);
@@ -473,20 +574,62 @@ void main(void){
 
       set_sprite_tile(player.sprite_id, player.sprite_tile_id);
       move_sprite(player.sprite_id, player.x, player.y);
+      
+      /**
+       * Update bullets, if fired
+       */
+      if (bullets_fired){
+        // Update bullet positions
+        b_ptr = bullets;
+        for (i=0; i<bullets_arr_idx; i++){
+          if (b_ptr->speed == 0){
+            b_ptr++;
+            continue;
+          }
+          b_ptr->x += b_ptr->speed;
+          if (b_ptr->x > SCREEN_R){
+            b_ptr->x = 0;
+            b_ptr->y = 0;
+            b_ptr->speed = 0;
+            bullets_active--;
+          }
+          else if (check_collisions(b_ptr, coll_map, bkg_map, true)){
+           // Hide sprite
+            b_ptr->x = 0;
+            b_ptr->y = 0;
+            b_ptr->speed = 0;
+            bullets_active--;
+          }
+          move_sprite(b_ptr->sprite_id, b_ptr->x, b_ptr->y);
+          b_ptr++;
+        }
 
-      if (damage_reecovery_count == 0){
+        if (bullets_active <= 0){
+          // No active bullets, we can overwrite the array
+          bullets_arr_idx = 0;
+          bullets_fired = false;
+          bullets_active = 0;
+        }
+      }
+
+      /**
+       * 
+       * 
+       */
+
+      if (damage_recovery_count == 0){
         if (damage_hidden){
           SHOW_SPRITES;
           damage_hidden = false;
         }
-        coll = check_collisions(player, coll_map, bkg_map);
+        coll = check_collisions(&player, coll_map, bkg_map, false);
         if (coll == 1) {
           player.health -= 5;
-          damage_reecovery_count = 16;
+          damage_recovery_count = 16;
         }
         else if (coll == 2) {
           player.health -= 2;
-          damage_reecovery_count = 16;
+          damage_recovery_count = 16;
         }
         if (player.health <= 0){
           // End game in the future
@@ -500,11 +643,13 @@ void main(void){
           // Load title screen
           set_bkg_tiles(0,0,20,COLUMN_HEIGHT,game_titlescreen);
           move_bkg(0,0);
+          player.sprite_tile_id = player_sprite_base_id;
+          set_sprite_tile(player.sprite_id, player.sprite_tile_id);
           break;
         }
       }
       else{
-        damage_reecovery_count--;
+        damage_recovery_count--;
         if (damage_hidden){
           SHOW_SPRITES;
           damage_hidden = false;
@@ -551,7 +696,7 @@ void main(void){
       if (coll){
         if (player.health == 100){
           progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
-          for (uint8_t i = 1; i < 9; i++){
+          for (i = 1; i < 9; i++){
             progressbar_tiles[i] = progressbar_tilemap_offset + 2; // center of bar
           }
           progressbar_tiles[9] = progressbar_tilemap_offset + 3; // right edge of bar
@@ -560,8 +705,8 @@ void main(void){
           progressbar_tiles[9] = progressbar_tilemap_offset + 6;
         }
         else if (player.health >= 10){
-          uint8_t idx = (player.health + 10)/10;
-          for (uint8_t i=idx; i < 9; i++){
+          idx = (player.health + 10)/10;
+          for (i=idx; i < 9; i++){
             progressbar_tiles[i] = progressbar_tilemap_offset + 5;
           }
         }
@@ -572,13 +717,13 @@ void main(void){
         set_win_tiles(5, 0, 10, 1, progressbar_tiles);
 
         if (player.health > 70){
-          sprite_base_id = 0;
+          player_sprite_base_id = 0;
         }
         else if (player.health > 30){
-          sprite_base_id = 3;
+          player_sprite_base_id = 3;
         }
         else if (player.health > 0){
-          sprite_base_id = 6;
+          player_sprite_base_id = 6;
         }
       }
 
