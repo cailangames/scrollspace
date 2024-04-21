@@ -31,6 +31,54 @@ void wait(uint8_t n){
   }
 }
 
+void fadeout(void){
+  uint8_t i;
+
+  for (i=0; i<4; i++){
+    switch (i)
+    {
+    case 0:
+      BGP_REG = 0xE4;
+      break;
+
+    case 1:
+      BGP_REG = 0xF9;
+      break;
+    
+    case 2:
+      BGP_REG = 0xFE;
+      break;
+    
+    case 3:
+      BGP_REG = 0xFF;
+      break;
+    }
+    wait(10);
+  }
+}
+
+void fadein(void){
+  uint8_t i;
+
+  for (i=0; i<3; i++){
+    switch (i)
+    {
+    case 0:
+      BGP_REG = 0xFE;
+      break;
+
+    case 1:
+      BGP_REG = 0xF9;
+      break;
+    
+    case 2:
+      BGP_REG = 0xE4;
+      break;
+    }
+    wait(10);
+  }
+}
+
 void score2tile(uint16_t score_msb, uint16_t score_lsb, uint8_t* score_tiles){
   // Max score is 4294967296, which is 10 digits total
   // score_lsb covers from 0 - 65535
@@ -636,8 +684,9 @@ void main(void){
           // For now, reset to full health
           player.sprite_tile_id = 9;
           set_sprite_tile(player.sprite_id, player.sprite_tile_id);
-          wait(120);
-          //player.health = 100;
+          wait(10);
+          HIDE_BKG;
+          fadeout();
           HIDE_SPRITES;
           HIDE_WIN;
           // Load title screen
@@ -645,6 +694,9 @@ void main(void){
           move_bkg(0,0);
           player.sprite_tile_id = player_sprite_base_id;
           set_sprite_tile(player.sprite_id, player.sprite_tile_id);
+          SHOW_BKG;
+          wait(60);
+          fadein();
           break;
         }
       }
