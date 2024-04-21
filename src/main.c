@@ -273,32 +273,36 @@ uint8_t check_collisions(struct Player *sprite, uint8_t *coll_map, uint8_t *bkg_
 
   if (coll_map[cm_idx_topl] > 0){
     if (coll_map[cm_idx_topl] > 1) {
-      // Replace obstacle tile
+      // Replace obstacle tile and remove collision
       bkg_map[bkg_idx_topl] = 0;
+      coll_map[cm_idx_topl] = 0;
       set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
    return true;
   }
   else if (coll_map[cm_idx_topr] > 0) {
     if (coll_map[cm_idx_topr] > 1) {
-      // Replace obstacle tile
+      // Replace obstacle tile and remove collision
       bkg_map[bkg_idx_topr] = 0;
+      coll_map[cm_idx_topr] = 0;
       set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
     return true;
   }
   else if(coll_map[cm_idx_botl] > 0){
     if (coll_map[cm_idx_botl] > 1) {
-      // Replace obstacle tile
+      // Replace obstacle tile and remove collision
       bkg_map[bkg_idx_botl] = 0;
+      coll_map[cm_idx_botl] = 0;
       set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
     return true;
   } 
   else if (coll_map[cm_idx_botr] > 0){
     if (coll_map[cm_idx_botr] > 1) {
-      // Replace obstacle tile
+      // Replace obstacle tile and remove collision
       bkg_map[bkg_idx_botr] = 0;
+      coll_map[cm_idx_botr] = 0;
       set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
     return true;
@@ -561,6 +565,8 @@ void main(void){
           // Collision box
           b.cb.x = b.x;
           b.cb.y = b.y;
+          b.cb_x_offset = 0;
+          b.cb_y_offset = 0;
           b.cb.h = 8;
           b.cb.w = 8;
 
@@ -635,6 +641,10 @@ void main(void){
             continue;
           }
           b_ptr->x += b_ptr->speed;
+          // Update collision box
+          b_ptr->cb.x = b_ptr->x + b_ptr->cb_x_offset;
+          b_ptr->cb.y = b_ptr->y + b_ptr->cb_y_offset;
+
           if (b_ptr->x > SCREEN_R){
             b_ptr->x = 0;
             b_ptr->y = 0;
@@ -703,11 +713,13 @@ void main(void){
       else{
         damage_recovery_count--;
         if (damage_hidden){
-          SHOW_SPRITES;
+          // SHOW_SPRITES;
+          move_sprite(player.sprite_id, player.x, player.y);
           damage_hidden = false;
         }
         else{
-          HIDE_SPRITES;
+          // HIDE_SPRITES;
+          move_sprite(player.sprite_id, 0, 0);
           damage_hidden = true;
         }
       }
