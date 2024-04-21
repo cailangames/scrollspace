@@ -7,6 +7,13 @@ enum direction{
   LEFT=8,
 };
 
+enum sprite_type{
+  PLAYER=0,
+  BULLET=1,
+  BOMB=2,
+  LASER=3
+};
+
 struct CollisionBox {
   uint8_t x;
   uint8_t y;
@@ -14,7 +21,7 @@ struct CollisionBox {
   uint8_t h;
 };
 
-struct Player {
+struct Sprite {
   uint8_t sprite_id;
   uint8_t sprite_tile_id;
   uint8_t x;
@@ -25,5 +32,8 @@ struct Player {
   enum direction dir; 
   struct CollisionBox cb;
   int8_t health;
+  bool active;
+  uint8_t lifespan;
+  enum sprite_type type;
 };
 

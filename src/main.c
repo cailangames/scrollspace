@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "player.h"
+#include "sprites.h"
 #include "title_screens.h"
 #include "player_sprites.h"
 #include "block_tiles.h"
@@ -235,7 +235,7 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
   }
 }
 
-uint8_t check_collisions(struct Player *sprite, uint8_t *coll_map, uint8_t *bkg_map, bool bullet){
+uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, bool bullet){
   /*
    * The player sprite can collide with up to 4 tiles.
    * Check the collision map on the top_left, top_right
@@ -346,13 +346,13 @@ void main(void){
   SHOW_BKG;
 
   uint8_t progressbar_tiles[10];
-  struct Player player;
+  struct Sprite player;
   /**
    * Create bullet sprite array 
    */
-  struct Player bullets[MAX_BULLETS];
+  struct Sprite bullets[MAX_BULLETS];
   uint8_t bullets_arr_idx;
-  int8_t bullets_active;
+  uint8_t bullets_active;
   bool bullets_fired;
 
   uint8_t gap_w_min;    // Minimum gap width
@@ -381,13 +381,16 @@ void main(void){
   uint16_t score_msb; // upper part of 32-bit score (max score 4,294,967,296)
   uint8_t coll;
   bool damage_hidden; // Used during the damage recovery to toggle between showing and hidding the player sprite
+  uint8_t bullet_reset; // Number of screens before you can shoot bullets again
 
   uint8_t player_sprite_base_id;
   uint8_t bullet_sprite_base_id;
 
-  struct Player b;
-  struct Player *b_ptr;
+  // Bullet sprites and pointers
+  struct Sprite b;
+  struct Sprite *b_ptr;
 
+  // Temporary variables (loop counters, array indices, etc)
   uint8_t tmpx; 
   uint8_t tmpy; 
   uint8_t i, idx;
@@ -418,6 +421,8 @@ void main(void){
     player.cb.w = 5;
     player.cb.h = 4;
     player.health = 100;
+    player.active = true;
+    player.type = PLAYER;
     move_sprite(player.sprite_id, player.x, player.y);
 
     /**
@@ -426,6 +431,7 @@ void main(void){
     bullets_arr_idx = 0;
     bullets_active = 0;
     bullets_fired = false;
+    bullet_reset = 0;
 
     /*
     * Initialize map by filling in the remaining tiles in the 
@@ -554,9 +560,12 @@ void main(void){
       }
 
       if (KEY_FIRST_PRESS(J_A)){
-        if (bullets_arr_idx < MAX_BULLETS){
+        if ((bullet_reset == 0) && \
+            (bullets_arr_idx < MAX_BULLETS))
+        {
           bullets_fired = true;
 
+          b.type = BULLET;
           b.sprite_id = bullets_arr_idx + 1;
           b.speed = 4;
           b.x = player.x;
@@ -566,17 +575,19 @@ void main(void){
           b.cb.x = b.x;
           b.cb.y = b.y;
           b.cb_x_offset = 0;
-          b.cb_y_offset = 0;
-          b.cb.h = 8;
+          b.cb_y_offset = 2;
+          b.cb.h = 4;
           b.cb.w = 8;
+          b.active = true;
+          b.lifespan = 20;
 
           b.sprite_tile_id = bullet_sprite_base_id;
-          if (player.dir & UP){
-            b.sprite_tile_id = bullet_sprite_base_id + 1;
-          }
-          else if (player.dir & DOWN){
-            b.sprite_tile_id = bullet_sprite_base_id + 2;
-          }
+          // if (player.dir & UP){
+            // b.sprite_tile_id = bullet_sprite_base_id + 1;
+          // }
+          // else if (player.dir & DOWN){
+            // b.sprite_tile_id = bullet_sprite_base_id + 2;
+          // }
           set_sprite_tile(b.sprite_id, b.sprite_tile_id);
           move_sprite(b.sprite_id, b.x, b.y);
 
@@ -636,37 +647,41 @@ void main(void){
         // Update bullet positions
         b_ptr = bullets;
         for (i=0; i<bullets_arr_idx; i++){
-          if (b_ptr->speed == 0){
+          if (!b_ptr->active){
             b_ptr++;
             continue;
           }
           b_ptr->x += b_ptr->speed;
+          b_ptr->lifespan--;
+
           // Update collision box
           b_ptr->cb.x = b_ptr->x + b_ptr->cb_x_offset;
           b_ptr->cb.y = b_ptr->y + b_ptr->cb_y_offset;
 
-          if (b_ptr->x > SCREEN_R){
-            b_ptr->x = 0;
-            b_ptr->y = 0;
-            b_ptr->speed = 0;
-            bullets_active--;
-          }
-          else if (check_collisions(b_ptr, coll_map, bkg_map, true)){
+          if ((b_ptr->x > SCREEN_R) || \
+              check_collisions(b_ptr, coll_map, bkg_map, true) || \
+              (b_ptr->lifespan == 0))
+          {
            // Hide sprite
             b_ptr->x = 0;
             b_ptr->y = 0;
             b_ptr->speed = 0;
+            b_ptr->active = false;
             bullets_active--;
           }
+          
           move_sprite(b_ptr->sprite_id, b_ptr->x, b_ptr->y);
           b_ptr++;
         }
 
-        if (bullets_active <= 0){
+        if ((bullets_active == 0) && \
+            (bullets_arr_idx >= MAX_BULLETS))
+        {
           // No active bullets, we can overwrite the array
           bullets_arr_idx = 0;
           bullets_fired = false;
           bullets_active = 0;
+          bullet_reset = 2;  // Prevent bullets for 2 screens
         }
       }
 
@@ -736,6 +751,10 @@ void main(void){
         if (col_count > 20){
           col_count = 0;
           screen_count++;
+
+          if (bullet_reset > 0){
+            bullet_reset--;
+          }
 
           // Increment score
           score_lsb++;
