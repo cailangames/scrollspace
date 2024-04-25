@@ -10,7 +10,7 @@
 #include "player_sprites.h"
 #include "block_tiles.h"
 #include "progressbar_tiles.h"
-#include "bullets_sprites.h"
+#include "projectiles_sprites.h"
 
 #define KEY_PRESSED(K) (current_input & K)
 #define KEY_HELD(K) ((current_input & K) && (old_input & K))
@@ -331,7 +331,7 @@ void main(void){
 
   // Load sprite data
   set_sprite_data(0,10,player_data);
-  set_sprite_data(10,3,bullets_data);
+  set_sprite_data(10,3,projectiles_data);
 
   // Load title screen
   set_bkg_tiles(0,0,20,COLUMN_HEIGHT,game_titlescreen);
