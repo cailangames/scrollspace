@@ -20,7 +20,7 @@
 #define FONT_OFFSET 36
 #define MAPBLOCK_IDX  FONT_OFFSET
 #define SCREEN_T  16
-#define SCREEN_B 152-8
+#define SCREEN_B 144
 #define SCREEN_L 8
 #define SCREEN_R 160
 #define COLUMN_HEIGHT 16
@@ -247,10 +247,10 @@ void drop_bomb(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8
   int16_t cm_idx_botl, cm_idx_botr; 
   int16_t bkg_idx_topl, bkg_idx_topr; 
   int16_t bkg_idx_botl, bkg_idx_botr; 
-  int8_t row_topl, row_topr;
-  int8_t row_botl, row_botr;
-  int8_t col_topl, col_topr;
-  int8_t col_botl, col_botr;
+  int16_t row_topl, row_topr;
+  int16_t row_botl, row_botr;
+  int16_t col_topl, col_topr;
+  int16_t col_botl, col_botr;
 
   row_topl = (sprite->cb.y - 16) / 8;
   col_topl = ((SCX_REG + sprite->cb.x - 8) %256) / 8;
@@ -265,10 +265,10 @@ void drop_bomb(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8
 
   row_topr = row_topl;
   col_topr = ((SCX_REG + sprite->cb.x + sprite->cb.w - 8)%256) / 8;
-  if (row_topr - 8*radius < SCREEN_T){
+  if ((row_topr - 8*radius) < SCREEN_T){
     row_topr =  SCREEN_T;
   }
-  if (col_topr + 8*radius > SCREEN_R){
+  if ((col_topr + 8*radius) > SCREEN_R){
     col_topr = SCREEN_R;
   }
   cm_idx_topr = col_topr*COLUMN_HEIGHT + row_topr;
@@ -276,10 +276,10 @@ void drop_bomb(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8
 
   row_botl = ((sprite->cb.y + sprite->cb.h - 16)%256) / 8;
   col_botl = col_topl; 
-  if (row_botl + 8*radius < SCREEN_B){
+  if ((row_botl + 8*radius) < SCREEN_B){
     row_botl = SCREEN_B;
   }
-  if (col_botl - 8*radius < SCREEN_L){
+  if ((col_botl - 8*radius) < SCREEN_L){
     col_botl = SCREEN_L;
   }
   cm_idx_botl = col_botl*COLUMN_HEIGHT + row_botl;
@@ -287,10 +287,10 @@ void drop_bomb(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8
 
   row_botr = row_botl;
   col_botr = col_topr; 
-  if (row_botr + 8*radius < SCREEN_B){
+  if ((row_botr + 8*radius) < SCREEN_B){
     row_botr = SCREEN_B;
   }
-  if (col_botr + 8*radius < SCREEN_R){
+  if ((col_botr + 8*radius) < SCREEN_R){
     col_botr = SCREEN_R;
   }
   cm_idx_botr = col_botr*COLUMN_HEIGHT + row_botr;
@@ -310,7 +310,7 @@ void drop_bomb(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8
 
 }
 
-uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, bool bullet){
+uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map){
   /*
    * The player sprite can collide with up to 4 tiles.
    * Check the collision map on the top_left, top_right
@@ -321,10 +321,10 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
   uint16_t cm_idx_botl, cm_idx_botr; 
   uint16_t bkg_idx_topl, bkg_idx_topr; 
   uint16_t bkg_idx_botl, bkg_idx_botr; 
-  uint8_t row_topl, row_topr;
-  uint8_t row_botl, row_botr;
-  uint8_t col_topl, col_topr;
-  uint8_t col_botl, col_botr;
+  uint16_t row_topl, row_topr;
+  uint16_t row_botl, row_botr;
+  uint16_t col_topl, col_topr;
+  uint16_t col_botl, col_botr;
 
   row_topl = (sprite->cb.y - 16) / 8;
   col_topl = ((SCX_REG + sprite->cb.x - 8) %256) / 8;
@@ -481,6 +481,7 @@ void main(void){
 
   while (1){
     // Load the window contents
+    bullets_arr_idx = 0;
     powerups_top_tiles[0] = powerups_tilemap_offset + 4;  // Deselected ammo
     powerups_top_tiles[1] = MAX_BULLETS - bullets_arr_idx + 1;
     powerups_top_tiles[2] = 0;
@@ -499,6 +500,7 @@ void main(void){
     }
     progressbar_tiles[9] = progressbar_tilemap_offset + 3; // right edge of bar
 
+    score = 0;
     score2tile(score, score_tiles);
     set_win_tiles(2, 0, 5, 1, powerups_top_tiles);
     set_win_tiles(2, 1, 5, 1, powerups_bot_tiles);
@@ -832,7 +834,7 @@ void main(void){
           b_ptr->cb.y = b_ptr->y + b_ptr->cb_y_offset;
 
           if ((b_ptr->x > SCREEN_R) || \
-              check_collisions(b_ptr, coll_map, bkg_map, true) || \
+              check_collisions(b_ptr, coll_map, bkg_map) || \
               (b_ptr->lifespan == 0))
           {
            // Hide sprite
@@ -872,7 +874,7 @@ void main(void){
           SHOW_SPRITES;
           damage_hidden = false;
         }
-        coll = check_collisions(&player, coll_map, bkg_map, false);
+        coll = check_collisions(&player, coll_map, bkg_map);
         if (coll == 1) {
           player.health -= 5;
           damage_recovery_count = 16;
