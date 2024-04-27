@@ -10,7 +10,7 @@ enum direction{
 enum sprite_type{
   PLAYER=0,
   BULLET=1,
-  BOMB=2,
+  BOMBS=2,
   LASER=3
 };
 

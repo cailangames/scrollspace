@@ -26,6 +26,13 @@
 #define COLUMN_HEIGHT 16
 #define MAX_BULLETS 3
 
+enum powerup{
+  GUN=0,
+  BOMB=1,
+  SHIELD=2,
+  HEALTH=3
+};
+
 void wait(uint8_t n){
   uint8_t i;
   for (i=0; i < n; i++){
@@ -429,6 +436,7 @@ void main(void){
   uint8_t bullets_active;
   bool bullets_fired;
   bool bomb_dropped;
+  enum powerup active_powerup;
 
   uint8_t gap_w_min;    // Minimum gap width
   uint8_t gap_w_start;
@@ -473,16 +481,16 @@ void main(void){
 
   while (1){
     // Load the window contents
-    powerups_top_tiles[0] = powerups_tilemap_offset + 4;  // Selected ammo
+    powerups_top_tiles[0] = powerups_tilemap_offset + 4;  // Deselected ammo
     powerups_top_tiles[1] = MAX_BULLETS - bullets_arr_idx + 1;
     powerups_top_tiles[2] = 0;
-    powerups_top_tiles[3] = powerups_tilemap_offset + 2;  // Deselected health kit
+    powerups_top_tiles[3] = powerups_tilemap_offset + 3;  // Deselected health kit
     powerups_top_tiles[4] = 1;
 
-    powerups_bot_tiles[0] = powerups_tilemap_offset + 5;  // Selected bomb
+    powerups_bot_tiles[0] = powerups_tilemap_offset + 1;  // Deselected bomb
     powerups_bot_tiles[1] = 1;
     powerups_bot_tiles[2] = 0;
-    powerups_bot_tiles[3] = powerups_tilemap_offset + 3;  // Deselected shielld
+    powerups_bot_tiles[3] = powerups_tilemap_offset + 2;  // Deselected shield
     powerups_bot_tiles[4] = 1;
 
     progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
@@ -525,6 +533,7 @@ void main(void){
     bullet_reset = 0;
     bomb_reset = 0;
     bomb_dropped = false;
+    active_powerup = GUN;
 
     /*
     * Initialize map by filling in the remaining tiles in the 
@@ -653,52 +662,118 @@ void main(void){
       }
 
       if (KEY_FIRST_PRESS(J_A)){
-        if ((bullet_reset == 0) && \
-            (bullets_arr_idx < MAX_BULLETS))
+        switch (active_powerup)
         {
-          bullets_fired = true;
+          case GUN:
+          {
+            if ((bullet_reset == 0) && \
+                (bullets_arr_idx < MAX_BULLETS))
+            {
+              bullets_fired = true;
 
-          b.type = BULLET;
-          b.sprite_id = bullets_arr_idx + 1;
-          b.speed = 4;
-          b.x = player.x;
-          b.y = player.y;
+              b.type = BULLET;
+              b.sprite_id = bullets_arr_idx + 1;
+              b.speed = 4;
+              b.x = player.x;
+              b.y = player.y;
 
-          // Collision box
-          b.cb.x = b.x;
-          b.cb.y = b.y;
-          b.cb_x_offset = 0;
-          b.cb_y_offset = 2;
-          b.cb.h = 4;
-          b.cb.w = 8;
-          b.active = true;
-          b.lifespan = 20;
+              // Collision box
+              b.cb.x = b.x;
+              b.cb.y = b.y;
+              b.cb_x_offset = 0;
+              b.cb_y_offset = 2;
+              b.cb.h = 4;
+              b.cb.w = 8;
+              b.active = true;
+              b.lifespan = 20;
 
-          b.sprite_tile_id = bullet_sprite_base_id;
-          // if (player.dir & UP){
-            // b.sprite_tile_id = bullet_sprite_base_id + 1;
-          // }
-          // else if (player.dir & DOWN){
-            // b.sprite_tile_id = bullet_sprite_base_id + 2;
-          // }
-          set_sprite_tile(b.sprite_id, b.sprite_tile_id);
-          move_sprite(b.sprite_id, b.x, b.y);
+              b.sprite_tile_id = bullet_sprite_base_id;
+              set_sprite_tile(b.sprite_id, b.sprite_tile_id);
+              move_sprite(b.sprite_id, b.x, b.y);
 
-          *(bullets+bullets_arr_idx) = b;
+              *(bullets+bullets_arr_idx) = b;
 
-          bullets_arr_idx++;
-          bullets_active++;
+              bullets_arr_idx++;
+              bullets_active++;
 
-          if (bullets_arr_idx > MAX_BULLETS){
-            bullets_arr_idx = MAX_BULLETS;
-            bullets_active = MAX_BULLETS;
+              if (bullets_arr_idx > MAX_BULLETS){
+                bullets_arr_idx = MAX_BULLETS;
+                bullets_active = MAX_BULLETS;
+              }
+            }
           }
+          break;
+          
+          case BOMB:
+          {
+            if (bomb_reset == 0){
+              bomb_dropped = true;
+            }
+          }
+          break;
+
+          case SHIELD:
+          {
+
+          }
+          break;
+
+          case HEALTH:
+          {
+
+          }
+          break;
         }
       }
       if (KEY_FIRST_PRESS(J_B)){
-        if (bomb_reset == 0){
-          bomb_dropped = true;
+        switch (active_powerup)
+        {
+          case GUN:
+          {
+            // Deselect current tile
+            powerups_top_tiles[0] = powerups_tilemap_offset + active_powerup; 
+
+            // Change active powerup 
+            active_powerup = BOMB;
+            powerups_bot_tiles[0] = powerups_tilemap_offset + 4 + active_powerup;
+          }
+          break;
+          
+          case BOMB:
+          {
+            // Deselect current tile
+            powerups_bot_tiles[0] = powerups_tilemap_offset + active_powerup; 
+
+            // Change active powerup 
+            active_powerup = SHIELD;
+            powerups_bot_tiles[3] = powerups_tilemap_offset + 4 + active_powerup;
+          }
+          break;
+
+          case SHIELD:
+          {
+            // Deselect current tile
+            powerups_bot_tiles[3] = powerups_tilemap_offset + active_powerup; 
+
+            // Change active powerup 
+            active_powerup = HEALTH;
+            powerups_top_tiles[3] = powerups_tilemap_offset + 4 + active_powerup;
+          }
+          break;
+
+          case HEALTH:
+          {
+            // Deselect current tile
+            powerups_top_tiles[3] = powerups_tilemap_offset + active_powerup; 
+
+            // Change active powerup 
+            active_powerup = GUN;
+            powerups_top_tiles[0] = powerups_tilemap_offset + 4 + active_powerup;
+          }
+          break;
         }
+        set_win_tiles(2, 0, 5, 1, powerups_top_tiles);
+        set_win_tiles(2, 1, 5, 1, powerups_bot_tiles);
       }
 
       old_input = current_input;
@@ -912,8 +987,11 @@ void main(void){
         // Update HUD
         if (bullet_reset == 0){
           powerups_top_tiles[1] = MAX_BULLETS - bullets_arr_idx + 1;  
-          set_win_tiles(2, 0, 5, 1, powerups_top_tiles);
         }
+        else{
+          powerups_top_tiles[1] = 1;  
+        }
+        set_win_tiles(2, 0, 5, 1, powerups_top_tiles);
       }
       
       frame_count++;
