@@ -242,76 +242,63 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
 }
 
 
-void drop_bomb(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8_t radius){
+void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8_t radius){
   /*
-   * Grab the corners of the sprite and move radius tiles away and replace 
+   * Grab the corners of the player and move radius tiles away and replace 
    * the coll_map and bkg_map entries with 0.
+   * The bomb's radius is slightly tipped forward (by 2 tile)
    */
-  int16_t cm_idx_topl, cm_idx_topr; 
-  int16_t cm_idx_botl, cm_idx_botr; 
-  int16_t bkg_idx_topl, bkg_idx_topr; 
-  int16_t bkg_idx_botl, bkg_idx_botr; 
-  int16_t row_topl, row_topr;
-  int16_t row_botl, row_botr;
-  int16_t col_topl, col_topr;
-  int16_t col_botl, col_botr;
+  uint16_t cm_idx; 
+  uint16_t bkg_idx; 
+  uint16_t row_top, row_bot;
+  uint16_t col_left, col_right;
 
-  row_topl = (sprite->cb.y - 16) / 8;
-  col_topl = ((SCX_REG + sprite->cb.x - 8) %256) / 8;
-  if (row_topl - 8*radius < SCREEN_T){
-    row_topl = SCREEN_T;
-  }
-  if (col_topl - 8*radius < SCREEN_L){
-    col_topl = SCREEN_L;
-  }
-  cm_idx_topl = col_topl*COLUMN_HEIGHT + row_topl;
-  bkg_idx_topl = col_topl + row_topl*32;
+  row_top = (player->y - 16)/8;
+  row_bot = row_top + 1;
+  col_left = ((SCX_REG + player->x - 8) % 256)/8;
+  col_left += 2; // tip forward by 2 tile
+  col_right = col_left + 1;
 
-  row_topr = row_topl;
-  col_topr = ((SCX_REG + sprite->cb.x + sprite->cb.w - 8)%256) / 8;
-  if ((row_topr - 8*radius) < SCREEN_T){
-    row_topr =  SCREEN_T;
+  if (radius <= row_top){
+    row_top -= radius;
   }
-  if ((col_topr + 8*radius) > SCREEN_R){
-    col_topr = SCREEN_R;
+  else {
+    row_top = 0;
   }
-  cm_idx_topr = col_topr*COLUMN_HEIGHT + row_topr;
-  bkg_idx_topr = col_topr + row_topr*32;
 
-  row_botl = ((sprite->cb.y + sprite->cb.h - 16)%256) / 8;
-  col_botl = col_topl; 
-  if ((row_botl + 8*radius) < SCREEN_B){
-    row_botl = SCREEN_B;
+  if (COLUMN_HEIGHT >= row_bot + radius){
+    row_bot += radius;
   }
-  if ((col_botl - 8*radius) < SCREEN_L){
-    col_botl = SCREEN_L;
+  else {
+    row_bot = COLUMN_HEIGHT;
   }
-  cm_idx_botl = col_botl*COLUMN_HEIGHT + row_botl;
-  bkg_idx_botl = col_botl + row_botl*32;
 
-  row_botr = row_botl;
-  col_botr = col_topr; 
-  if ((row_botr + 8*radius) < SCREEN_B){
-    row_botr = SCREEN_B;
+  if (radius <= col_left){
+    col_left -= radius;
   }
-  if ((col_botr + 8*radius) < SCREEN_R){
-    col_botr = SCREEN_R;
+  else {
+    col_left = 0;
   }
-  cm_idx_botr = col_botr*COLUMN_HEIGHT + row_botr;
-  bkg_idx_botr = col_botr + row_botr*32;
 
-  /**
-   * HOW DO I ACTUALLY DO THIS?! 
-   * 
-   */
+  if (32 >= col_right + radius){
+    col_right += radius;
+  }
+  else {
+    col_right = 32;
+  }
+
   uint16_t row, col;
-  for (row=0; row < row_botl - row_topl; row++){
-    for (col=0; col < col_topr - col_topl; col++){
-      continue;
+  for (row=row_top; row < row_bot; row++){
+    for (col=col_left; col < col_right; col++){
+      cm_idx = col*COLUMN_HEIGHT + row;
+      bkg_idx = col + row*32;
+
+      coll_map[cm_idx] = 0;
+      bkg_map[bkg_idx] = 0;
     }
   }
 
-
+  set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
 }
 
 uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map){
@@ -399,6 +386,14 @@ void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_
       progressbar_tiles[i] = progressbar_tilemap_offset + 2; // center of bar
     }
     progressbar_tiles[9] = progressbar_tilemap_offset + 3; // right edge of bar
+  }
+  else if (player->health >= 90) {
+    progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
+    for (i = 1; i < 9; i++){
+      progressbar_tiles[i] = progressbar_tilemap_offset + 2; // center of bar
+    }
+    progressbar_tiles[9] = progressbar_tilemap_offset + 6; // right edge of bar
+
   }
   else if ((player->health < 90) && (player->health >= 10)) {
     idx = (player->health + 10) / 10;
@@ -529,10 +524,10 @@ void main(void){
   while (1){
     // Load the window contents
     bullets_arr_idx = 0;
-    n_bullets = 4;
-    n_bombs = 3;
-    n_shields = 2;
-    n_health = 3;
+    n_bullets = 9;
+    n_bombs = 9;
+    n_shields = 9;
+    n_health = 9;
 
     powerups_top_tiles[0] = powerups_tilemap_offset + 4;  // Deselected ammo
     powerups_top_tiles[1] = n_bullets + 1;
@@ -994,7 +989,7 @@ void main(void){
         }
       }
       if (bomb_dropped){
-        // drop_bomb(&player, coll_map, bkg_map);
+        drop_bomb(&player, coll_map, bkg_map, 3);
         bomb_dropped = false;
       }
 
