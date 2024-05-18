@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <gbdk/bcd.h>
 
+#include "hUGEDriver.h"
 #include "sprites.h"
 #include "title_screens.h"
 #include "player_sprites.h"
@@ -429,7 +430,6 @@ void main(void){
   /*
    * Load background and sprite data
    */
-
   // Load font tiles to background map
   font_t min_font;
   font_init();
@@ -454,6 +454,20 @@ void main(void){
 
   // Load Window
   move_win(7,128);
+
+  /**
+   * Load music 
+   */
+  extern const hUGESong_t main_song;
+  hUGE_init(&main_song);
+
+  NR52_REG = 0x80;
+  NR51_REG = 0xFF;
+  NR50_REG = 0x33;
+
+  hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
+  hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
+  add_VBL(hUGE_dosound);
 
   /*
    * Turn on display and show background 
@@ -524,7 +538,7 @@ void main(void){
   while (1){
     // Load the window contents
     bullets_arr_idx = 0;
-    n_bullets = 9;
+    n_bullets = 0;
     n_bombs = 9;
     n_shields = 9;
     n_health = 9;
@@ -634,6 +648,9 @@ void main(void){
 
     waitpad(J_START);
     waitpadup();
+    hUGE_init(&main_song);
+    hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
+    hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
 
     SHOW_SPRITES;
     SHOW_WIN;
@@ -651,9 +668,13 @@ void main(void){
 
       // D-PAD
       if (KEY_PRESSED(J_START)){
+        hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
+        hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
         waitpadup();
         waitpad(J_START);
         waitpadup();
+        hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
+        hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
       }
 
       if (!KEY_PRESSED(J_UP) && !KEY_PRESSED(J_DOWN) && \
@@ -1019,6 +1040,8 @@ void main(void){
         if (player.health <= 0){
           // End game in the future
           // For now, reset to full health
+          hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
+          hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
           player.sprite_tile_id = 9;
           set_sprite_tile(player.sprite_id, player.sprite_tile_id);
           wait(10);
@@ -1071,7 +1094,7 @@ void main(void){
             screen_count++;
 
             // Increment score
-            score++;
+            score += 16;
 
             score2tile(score, score_tiles);
 
@@ -1129,6 +1152,7 @@ void main(void){
 
       // Wait for frame to finish drawing
       vsync();
+      // hUGE_dosound();
     }
   }
 }

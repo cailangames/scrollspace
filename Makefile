@@ -1,6 +1,8 @@
 SHELL := /bin/bash
 
 GBDK_HOME	= /opt/gbdk/
+HUGE_HOME = /opt/hUGEDriver-6/
+
 LCC	= $(GBDK_HOME)bin/lcc
 
 # These can be compiled individually as
@@ -20,6 +22,8 @@ OBJDIR = obj/$(EXT)
 BINDIR = build/$(EXT)
 MKDIRS = $(OBJDIR) $(BINDIR)
 
+HUGE_LIB = $(HUGE_HOME)gbdk/hUGEDriver.lib
+HUGE_H = $(HUGE_HOME)include/
 
 BINS = $(OBJDIR)/$(PROJECT_NAME)_$(VERSION).$(EXT)
 CSOURCES = $(foreach dir,$(SRCDIR),$(notdir $(wildcard $(dir)/*.c)))
@@ -32,11 +36,11 @@ all: $(TARGETS)
 
 # Compule .c files in "src/" to .o object files
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
-	$(LCC) $(CFLAGS) -c -o $@ $<
+	$(LCC) $(CFLAGS) -c -I$(HUGE_H) -I$(GBDK_HOME) -o $@ $<
 
 # Link the compiled object files into a .$(EXT) ROM file
 $(BINS): $(OBJS)
-	$(LCC) $(LCCFLAGS) $(CFLAGS) -o $(BINDIR)/$(PROJECT_NAME)_$(VERSION).$(EXT) $(OBJS) 
+	$(LCC) $(LCCFLAGS) $(CFLAGS) -o $(BINDIR)/$(PROJECT_NAME)_$(VERSION).$(EXT) $(OBJS) -Wl-l$(HUGE_LIB)
 
 clean:
 	@echo Cleaning
