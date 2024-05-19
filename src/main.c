@@ -343,7 +343,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       // Replace obstacle tile and remove collision
       bkg_map[bkg_idx_topl] = 0;
       coll_map[cm_idx_topl] = 0;
-      set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+      // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
    return true;
   }
@@ -352,7 +352,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       // Replace obstacle tile and remove collision
       bkg_map[bkg_idx_topr] = 0;
       coll_map[cm_idx_topr] = 0;
-      set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+      // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
     return true;
   }
@@ -361,7 +361,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       // Replace obstacle tile and remove collision
       bkg_map[bkg_idx_botl] = 0;
       coll_map[cm_idx_botl] = 0;
-      set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+      // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
     return true;
   } 
@@ -370,7 +370,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       // Replace obstacle tile and remove collision
       bkg_map[bkg_idx_botr] = 0;
       coll_map[cm_idx_botr] = 0;
-      set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+      // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
     return true;
   }
@@ -519,7 +519,8 @@ void main(void){
   uint8_t col_count;  // counter for number of columns scrolled. Used to calculate screen_count
   uint16_t screen_count; // number of screens scrolled
   uint32_t score; 
-  uint8_t coll;
+  uint8_t player_collision;
+  uint8_t bullet_collision;
   bool damage_hidden; // Used during the damage recovery to toggle between showing and hidding the player sprite
 
   uint8_t player_sprite_base_id;
@@ -538,7 +539,7 @@ void main(void){
   while (1){
     // Load the window contents
     bullets_arr_idx = 0;
-    n_bullets = 0;
+    n_bullets = 9;
     n_bombs = 9;
     n_shields = 9;
     n_health = 9;
@@ -643,7 +644,8 @@ void main(void){
     col_count = 0;  // counter for number of columns scrolled. Used to calculate screen_count
     screen_count = 0; // number of screens scrolled
     score= 0; 
-    coll = 0;
+    player_collision = 0;
+    bullet_collision = 0;
     damage_hidden = false; // Used during the damage recovery to toggle between showing and hidding the player sprite
 
     waitpad(J_START);
@@ -664,7 +666,8 @@ void main(void){
 
     while(1) {
       current_input = joypad();
-      coll = 0;
+      player_collision = 0;
+      bullet_collision = 0;
 
       // D-PAD
       if (KEY_PRESSED(J_START)){
@@ -987,8 +990,9 @@ void main(void){
           b_ptr->cb.x = b_ptr->x + b_ptr->cb_x_offset;
           b_ptr->cb.y = b_ptr->y + b_ptr->cb_y_offset;
 
+          bullet_collision = check_collisions(b_ptr, coll_map, bkg_map);
           if ((b_ptr->x > SCREEN_R) || \
-              check_collisions(b_ptr, coll_map, bkg_map) || \
+              bullet_collision || \
               (b_ptr->lifespan == 0))
           {
            // Hide sprite
@@ -1028,12 +1032,12 @@ void main(void){
           SHOW_SPRITES;
           damage_hidden = false;
         }
-        coll = check_collisions(&player, coll_map, bkg_map);
-        if (coll == 1) {
+        player_collision = check_collisions(&player, coll_map, bkg_map);
+        if (player_collision == 1) {
           player.health -= 5;
           damage_recovery_count = 16;
         }
-        else if (coll == 2) {
+        else if (player_collision == 2) {
           player.health -= 2;
           damage_recovery_count = 16;
         }
@@ -1061,7 +1065,7 @@ void main(void){
         }
 
         // Update health bar after a collision
-        if (coll){
+        if (player_collision){
           update_health_bar(&player, progressbar_tiles, &player_sprite_base_id, progressbar_tilemap_offset);
         }
       }
@@ -1080,6 +1084,12 @@ void main(void){
           }
         }
       }
+
+      if ((player_collision) || (bullet_collision)){
+        // Update bkg_map if there are collisions
+        set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+      }
+
 
       if ((frame_count & scroll_thresh)){
         scroll_bkg(1,0);
