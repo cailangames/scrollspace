@@ -31,6 +31,7 @@
 #define MAX_SHIELDS 3
 #define MAX_HEALTH 3
 
+
 enum powerup{
   GUN=0,
   BOMB=1,
@@ -155,6 +156,7 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
                          uint8_t *gap_w, uint8_t *new_column, 
                          uint8_t gap_w_min, uint8_t obs_w_max,
                          uint8_t *coll_map, uint8_t *bkg_map){
+                         
   // initrand(DIV_REG);
   uint8_t n;  // random number
   uint8_t i;  // Loop counter
@@ -229,8 +231,8 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
     }
   }
 
-  // Write new column to tile map
-  set_bkg_tiles(*col_idx, 0, 1, COLUMN_HEIGHT, new_column);
+  // // Write new column to tile map
+  // set_bkg_tiles(*col_idx, 0, 1, COLUMN_HEIGHT, new_column);
 
   // Increment col_idx
   tmp_col_idx = *col_idx + 1;
@@ -299,7 +301,7 @@ void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8
     }
   }
 
-  set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+  // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
 }
 
 uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map){
@@ -343,7 +345,6 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       // Replace obstacle tile and remove collision
       bkg_map[bkg_idx_topl] = 0;
       coll_map[cm_idx_topl] = 0;
-      // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
    return true;
   }
@@ -352,7 +353,6 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       // Replace obstacle tile and remove collision
       bkg_map[bkg_idx_topr] = 0;
       coll_map[cm_idx_topr] = 0;
-      // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
     return true;
   }
@@ -361,7 +361,6 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       // Replace obstacle tile and remove collision
       bkg_map[bkg_idx_botl] = 0;
       coll_map[cm_idx_botl] = 0;
-      // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
     return true;
   } 
@@ -370,7 +369,6 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       // Replace obstacle tile and remove collision
       bkg_map[bkg_idx_botr] = 0;
       coll_map[cm_idx_botr] = 0;
-      // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     }
     return true;
   }
@@ -501,12 +499,13 @@ void main(void){
   uint8_t obs_w_max;  // Maximum width of obstacles
   uint8_t gap_row_idx;   // Start of gap
   uint8_t gap_w; // Gap width
-  uint8_t col_idx;   // First column to populate
 
   // Collision map. The first 18 elements correspond to the first col in background tile map
+  uint8_t col_idx;   // First column to populate
   uint8_t *coll_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));
   uint8_t *bkg_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));
   uint8_t new_column[COLUMN_HEIGHT];  // Placeholder for new column array
+  bool copy_bkgmap_to_vram; //, copy_column_to_vram;
 
   uint8_t current_input;
   uint8_t old_input;
@@ -657,17 +656,22 @@ void main(void){
     SHOW_SPRITES;
     SHOW_WIN;
     initrand(DIV_REG);
-    for (int i=0; i<12; i++){
+    for (int i=0; i<11; i++){
       generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map, bkg_map);
+      set_bkg_tiles(col_idx, 0, 1, COLUMN_HEIGHT, new_column);
     }
+    //vsync();
 
     player_sprite_base_id = 0;
     bullet_sprite_base_id = 19;
+
+    copy_bkgmap_to_vram = false;
 
     while(1) {
       current_input = joypad();
       player_collision = 0;
       bullet_collision = 0;
+      copy_bkgmap_to_vram = false;
 
       // D-PAD
       if (KEY_PRESSED(J_START)){
@@ -1015,6 +1019,7 @@ void main(void){
       }
       if (bomb_dropped){
         drop_bomb(&player, coll_map, bkg_map, 3);
+        copy_bkgmap_to_vram = true;
         bomb_dropped = false;
       }
 
@@ -1085,12 +1090,6 @@ void main(void){
         }
       }
 
-      if ((player_collision) || (bullet_collision)){
-        // Update bkg_map if there are collisions
-        set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
-      }
-
-
       if ((frame_count & scroll_thresh)){
         scroll_bkg(1,0);
         scroll_count++;
@@ -1098,6 +1097,8 @@ void main(void){
         if (scroll_count == 8){
           scroll_count = 0;
           generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map, bkg_map);
+          copy_bkgmap_to_vram = true;
+
           col_count++;
           if (col_count > 20){
             col_count = 0;
@@ -1153,16 +1154,22 @@ void main(void){
         frame_count = 0;
       }
 
-      // if ((frame_count & 0x1) == 0){ // %2
-        // n_bullets += 3;
-        // if (n_bullets > MAX_BULLETS){
-          // n_bullets = MAX_BULLETS;
-        // }
-      // }
+      if ((player_collision) || (bullet_collision)){
+        // // Update bkg_map if there are collisions
+        // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+        copy_bkgmap_to_vram = true;
+      }
 
       // Wait for frame to finish drawing
       vsync();
-      // hUGE_dosound();
+      if (copy_bkgmap_to_vram){
+        // Write the entire map (from drop_bomb())
+        set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+      }
+      // else if (copy_column_to_vram) {
+        // // Write new column to tile map (from generate_new_column())
+        // set_bkg_tiles(col_idx, 0, 1, COLUMN_HEIGHT, new_column);
+      // }
     }
   }
 }
