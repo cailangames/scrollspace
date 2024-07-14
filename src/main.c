@@ -31,12 +31,16 @@
 #define MAX_SHIELDS 9
 #define MAX_HEALTH 9
 
-
 enum powerup{
   GUN=0,
   BOMB=1,
   SHIELD=2,
   HEALTH=3
+};
+
+enum animation_state{
+  HIDDEN=0,
+  SHOWN=1
 };
 
 void wait(uint8_t n){
@@ -95,7 +99,37 @@ void fadein(void){
 }
 
 void score2tile(uint32_t score, uint8_t* score_tiles){
-  uint8_t len = bcd2text(&score, 1, score_tiles);
+  // uint8_t len = bcd2text(&score, 1, score_tiles);
+  // set_win_tiles(10, 1, len, 1, score_tiles);
+  
+  uint8_t digit;  
+  uint8_t len = 4;
+  uint32_t factor;
+
+  // For now, only support scores from 0-999
+  if (score < 1000){
+    digit = (score / 1000);
+    score -= digit*1000;
+    score_tiles[0] = digit + 0x01;
+
+    digit = score / 100;
+    score -= digit*100;
+    score_tiles[1] = digit + 0x01;
+
+    digit = score / 10;
+    score -= digit*10;
+    score_tiles[2] = digit + 0x01;
+
+    digit = score;
+    score_tiles[3] = digit + 0x01;
+
+  }
+  else {
+    score_tiles[0] = 0x01;
+    score_tiles[1] = 0x01;
+    score_tiles[2] = 0x01;
+    score_tiles[3] = 0x01;
+  }
   set_win_tiles(10, 1, len, 1, score_tiles);
 }
 
@@ -513,14 +547,14 @@ void main(void){
   uint8_t dy;
   uint8_t frame_count;
   uint8_t scroll_count;
-  uint16_t damage_recovery_count; // When hit, skip checking collisions for this long
+  uint16_t damage_animation_counter; // When hit, skip checking collisions for this long
   uint8_t scroll_thresh; // Scroll when this is set
   uint8_t col_count;  // counter for number of columns scrolled. Used to calculate screen_count
   uint16_t screen_count; // number of screens scrolled
   uint32_t score; 
   uint8_t player_collision;
   uint8_t bullet_collision;
-  bool damage_hidden; // Used during the damage recovery to toggle between showing and hidding the player sprite
+  enum animation_state damage_animation_state; // Used during the damage recovery to toggle between showing and hidding the player sprite
 
   uint8_t player_sprite_base_id;
   uint8_t bullet_sprite_base_id;
@@ -638,14 +672,14 @@ void main(void){
     dy = 0;
     frame_count = 0;
     scroll_count = 0;
-    damage_recovery_count = 0; // When hit, skip checking collisions for this long
+    damage_animation_counter = 0; // When hit, skip checking collisions for this long
     scroll_thresh = 0x3; // Scroll when this is set
     col_count = 0;  // counter for number of columns scrolled. Used to calculate screen_count
     screen_count = 0; // number of screens scrolled
-    score= 0; 
+    score = 0; 
     player_collision = 0;
     bullet_collision = 0;
-    damage_hidden = false; // Used during the damage recovery to toggle between showing and hidding the player sprite
+    damage_animation_state = HIDDEN;
 
     waitpad(J_START);
     waitpadup();
@@ -793,7 +827,7 @@ void main(void){
           {
             if ((n_shields > 0) && (!shield_active)){
               shield_active = true;
-              damage_recovery_count = 8*20;
+              damage_animation_counter = 8*20;
               player_sprite_base_id += 10;
               n_shields--;
             }
@@ -995,6 +1029,10 @@ void main(void){
           b_ptr->cb.y = b_ptr->y + b_ptr->cb_y_offset;
 
           bullet_collision = check_collisions(b_ptr, coll_map, bkg_map);
+          if (bullet_collision) {
+            score += 2;
+          }
+
           if ((b_ptr->x > SCREEN_R) || \
               bullet_collision || \
               (b_ptr->lifespan == 0))
@@ -1027,24 +1065,25 @@ void main(void){
        * Continue processing 
        */
 
-      if (damage_recovery_count == 0){
+      if (damage_animation_counter == 0){
         if (shield_active){
           shield_active = false;
           player_sprite_base_id -= 10;
         }
 
-        if (damage_hidden){
-          SHOW_SPRITES;
-          damage_hidden = false;
+        if (damage_animation_state == HIDDEN){
+          // SHOW_SPRITES;
+          move_sprite(player.sprite_id, player.x, player.y);
+          damage_animation_state = SHOWN;
         }
         player_collision = check_collisions(&player, coll_map, bkg_map);
         if (player_collision == 1) {
           player.health -= 5;
-          damage_recovery_count = 16;
+          damage_animation_counter = 16;
         }
         else if (player_collision == 2) {
           player.health -= 2;
-          damage_recovery_count = 16;
+          damage_animation_counter = 16;
         }
         if (player.health <= 0){
           // End game in the future
@@ -1075,17 +1114,17 @@ void main(void){
         }
       }
       else {
-        damage_recovery_count--;
+        damage_animation_counter--;
         if (!shield_active){
-          if (damage_hidden){
+          if (damage_animation_state == HIDDEN){
             // SHOW_SPRITES;
             move_sprite(player.sprite_id, player.x, player.y);
-            damage_hidden = false;
+            damage_animation_state = SHOWN;
           }
           else{
             // HIDE_SPRITES;
             move_sprite(player.sprite_id, 0, 0);
-            damage_hidden = true;
+            damage_animation_state = HIDDEN;
           }
         }
       }
@@ -1105,7 +1144,7 @@ void main(void){
             screen_count++;
 
             // Increment score
-            score += 16;
+            score += 5;
 
             score2tile(score, score_tiles);
 
@@ -1158,6 +1197,7 @@ void main(void){
         // // Update bkg_map if there are collisions
         // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
         copy_bkgmap_to_vram = true;
+        score2tile(score, score_tiles);
       }
 
       // Wait for frame to finish drawing
