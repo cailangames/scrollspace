@@ -102,26 +102,59 @@ void score2tile(uint32_t score, uint8_t* score_tiles){
   // uint8_t len = bcd2text(&score, 1, score_tiles);
   // set_win_tiles(10, 1, len, 1, score_tiles);
   
-  uint8_t digit;  
-  uint8_t len = 4;
-  uint32_t factor;
+  uint8_t digit, i;  
+  uint8_t len = 10;
 
   // For now, only support scores from 0-999
   if (score < 1000){
+    i = 0;
+    digit = (score / 1000000000);
+    score -= digit*1000000000;
+    score_tiles[i] = digit + 0x01;
+
+    i++;
+    digit = (score / 100000000);
+    score -= digit*100000000;
+    score_tiles[i] = digit + 0x01;
+
+    i++;
+    digit = (score / 10000000);
+    score -= digit*10000000;
+    score_tiles[i] = digit + 0x01;
+
+    i++;
+    digit = (score / 1000000);
+    score -= digit*1000000;
+    score_tiles[i] = digit + 0x01;
+
+    i++;
+    digit = (score / 100000);
+    score -= digit*100000;
+    score_tiles[i] = digit + 0x01;
+
+    i++;
+    digit = (score / 10000);
+    score -= digit*10000;
+    score_tiles[i] = digit + 0x01;
+
+    i++;
     digit = (score / 1000);
     score -= digit*1000;
-    score_tiles[0] = digit + 0x01;
+    score_tiles[i] = digit + 0x01;
 
+    i++;
     digit = score / 100;
     score -= digit*100;
-    score_tiles[1] = digit + 0x01;
+    score_tiles[i] = digit + 0x01;
 
+    i++;
     digit = score / 10;
     score -= digit*10;
-    score_tiles[2] = digit + 0x01;
+    score_tiles[i] = digit + 0x01;
 
+    i++;
     digit = score;
-    score_tiles[3] = digit + 0x01;
+    score_tiles[i] = digit + 0x01;
 
   }
   else {
@@ -130,7 +163,7 @@ void score2tile(uint32_t score, uint8_t* score_tiles){
     score_tiles[2] = 0x01;
     score_tiles[3] = 0x01;
   }
-  set_win_tiles(10, 1, len, 1, score_tiles);
+  set_win_tiles(8, 1, len, 1, score_tiles);
 }
 
 uint8_t update_obstacle_max_width(uint8_t new_gap_w_min){
@@ -1139,19 +1172,23 @@ void main(void){
           copy_bkgmap_to_vram = true;
 
           col_count++;
-          if (col_count > 20){
+          if (col_count == 20){
             col_count = 0;
             screen_count++;
 
-            // Increment score
+            // Increment score at full screen
             score += 5;
 
-            score2tile(score, score_tiles);
+            // score2tile(score, score_tiles);
 
             if (screen_count == (scroll_thresh*20)){
               screen_count = 0;
               scroll_thresh = (scroll_thresh << 1) + 1;
             }
+          }
+          else if (col_count == 10){
+            // Increment score at half screen
+            score += 2;
           }
         }
       }
@@ -1197,11 +1234,12 @@ void main(void){
         // // Update bkg_map if there are collisions
         // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
         copy_bkgmap_to_vram = true;
-        score2tile(score, score_tiles);
+        // score2tile(score, score_tiles);
       }
 
       // Wait for frame to finish drawing
       vsync();
+      score2tile(score, score_tiles);
       if (copy_bkgmap_to_vram){
         // Write the entire map (from drop_bomb())
         set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
