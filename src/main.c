@@ -1181,9 +1181,37 @@ void main(void){
 
             // score2tile(score, score_tiles);
 
-            if (screen_count == (scroll_thresh*20)){
+            // if (screen_count == (scroll_thresh*20)){
+            if (screen_count == 20){
+              // Increase speed every 20 screens
               screen_count = 0;
               scroll_thresh = (scroll_thresh << 1) + 1;
+
+              // Add one to every powerup
+              if (n_bullets < MAX_BULLETS){
+                n_bullets++;
+              }
+              if (n_bombs < MAX_BOMBS){
+                n_bombs++;
+              }
+              if (n_shields < MAX_SHIELDS){
+                n_shields++;
+              }
+              if (n_health < MAX_HEALTH){
+                n_health++;
+              }
+            }
+            else if (screen_count == 5){
+              // Add a bullet every 5 screens
+              if (n_bullets < MAX_BULLETS){
+                n_bullets++;
+              }
+            }
+            else if (screen_count == 10){
+              // Add a bomb every 10 screens
+              if (n_bombs < MAX_BOMBS){
+                n_bombs++;
+              }
             }
           }
           else if (col_count == 10){
