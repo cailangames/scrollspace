@@ -249,7 +249,7 @@ void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8
   /*
    * Grab the corners of the player and move radius tiles away and replace 
    * the coll_map and bkg_map entries with 0.
-   * The bomb's radius is slightly tipped forward (by 2 tile)
+   * The bomb is dropped in front of the player
    */
   uint16_t cm_idx; 
   uint16_t bkg_idx; 
@@ -259,8 +259,8 @@ void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8
   row_top = (player->y - 16)/8;
   row_bot = row_top + 1;
   col_left = ((SCX_REG + player->x - 8) % 256)/8;
-  col_left += 2; // tip forward by 2 tile
-  col_right = col_left + 1;
+  col_left += radius+1; // drop in front of player 
+  col_right = col_left;
 
   if (radius <= row_top){
     row_top -= radius;
