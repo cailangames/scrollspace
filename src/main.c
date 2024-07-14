@@ -532,7 +532,7 @@ void main(void){
 
   hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
   hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
-  add_VBL(hUGE_dosound);
+  // add_VBL(hUGE_dosound);
 
   /*
    * Turn on display and show background 
