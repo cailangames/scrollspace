@@ -26,10 +26,10 @@
 #define SCREEN_L 8
 #define SCREEN_R 160
 #define COLUMN_HEIGHT 16
-#define MAX_BULLETS 6
-#define MAX_BOMBS 3
-#define MAX_SHIELDS 3
-#define MAX_HEALTH 3
+#define MAX_BULLETS 9
+#define MAX_BOMBS 9
+#define MAX_SHIELDS 9
+#define MAX_HEALTH 9
 
 
 enum powerup{
@@ -538,10 +538,10 @@ void main(void){
   while (1){
     // Load the window contents
     bullets_arr_idx = 0;
-    n_bullets = 9;
-    n_bombs = 9;
-    n_shields = 9;
-    n_health = 9;
+    n_bullets = MAX_BULLETS;
+    n_bombs = MAX_BOMBS;
+    n_shields = MAX_SHIELDS;
+    n_health = MAX_HEALTH;
 
     powerups_top_tiles[0] = powerups_tilemap_offset + 4;  // Deselected ammo
     powerups_top_tiles[1] = n_bullets + 1;
