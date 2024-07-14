@@ -1183,9 +1183,10 @@ void main(void){
 
             // if (screen_count == (scroll_thresh*20)){
             if (screen_count == 20){
-              // Increase speed every 20 screens
               screen_count = 0;
-              scroll_thresh = (scroll_thresh << 1) + 1;
+              // Increase speed every 20 screens
+              // This logic is incorrect. FIX
+              // scroll_thresh = (scroll_thresh << 1) + 1;
 
               // Add one to every powerup
               if (n_bullets < MAX_BULLETS){
