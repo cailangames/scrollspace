@@ -415,19 +415,19 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       bkg_map[bkg_idx_topl] = 0;
       coll_map[cm_idx_topl] = 0;
     }
-    
-    if (sprite->dir & UP){
-      // Top Left collision detected while sprite is moving up 
-      sprite->y += 8;
-    }
-    
-    if (sprite->dir & LEFT){
-      // Top Left collision detected while sprite is moving up 
-      sprite->x += 8;
+    else {
+      if (sprite->dir & UP){
+        // Top Left collision detected while sprite is moving up 
+        sprite->y += 8;
+      }
+      
+      if (sprite->dir & LEFT){
+        // Top Left collision detected while sprite is moving up 
+        sprite->x += 8;
+      }
     }
 
     collision = true;
-    // return true;
   }
   else if (coll_map[cm_idx_topr] > 0) {
     if (coll_map[cm_idx_topr] > 1) {
@@ -435,18 +435,19 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       bkg_map[bkg_idx_topr] = 0;
       coll_map[cm_idx_topr] = 0;
     }
+    else {
+      if (sprite->dir & UP){
+        // Top Right collision detected while sprite is moving up 
+        sprite->y += 8;
+      }
 
-    if (sprite->dir & UP){
-      // Top Right collision detected while sprite is moving up 
-      sprite->y += 8;
+      if (sprite->dir & RIGHT){
+        // Top Right collision detected while sprite is moving up 
+        sprite->x -= 8;
+      }
     }
 
-    if (sprite->dir & RIGHT){
-      // Top Right collision detected while sprite is moving up 
-      sprite->x -= 8;
-    }
     collision = true;
-    // return true;
   }
   else if(coll_map[cm_idx_botl] > 0){
     if (coll_map[cm_idx_botl] > 1) {
@@ -454,19 +455,19 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       bkg_map[bkg_idx_botl] = 0;
       coll_map[cm_idx_botl] = 0;
     }
+    else {
+      if (sprite->dir & DOWN){
+        // Bottom Left collision detected while sprite is moving down 
+        sprite->y -= 8;
+      }
 
-    if (sprite->dir & DOWN){
-      // Bottom Left collision detected while sprite is moving down 
-      sprite->y -= 8;
-    }
-
-    if (sprite->dir & LEFT){
-      // Bottom Left collision detected while sprite is moving down 
-      sprite->x += 8;
+      if (sprite->dir & LEFT){
+        // Bottom Left collision detected while sprite is moving down 
+        sprite->x += 8;
+      }
     }
 
     collision = true;
-    // return true;
   } 
   else if (coll_map[cm_idx_botr] > 0){
     if (coll_map[cm_idx_botr] > 1) {
@@ -474,18 +475,19 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       bkg_map[bkg_idx_botr] = 0;
       coll_map[cm_idx_botr] = 0;
     }
+    else {
+      if (sprite->dir & DOWN){
+        // Bottom Right collision detected while sprite is moving down 
+        sprite->y -= 8;
+      }
 
-    if (sprite->dir & DOWN){
-      // Bottom Right collision detected while sprite is moving down 
-      sprite->y -= 8;
+      if (sprite->dir & RIGHT){
+        // Bottom Right collision detected while sprite is moving down 
+        sprite->x -= 8;
+      }
     }
 
-    if (sprite->dir & RIGHT){
-      // Bottom Right collision detected while sprite is moving down 
-      sprite->x -= 8;
-    }
     collision = true;
-    // return true;
   }
   // else{
   //   return false;
