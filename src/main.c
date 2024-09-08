@@ -372,7 +372,7 @@ void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8
   // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
 }
 
-uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map){
+uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8_t player_sprite){
   /*
    * The player sprite can collide with up to 4 tiles.
    * Check the collision map on the top_left, top_right
@@ -387,6 +387,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
   uint16_t row_botl, row_botr;
   uint16_t col_topl, col_topr;
   uint16_t col_botl, col_botr;
+  uint8_t collision = false;
 
   row_topl = (sprite->cb.y - 16) / 8;
   col_topl = ((SCX_REG + sprite->cb.x - 8) %256) / 8;
@@ -414,7 +415,19 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       bkg_map[bkg_idx_topl] = 0;
       coll_map[cm_idx_topl] = 0;
     }
-   return true;
+    
+    if (sprite->dir & UP){
+      // Top Left collision detected while sprite is moving up 
+      sprite->y += 8;
+    }
+    
+    if (sprite->dir & LEFT){
+      // Top Left collision detected while sprite is moving up 
+      sprite->x += 8;
+    }
+
+    collision = true;
+    // return true;
   }
   else if (coll_map[cm_idx_topr] > 0) {
     if (coll_map[cm_idx_topr] > 1) {
@@ -422,7 +435,18 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       bkg_map[bkg_idx_topr] = 0;
       coll_map[cm_idx_topr] = 0;
     }
-    return true;
+
+    if (sprite->dir & UP){
+      // Top Right collision detected while sprite is moving up 
+      sprite->y += 8;
+    }
+
+    if (sprite->dir & RIGHT){
+      // Top Right collision detected while sprite is moving up 
+      sprite->x -= 8;
+    }
+    collision = true;
+    // return true;
   }
   else if(coll_map[cm_idx_botl] > 0){
     if (coll_map[cm_idx_botl] > 1) {
@@ -430,7 +454,19 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       bkg_map[bkg_idx_botl] = 0;
       coll_map[cm_idx_botl] = 0;
     }
-    return true;
+
+    if (sprite->dir & DOWN){
+      // Bottom Left collision detected while sprite is moving down 
+      sprite->y -= 8;
+    }
+
+    if (sprite->dir & LEFT){
+      // Bottom Left collision detected while sprite is moving down 
+      sprite->x += 8;
+    }
+
+    collision = true;
+    // return true;
   } 
   else if (coll_map[cm_idx_botr] > 0){
     if (coll_map[cm_idx_botr] > 1) {
@@ -438,11 +474,27 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       bkg_map[bkg_idx_botr] = 0;
       coll_map[cm_idx_botr] = 0;
     }
-    return true;
+
+    if (sprite->dir & DOWN){
+      // Bottom Right collision detected while sprite is moving down 
+      sprite->y -= 8;
+    }
+
+    if (sprite->dir & RIGHT){
+      // Bottom Right collision detected while sprite is moving down 
+      sprite->x -= 8;
+    }
+    collision = true;
+    // return true;
   }
-  else{
-    return false;
+  // else{
+  //   return false;
+  // }
+  
+  if (player_sprite){
+    move_sprite(sprite->sprite_id, sprite->x, sprite->y);
   }
+  return collision;
 }
 
 void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_t *player_sprite_base_id, uint8_t progressbar_tilemap_offset){
@@ -581,7 +633,7 @@ void main(void){
   uint8_t dy;
   uint8_t frame_count;
   uint8_t scroll_count;
-  uint16_t damage_animation_counter; // When hit, skip checking collisions for this long
+  int16_t damage_animation_counter; // When hit, skip checking collisions for this long
   uint8_t scroll_thresh; // Scroll when this is set
   uint8_t col_count;  // counter for number of columns scrolled. Used to calculate screen_count
   uint16_t screen_count; // number of screens scrolled
@@ -1063,7 +1115,7 @@ void main(void){
           b_ptr->cb.x = b_ptr->x + b_ptr->cb_x_offset;
           b_ptr->cb.y = b_ptr->y + b_ptr->cb_y_offset;
 
-          bullet_collision = check_collisions(b_ptr, coll_map, bkg_map);
+          bullet_collision = check_collisions(b_ptr, coll_map, bkg_map, false);
           if (bullet_collision) {
             score += 2;
           }
@@ -1101,6 +1153,8 @@ void main(void){
        */
 
       if (damage_animation_counter == 0){
+        // Damage animation or shield powerup expired.
+        // Reset so that player is shown
         if (shield_active){
           shield_active = false;
           player_sprite_base_id -= 10;
@@ -1111,7 +1165,8 @@ void main(void){
           move_sprite(player.sprite_id, player.x, player.y);
           damage_animation_state = SHOWN;
         }
-        player_collision = check_collisions(&player, coll_map, bkg_map);
+
+        player_collision = check_collisions(&player, coll_map, bkg_map, true);
         if (player_collision == 1) {
           player.health -= 5;
           damage_animation_counter = 16;
@@ -1120,6 +1175,7 @@ void main(void){
           player.health -= 2;
           damage_animation_counter = 16;
         }
+
         if (player.health <= 0){
           // End game in the future
           // For now, reset to full health
@@ -1150,6 +1206,9 @@ void main(void){
       }
       else {
         damage_animation_counter--;
+        if (damage_animation_counter < 0){
+          damage_animation_counter = 0;
+        }
         if (!shield_active){
           if (damage_animation_state == HIDDEN){
             // SHOW_SPRITES;
