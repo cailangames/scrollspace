@@ -21,6 +21,7 @@
 #define KEY_FIRST_PRESS(K) ((current_input & K) && !(old_input & K))
 #define FONT_OFFSET 36
 #define MAPBLOCK_IDX  FONT_OFFSET
+#define CRATERBLOCK_IDX MAPBLOCK_IDX+3
 #define SCREEN_T  16
 #define SCREEN_B 144
 #define SCREEN_L 8
@@ -364,7 +365,7 @@ void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8
       bkg_idx = col + row*32;
 
       coll_map[cm_idx] = 0;
-      bkg_map[bkg_idx] = 0;
+      bkg_map[bkg_idx] = CRATERBLOCK_IDX; // 0;  // Index 0 is the blank tile, index 4 is the crater tile
     }
   }
 
@@ -503,9 +504,9 @@ void main(void){
 
   // Load background tiles
   uint8_t blocks_tilemap_offset = FONT_OFFSET;
-  uint8_t powerups_tilemap_offset = blocks_tilemap_offset + 3;
+  uint8_t powerups_tilemap_offset = blocks_tilemap_offset + 4;
   uint8_t progressbar_tilemap_offset = powerups_tilemap_offset + 8;
-  set_bkg_data(FONT_OFFSET,3,block_tiles);
+  set_bkg_data(FONT_OFFSET,4,block_tiles);
   set_bkg_data(powerups_tilemap_offset, 8, powerups_tiles);
   set_bkg_data(progressbar_tilemap_offset, 7, progressbar_tiles);
 
@@ -749,6 +750,7 @@ void main(void){
         waitpadup();
         hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
         hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
+        damage_animation_state = SHOWN;
       }
 
       if (!KEY_PRESSED(J_UP) && !KEY_PRESSED(J_DOWN) && \
@@ -1047,7 +1049,7 @@ void main(void){
       if (bullets_fired){
         // Update bullet positions
         b_ptr = bullets;
-        for (i=0; i<MAX_BULLETS; i++){
+        for (i=0; i < MAX_BULLETS; i++){
           // If current bullet is not active, move to the next one
           if (!b_ptr->active){
             b_ptr++;
