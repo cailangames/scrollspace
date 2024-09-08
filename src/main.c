@@ -99,71 +99,71 @@ void fadein(void){
 }
 
 void score2tile(uint32_t score, uint8_t* score_tiles){
-  // uint8_t len = bcd2text(&score, 1, score_tiles);
-  // set_win_tiles(10, 1, len, 1, score_tiles);
+  uint8_t len = bcd2text(&score, 1, score_tiles);
+  set_win_tiles(10, 1, len, 1, score_tiles);
   
-  uint8_t digit, i;  
-  uint8_t len = 10;
+  // uint8_t digit, i;  
+  // uint8_t len = 10;
 
-  // For now, only support scores from 0-999
-  if (score < 1000){
-    i = 0;
-    digit = (score / 1000000000);
-    score -= digit*1000000000;
-    score_tiles[i] = digit + 0x01;
+  // // For now, only support scores from 0-999
+  // if (score < 1000){
+  //   i = 0;
+  //   digit = (score / 1000000000);
+  //   score -= digit*1000000000;
+  //   score_tiles[i] = digit + 0x01;
 
-    i++;
-    digit = (score / 100000000);
-    score -= digit*100000000;
-    score_tiles[i] = digit + 0x01;
+  //   i++;
+  //   digit = (score / 100000000);
+  //   score -= digit*100000000;
+  //   score_tiles[i] = digit + 0x01;
 
-    i++;
-    digit = (score / 10000000);
-    score -= digit*10000000;
-    score_tiles[i] = digit + 0x01;
+  //   i++;
+  //   digit = (score / 10000000);
+  //   score -= digit*10000000;
+  //   score_tiles[i] = digit + 0x01;
 
-    i++;
-    digit = (score / 1000000);
-    score -= digit*1000000;
-    score_tiles[i] = digit + 0x01;
+  //   i++;
+  //   digit = (score / 1000000);
+  //   score -= digit*1000000;
+  //   score_tiles[i] = digit + 0x01;
 
-    i++;
-    digit = (score / 100000);
-    score -= digit*100000;
-    score_tiles[i] = digit + 0x01;
+  //   i++;
+  //   digit = (score / 100000);
+  //   score -= digit*100000;
+  //   score_tiles[i] = digit + 0x01;
 
-    i++;
-    digit = (score / 10000);
-    score -= digit*10000;
-    score_tiles[i] = digit + 0x01;
+  //   i++;
+  //   digit = (score / 10000);
+  //   score -= digit*10000;
+  //   score_tiles[i] = digit + 0x01;
 
-    i++;
-    digit = (score / 1000);
-    score -= digit*1000;
-    score_tiles[i] = digit + 0x01;
+  //   i++;
+  //   digit = (score / 1000);
+  //   score -= digit*1000;
+  //   score_tiles[i] = digit + 0x01;
 
-    i++;
-    digit = score / 100;
-    score -= digit*100;
-    score_tiles[i] = digit + 0x01;
+  //   i++;
+  //   digit = score / 100;
+  //   score -= digit*100;
+  //   score_tiles[i] = digit + 0x01;
 
-    i++;
-    digit = score / 10;
-    score -= digit*10;
-    score_tiles[i] = digit + 0x01;
+  //   i++;
+  //   digit = score / 10;
+  //   score -= digit*10;
+  //   score_tiles[i] = digit + 0x01;
 
-    i++;
-    digit = score;
-    score_tiles[i] = digit + 0x01;
+  //   i++;
+  //   digit = score;
+  //   score_tiles[i] = digit + 0x01;
 
-  }
-  else {
-    score_tiles[0] = 0x01;
-    score_tiles[1] = 0x01;
-    score_tiles[2] = 0x01;
-    score_tiles[3] = 0x01;
-  }
-  set_win_tiles(8, 1, len, 1, score_tiles);
+  // }
+  // else {
+  //   score_tiles[0] = 0x01;
+  //   score_tiles[1] = 0x01;
+  //   score_tiles[2] = 0x01;
+  //   score_tiles[3] = 0x01;
+  // }
+  // set_win_tiles(8, 1, len, 1, score_tiles);
 }
 
 uint8_t update_obstacle_max_width(uint8_t new_gap_w_min){
@@ -532,7 +532,7 @@ void main(void){
 
   hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
   hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
-  // add_VBL(hUGE_dosound);
+  add_VBL(hUGE_dosound);
 
   /*
    * Turn on display and show background 
@@ -815,7 +815,7 @@ void main(void){
               n_bullets--;
 
               b.type = BULLET;
-              b.sprite_id = bullets_arr_idx + 1;
+              b.sprite_id = bullets_arr_idx + 1; // +1 so we dont override the player (always sprite_id 0)
               b.speed = 4;
               b.x = player.x;
               b.y = player.y;
@@ -840,7 +840,7 @@ void main(void){
               bullets_active++;
 
               // Check if index exceeded the array size and reset to 0
-              if (bullets_arr_idx > MAX_BULLETS){
+              if (bullets_arr_idx >= MAX_BULLETS){
                 bullets_arr_idx = 0;
               }
             }
@@ -1047,7 +1047,7 @@ void main(void){
       if (bullets_fired){
         // Update bullet positions
         b_ptr = bullets;
-        for (i=0; i<bullets_arr_idx; i++){
+        for (i=0; i<MAX_BULLETS; i++){
           // If current bullet is not active, move to the next one
           if (!b_ptr->active){
             b_ptr++;
@@ -1268,6 +1268,7 @@ void main(void){
 
       // Wait for frame to finish drawing
       vsync();
+      
       score2tile(score, score_tiles);
       if (copy_bkgmap_to_vram){
         // Write the entire map (from drop_bomb())
