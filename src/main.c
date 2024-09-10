@@ -320,11 +320,9 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
 
     collision = true;
   }
-  // else{
-  //   return false;
-  // }
   
-  if (player_sprite){
+  if (collision & player_sprite){
+    // Move the player sprite after collision
     move_sprite(sprite->sprite_id, sprite->x, sprite->y);
   }
   return collision;
