@@ -7,6 +7,9 @@
 #include <gbdk/bcd.h>
 
 #include "hUGEDriver.h"
+#include "common.h"
+#include "procedural_generation.h"
+
 #include "sprites.h"
 #include "title_screens.h"
 #include "player_sprites.h"
@@ -15,34 +18,6 @@
 #include "progressbar_tiles.h"
 #include "projectiles_sprites.h"
 #include "powerups_tiles.h"
-
-#define KEY_PRESSED(K) (current_input & K)
-#define KEY_HELD(K) ((current_input & K) && (old_input & K))
-#define KEY_FIRST_PRESS(K) ((current_input & K) && !(old_input & K))
-#define FONT_OFFSET 36
-#define MAPBLOCK_IDX  FONT_OFFSET
-#define CRATERBLOCK_IDX MAPBLOCK_IDX+3
-#define SCREEN_T  16
-#define SCREEN_B 144
-#define SCREEN_L 8
-#define SCREEN_R 160
-#define COLUMN_HEIGHT 16
-#define MAX_BULLETS 9
-#define MAX_BOMBS 9
-#define MAX_SHIELDS 9
-#define MAX_HEALTH 9
-
-enum powerup{
-  GUN=0,
-  BOMB=1,
-  SHIELD=2,
-  HEALTH=3
-};
-
-enum animation_state{
-  HIDDEN=0,
-  SHOWN=1
-};
 
 void wait(uint8_t n){
   uint8_t i;
@@ -167,150 +142,6 @@ void score2tile(uint32_t score, uint8_t* score_tiles){
   // set_win_tiles(8, 1, len, 1, score_tiles);
 }
 
-uint8_t update_obstacle_max_width(uint8_t new_gap_w_min){
-  uint8_t obstacle_max = new_gap_w_min / 3;
-  if (obstacle_max == 0){
-    obstacle_max = 1;
-  }
-
-  return obstacle_max;
-}
-
-int8_t new_gap_row_idx_offset(void){
-  // initrand(DIV_REG);
-  uint8_t n = rand();
-  int8_t idx_offset;
-  
-  if (n < 24) {
-    idx_offset = 0;
-  }
-  else if (n < 140){
-    idx_offset = 1;
-  }
-  else {
-    idx_offset = -1;
-  }
-
-  return idx_offset;
-}
-
-int8_t new_w_offset(void){
-  // initrand(DIV_REG);
-  uint8_t n = rand();
-  int8_t w_offset;
-  
-  if (n < 24) {
-    w_offset = 1;
-  }
-  else if (n < 140){
-    w_offset = -1;
-  }
-  else {
-    w_offset = 0;
-  }
-
-  return w_offset;
-}
-
-uint8_t new_obstacle_idx(uint8_t gap_w, uint8_t gap_row_idx){
-  // initrand(DIV_REG);
-  // uint8_t n = rand() / 14;
-  uint16_t n = (gap_w * rand())/255 + gap_row_idx;
-
-  return (uint8_t) n;
-}
-
-void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx, 
-                         uint8_t *gap_w, uint8_t *new_column, 
-                         uint8_t gap_w_min, uint8_t obs_w_max,
-                         uint8_t *coll_map, uint8_t *bkg_map){
-                         
-  // initrand(DIV_REG);
-  uint8_t n;  // random number
-  uint8_t i;  // Loop counter
-  int8_t tmp_gap_row_idx;
-  int8_t idx_offset = 0;
-  int8_t w_offset = 0;
-  uint8_t tmp_col_idx;
-  
-  // Generate a random number to determine if we are going to 
-  // update both idx and w, or just one of them
-  n = rand();
-
-  if (n < 24) {
-    idx_offset = new_gap_row_idx_offset();
-    w_offset = new_w_offset();
-  }
-  else if (n < 140) {
-    idx_offset = new_gap_row_idx_offset();
-  }
-  else {
-    w_offset = new_w_offset();
-  }
-  
-  // Update the gap_row_idx and the gap_w
-  tmp_gap_row_idx = *gap_row_idx + idx_offset;
-  *gap_w = *gap_w + w_offset;
-
-  // Bound checking
-  if (tmp_gap_row_idx < 1){
-    *gap_row_idx = 1; // leave 1 row at top
-  }
-  else if (tmp_gap_row_idx > (COLUMN_HEIGHT - 2 - gap_w_min)) {
-    *gap_row_idx = (COLUMN_HEIGHT - 2 - gap_w_min);  // leave 1 row at bottom
-  }
-  else {
-    *gap_row_idx = (uint8_t) tmp_gap_row_idx;
-  }
-
-  if (*gap_w < gap_w_min){
-    *gap_w = gap_w_min;
-  }
-  else if (*gap_w > COLUMN_HEIGHT) {
-    *gap_w = COLUMN_HEIGHT;
-  }
-  obs_w_max = update_obstacle_max_width(*gap_w);
-
-  // Generate new column
-  for (i=0; i<COLUMN_HEIGHT;i++){
-    if ((i >= *gap_row_idx) && (i < *gap_row_idx+*gap_w)){
-      new_column[i] = 0;
-      bkg_map[(*col_idx) + i*32] = 0;
-      coll_map[(*col_idx)*COLUMN_HEIGHT + i] = 0;
-    }
-    else{
-      new_column[i] = MAPBLOCK_IDX;
-      bkg_map[(*col_idx) + i*32] = MAPBLOCK_IDX;
-      coll_map[(*col_idx)*COLUMN_HEIGHT + i] = 1;
-    }
-  }
-
-  // Get another random number to see if we should add
-  // Obstacles in the gap
-  n = rand();
-  if (n < 96){
-    uint8_t idx = new_obstacle_idx(*gap_w, *gap_row_idx);
-    if ((idx > *gap_row_idx) && (idx < *gap_row_idx + *gap_w)){
-      for (i=0; i<obs_w_max; i++){
-        new_column[idx+i] = MAPBLOCK_IDX + 2;
-        bkg_map[(*col_idx) + (idx+i)*32] = MAPBLOCK_IDX + 2;
-        coll_map[(*col_idx)*COLUMN_HEIGHT + idx + i] = 2;
-      }
-    }
-  }
-
-  // // Write new column to tile map
-  // set_bkg_tiles(*col_idx, 0, 1, COLUMN_HEIGHT, new_column);
-
-  // Increment col_idx
-  tmp_col_idx = *col_idx + 1;
-  if (tmp_col_idx > 31){
-    *col_idx = 0;
-  }
-  else{
-    *col_idx = tmp_col_idx;
-  }
-}
 
 
 void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8_t radius){
@@ -657,6 +488,9 @@ void main(void){
   uint8_t i, idx;
   uint16_t ii;
 
+  // Banking variables
+  uint8_t last_bank;
+
   while (1){
     // Load the window contents
     bullets_arr_idx = 0;
@@ -778,11 +612,14 @@ void main(void){
     SHOW_SPRITES;
     SHOW_WIN;
     initrand(DIV_REG);
+
+    last_bank = CURRENT_BANK;
+    SWITCH_ROM(1);
     for (int i=0; i<11; i++){
       generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map, bkg_map);
       set_bkg_tiles(col_idx, 0, 1, COLUMN_HEIGHT, new_column);
     }
-    //vsync();
+    SWITCH_ROM(last_bank);
 
     player_sprite_base_id = 0;
     bullet_sprite_base_id = 19;
@@ -1231,7 +1068,10 @@ void main(void){
 
         if (scroll_count == 8){
           scroll_count = 0;
+          last_bank = CURRENT_BANK;
+          SWITCH_ROM(1);
           generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map, bkg_map);
+          SWITCH_ROM(last_bank);
           copy_bkgmap_to_vram = true;
 
           col_count++;

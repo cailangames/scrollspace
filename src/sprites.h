@@ -1,3 +1,6 @@
+#ifndef _SPRITES_H_
+#define _SPRITES_H_
+
 #include <stdint.h>
 
 enum direction{
@@ -37,3 +40,4 @@ struct Sprite {
   enum sprite_type type;
 };
 
+#endif
