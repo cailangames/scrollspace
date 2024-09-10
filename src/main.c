@@ -19,6 +19,62 @@
 #include "projectiles_sprites.h"
 #include "powerups_tiles.h"
 
+void play_gun_sound(void){
+  // Stop Channel before playing FX
+  hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
+
+  NR12_REG = 0x0;
+  NR14_REG = 0x0;
+
+  // Play FX
+  NR10_REG = 0x4D;
+  NR11_REG = 0XC1;
+  NR12_REG = 0XF2;
+  NR13_REG = 0X9B;
+  NR14_REG = 0X87;
+
+  // Restart channel
+  hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
+
+}
+
+void play_health_sound(void){
+  // Stop Channel before playing FX
+  hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
+
+  NR12_REG = 0x0;
+  NR14_REG = 0x0;
+
+  // Play FX
+  NR10_REG = 0x75;
+  NR11_REG = 0X86;
+  NR12_REG = 0X5F;
+  NR13_REG = 0X62;
+  NR14_REG = 0X86;
+
+  // Restart channel
+  hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
+
+}
+
+void play_bomb_sound(void){
+  // Stop Channel before playing FX
+  hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
+
+  NR42_REG = 0x0;
+  NR44_REG = 0x0;
+
+  // Play FX
+  NR41_REG = 0X00;
+  NR42_REG = 0XF7;
+  NR43_REG = 0X71;
+  NR44_REG = 0X80;
+
+  // Restart channel
+  hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
+
+}
+
 void wait(uint8_t n){
   uint8_t i;
   for (i=0; i < n; i++){
@@ -408,14 +464,17 @@ void main(void){
    * Load music 
    */
   extern const hUGESong_t main_song;
-  hUGE_init(&main_song);
+  // hUGE_init(&main_song);
 
   NR52_REG = 0x80;
   NR51_REG = 0xFF;
   NR50_REG = 0x33;
 
+  // Start both channels
   hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
   hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
+  
+  // Add hUGE driver to VBL Interrupt handler
   add_VBL(hUGE_dosound);
 
   /*
@@ -734,6 +793,7 @@ void main(void){
               if (bullets_arr_idx >= MAX_BULLETS){
                 bullets_arr_idx = 0;
               }
+              play_gun_sound();
             }
           }
           break;
@@ -744,6 +804,7 @@ void main(void){
               bomb_dropped = true;
               n_bombs--;
             }
+            play_bomb_sound();
           }
           break;
 
@@ -767,6 +828,7 @@ void main(void){
               }
               n_health--;
               update_health_bar(&player, progressbar_tiles, &player_sprite_base_id, progressbar_tilemap_offset);
+              play_health_sound();
             }
           }
           break;
