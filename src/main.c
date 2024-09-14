@@ -1106,7 +1106,15 @@ void main(void){
           player_collision = 1;
         }
         else if (player_collision == 11) {
-          player.health += 10;
+          if (player.health < 100){
+            // Prevent health overflow (int8 maxes at 128)
+            if ((100 - player.health) >= 10){
+              player.health += 10;
+            }
+            else {
+              player.health += 100 - player.health;
+            }
+          }
           player_collision = 1;
           play_health_sound();
         }
