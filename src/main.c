@@ -274,7 +274,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
   uint16_t row_botl, row_botr;
   uint16_t col_topl, col_topr;
   uint16_t col_botl, col_botr;
-  uint8_t collision = false;
+  uint8_t collision = 0;
 
   row_topl = (sprite->cb.y - 16) / 8;
   col_topl = ((SCX_REG + sprite->cb.x - 8) %256) / 8;
@@ -297,12 +297,9 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
   bkg_idx_botr = col_botr + row_botr*32;
 
   if (coll_map[cm_idx_topl] > 0){
-    if (coll_map[cm_idx_topl] > 1) {
-      // Replace obstacle tile and remove collision
-      bkg_map[bkg_idx_topl] = 0;
-      coll_map[cm_idx_topl] = 0;
-    }
-    else {
+    collision = coll_map[cm_idx_topl];
+    if (collision == 1) {
+      // Hit a wall
       if (sprite->dir & UP){
         // Top Left collision detected while sprite is moving up 
         sprite->y += 8;
@@ -313,16 +310,21 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
         sprite->x += 8;
       }
     }
-
-    collision = true;
+    else if (collision < 10) {
+      // Hit a block
+      // Replace obstacle tile and remove collision
+      bkg_map[bkg_idx_topl] = 0;
+      coll_map[cm_idx_topl] = 0;
+    }
+    else if (player_sprite) {
+      bkg_map[bkg_idx_topl] = 0;
+      coll_map[cm_idx_topl] = 0;
+    }
   }
   else if (coll_map[cm_idx_topr] > 0) {
-    if (coll_map[cm_idx_topr] > 1) {
-      // Replace obstacle tile and remove collision
-      bkg_map[bkg_idx_topr] = 0;
-      coll_map[cm_idx_topr] = 0;
-    }
-    else {
+    collision = coll_map[cm_idx_topr]; 
+    if (collision == 1) {
+      // Hit a wall
       if (sprite->dir & UP){
         // Top Right collision detected while sprite is moving up 
         sprite->y += 8;
@@ -333,16 +335,21 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
         sprite->x -= 8;
       }
     }
-
-    collision = true;
+    else if (collision < 10) {
+      // Hit an obstacle
+      // Replace obstacle tile and remove collision
+      bkg_map[bkg_idx_topr] = 0;
+      coll_map[cm_idx_topr] = 0;
+    }
+    else if (player_sprite) {
+      bkg_map[bkg_idx_topr] = 0;
+      coll_map[cm_idx_topr] = 0;
+    }
   }
   else if(coll_map[cm_idx_botl] > 0){
-    if (coll_map[cm_idx_botl] > 1) {
-      // Replace obstacle tile and remove collision
-      bkg_map[bkg_idx_botl] = 0;
-      coll_map[cm_idx_botl] = 0;
-    }
-    else {
+    collision = coll_map[cm_idx_botl];
+    if (collision == 1) {
+      // Hit a wall
       if (sprite->dir & DOWN){
         // Bottom Left collision detected while sprite is moving down 
         sprite->y -= 8;
@@ -353,16 +360,21 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
         sprite->x += 8;
       }
     }
-
-    collision = true;
+    else if (collision < 10) {
+      // Hit an obstacle
+      // Replace obstacle tile and remove collision
+      bkg_map[bkg_idx_botl] = 0;
+      coll_map[cm_idx_botl] = 0;
+    }
+    else if (player_sprite) {
+      bkg_map[bkg_idx_botl] = 0;
+      coll_map[bkg_idx_botl] = 0;
+    }
   } 
   else if (coll_map[cm_idx_botr] > 0){
-    if (coll_map[cm_idx_botr] > 1) {
-      // Replace obstacle tile and remove collision
-      bkg_map[bkg_idx_botr] = 0;
-      coll_map[cm_idx_botr] = 0;
-    }
-    else {
+    collision = coll_map[cm_idx_botr];
+    if (collision == 1) {
+      // Hit a wall
       if (sprite->dir & DOWN){
         // Bottom Right collision detected while sprite is moving down 
         sprite->y -= 8;
@@ -373,14 +385,23 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
         sprite->x -= 8;
       }
     }
-
-    collision = true;
+    else if (collision < 10) {
+      // Hit an obstacle
+      // Replace obstacle tile and remove collision
+      bkg_map[bkg_idx_botr] = 0;
+      coll_map[cm_idx_botr] = 0;
+    }
+    else if (player_sprite) {
+      bkg_map[bkg_idx_botr] = 0;
+      coll_map[cm_idx_botr] = 0;
+    }
   }
   
-  if (collision & player_sprite){
+  if ((collision == 1) && (player_sprite)){
     // Move the player sprite after collision
     move_sprite(sprite->sprite_id, sprite->x, sprite->y);
   }
+
   return collision;
 }
 
@@ -512,10 +533,10 @@ void main(void){
 
   // Collision map. The first 18 elements correspond to the first col in background tile map
   uint8_t col_idx;   // First column to populate
-  uint8_t *coll_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));
-  uint8_t *bkg_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));
+  uint8_t *coll_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));  // 32x16
+  uint8_t *bkg_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));  // 16x32
   uint8_t new_column[COLUMN_HEIGHT];  // Placeholder for new column array
-  bool copy_bkgmap_to_vram; //, copy_column_to_vram;
+  bool copy_bkgmap_to_vram; 
 
   uint8_t current_input;
   uint8_t old_input;
@@ -1015,8 +1036,17 @@ void main(void){
           b_ptr->cb.y = b_ptr->y + b_ptr->cb_y_offset;
 
           bullet_collision = check_collisions(b_ptr, coll_map, bkg_map, false);
-          if (bullet_collision) {
+          // Check that the bullet collided with something it can destroy
+          if (bullet_collision == 2) {
+            // Hit a block
             score += 2;
+            // Force to 1 so the next || works
+            bullet_collision = 1;
+          }
+          else if (bullet_collision > 2) {
+            // Collided with something it can't destroy.
+            // Force to 0 so the next || works
+            bullet_collision = 0;
           }
 
           if ((b_ptr->x > SCREEN_R) || \
@@ -1067,12 +1097,24 @@ void main(void){
 
         player_collision = check_collisions(&player, coll_map, bkg_map, true);
         if (player_collision == 1) {
-          player.health -= 5;
+          player.health -= 10;
           damage_animation_counter = 16;
         }
         else if (player_collision == 2) {
-          player.health -= 2;
+          player.health -= 5;
           damage_animation_counter = 16;
+          player_collision = 1;
+        }
+        else if (player_collision == 11) {
+          player.health += 10;
+          player_collision = 1;
+          play_health_sound();
+        }
+        else if (player_collision == 10) {
+          shield_active = true;
+          damage_animation_counter = 8*20;
+          player_sprite_base_id += 10;
+          player_collision = 0;
         }
 
         if (player.health <= 0){
@@ -1223,10 +1265,8 @@ void main(void){
       }
 
       if ((player_collision) || (bullet_collision)){
-        // // Update bkg_map if there are collisions
-        // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+        // Update bkg_map if there are collisions
         copy_bkgmap_to_vram = true;
-        // score2tile(score, score_tiles);
       }
 
       // Wait for frame to finish drawing
@@ -1234,13 +1274,9 @@ void main(void){
       
       score2tile(score, score_tiles);
       if (copy_bkgmap_to_vram){
-        // Write the entire map (from drop_bomb())
+        // Write the entire map to VRAM
         set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
       }
-      // else if (copy_column_to_vram) {
-        // // Write new column to tile map (from generate_new_column())
-        // set_bkg_tiles(col_idx, 0, 1, COLUMN_HEIGHT, new_column);
-      // }
     }
   }
 }

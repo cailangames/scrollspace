@@ -133,6 +133,21 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
       }
     }
   }
+  else {
+    // Drop a powerup in the gap
+    if ((n > 250) && (n < 253)) {
+      // Shield
+      new_column[*gap_row_idx] = MAPBLOCK_IDX + 6;
+      bkg_map[(*col_idx) + (*gap_row_idx + (*gap_w >> 1))*32] = MAPBLOCK_IDX + 6;
+      coll_map[(*col_idx)*COLUMN_HEIGHT + (*gap_row_idx +(*gap_w >> 1))] = 10;
+    }
+    else if (n >= 253) {
+      // Health
+      new_column[*gap_row_idx] = MAPBLOCK_IDX + 7;
+      bkg_map[(*col_idx) + (*gap_row_idx + (*gap_w >> 1))*32] = MAPBLOCK_IDX + 7;
+      coll_map[(*col_idx)*COLUMN_HEIGHT + (*gap_row_idx + (*gap_w >> 1))] = 11;
+    }
+  }
 
   // Increment col_idx
   tmp_col_idx = *col_idx + 1;
