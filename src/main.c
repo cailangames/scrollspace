@@ -10,6 +10,7 @@
 #include "common.h"
 #include "procedural_generation.h"
 
+#include "font_extras_tiles.h"
 #include "sprites.h"
 #include "title_screens.h"
 #include "player_sprites.h"
@@ -18,6 +19,48 @@
 #include "progressbar_tiles.h"
 #include "projectiles_sprites.h"
 #include "powerups_tiles.h"
+
+// Score variables
+uint8_t isr_frame_counter;
+uint8_t playtime_seconds;
+uint8_t playtime_minutes;
+uint8_t playtime_hours;
+uint16_t playtime_days;  // uint8_t is too small (max 255) for 365 days in a year
+uint8_t playtime_years;
+uint8_t game_paused;
+
+void increment_score_isr(void){
+  if (game_paused){
+    return;
+  }
+
+  isr_frame_counter++;
+
+  if (isr_frame_counter == 60){
+    playtime_seconds++;
+    isr_frame_counter = 0;
+
+    if (playtime_seconds == 60){
+      playtime_minutes++;
+      playtime_seconds = 0;
+
+      if (playtime_minutes == 60){
+        playtime_hours++;
+        playtime_minutes = 0;
+
+        if (playtime_hours == 24){
+          playtime_days++;
+          playtime_hours = 0;
+
+          if (playtime_days == 365){
+            playtime_years++;
+            playtime_days = 0;
+          }
+        }
+      }
+    }
+  }
+}
 
 void play_gun_sound(void){
   // Stop Channel before playing FX
@@ -130,75 +173,41 @@ void fadein(void){
   }
 }
 
-void score2tile(uint32_t score, uint8_t* score_tiles){
-  uint8_t len = bcd2text(&score, 1, score_tiles);
-  set_win_tiles(10, 1, len, 1, score_tiles);
+void score2tile(uint8_t* score_tiles, uint8_t colon_offset){
+  uint8_t tens;
+  uint8_t hundreds;
+
+  // Seconds
+  tens = playtime_seconds/10;
+  score_tiles[11] = (playtime_seconds - 10*tens) + 0x01;
+  score_tiles[10] = tens + 0x01; 
+  score_tiles[9] = colon_offset;
   
-  // uint8_t digit, i;  
-  // uint8_t len = 10;
-
-  // // For now, only support scores from 0-999
-  // if (score < 1000){
-  //   i = 0;
-  //   digit = (score / 1000000000);
-  //   score -= digit*1000000000;
-  //   score_tiles[i] = digit + 0x01;
-
-  //   i++;
-  //   digit = (score / 100000000);
-  //   score -= digit*100000000;
-  //   score_tiles[i] = digit + 0x01;
-
-  //   i++;
-  //   digit = (score / 10000000);
-  //   score -= digit*10000000;
-  //   score_tiles[i] = digit + 0x01;
-
-  //   i++;
-  //   digit = (score / 1000000);
-  //   score -= digit*1000000;
-  //   score_tiles[i] = digit + 0x01;
-
-  //   i++;
-  //   digit = (score / 100000);
-  //   score -= digit*100000;
-  //   score_tiles[i] = digit + 0x01;
-
-  //   i++;
-  //   digit = (score / 10000);
-  //   score -= digit*10000;
-  //   score_tiles[i] = digit + 0x01;
-
-  //   i++;
-  //   digit = (score / 1000);
-  //   score -= digit*1000;
-  //   score_tiles[i] = digit + 0x01;
-
-  //   i++;
-  //   digit = score / 100;
-  //   score -= digit*100;
-  //   score_tiles[i] = digit + 0x01;
-
-  //   i++;
-  //   digit = score / 10;
-  //   score -= digit*10;
-  //   score_tiles[i] = digit + 0x01;
-
-  //   i++;
-  //   digit = score;
-  //   score_tiles[i] = digit + 0x01;
-
-  // }
-  // else {
-  //   score_tiles[0] = 0x01;
-  //   score_tiles[1] = 0x01;
-  //   score_tiles[2] = 0x01;
-  //   score_tiles[3] = 0x01;
-  // }
-  // set_win_tiles(8, 1, len, 1, score_tiles);
+  // Minutes
+  tens = playtime_minutes/10;
+  score_tiles[8] = (playtime_minutes - 10*tens) + 0x01;
+  score_tiles[7] = tens + 0x01; 
+  
+  if (playtime_hours > 0){
+    // Hours
+    tens = playtime_hours/10;
+    score_tiles[6] = colon_offset;
+    score_tiles[5] = (playtime_hours - 10*tens) + 0x01;
+    score_tiles[4] = tens + 0x01; 
+  }
+  
+  if (playtime_days > 0) {
+    // Days
+    hundreds = playtime_days / 100;
+    tens = (playtime_days - 100*hundreds)/10;
+    score_tiles[3] = colon_offset;
+    score_tiles[2] = (playtime_days - 100*hundreds - 10*tens) + 0x01;
+    score_tiles[1] = tens + 0x01; 
+    score_tiles[0] = hundreds + 0x01;
+  }
+  
+  set_win_tiles(7, 1, 12, 1, score_tiles);
 }
-
-
 
 void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8_t radius){
   /*
@@ -466,9 +475,13 @@ void main(void){
   uint8_t blocks_tilemap_offset = FONT_OFFSET;
   uint8_t powerups_tilemap_offset = blocks_tilemap_offset + 4;
   uint8_t progressbar_tilemap_offset = powerups_tilemap_offset + 8;
-  set_bkg_data(FONT_OFFSET,4,block_tiles);
+  set_bkg_data(blocks_tilemap_offset, 4, block_tiles);
   set_bkg_data(powerups_tilemap_offset, 8, powerups_tiles);
   set_bkg_data(progressbar_tilemap_offset, 7, progressbar_tiles);
+
+  // Load extra font characters
+  uint8_t extra_font_offset = progressbar_tilemap_offset + 7;
+  set_bkg_data(extra_font_offset,1,font_extras_tiles);
 
   // Load sprite data
   set_sprite_data(0,10,player_data);
@@ -497,6 +510,7 @@ void main(void){
   
   // Add hUGE driver to VBL Interrupt handler
   add_VBL(hUGE_dosound);
+  add_VBL(increment_score_isr);
 
   /*
    * Turn on display and show background 
@@ -507,7 +521,8 @@ void main(void){
   uint8_t progressbar_tiles[10];
   uint8_t powerups_top_tiles[5];
   uint8_t powerups_bot_tiles[5];
-  uint8_t score_tiles[10];
+  // uint8_t score_tiles[12];
+  uint8_t *score_tiles = calloc(12, sizeof(uint8_t));
 
   struct Sprite player;
   /**
@@ -548,7 +563,6 @@ void main(void){
   uint8_t scroll_thresh; // Scroll when this is set
   uint8_t col_count;  // counter for number of columns scrolled. Used to calculate screen_count
   uint16_t screen_count; // number of screens scrolled
-  uint32_t score; 
   uint8_t player_collision;
   uint8_t bullet_collision;
   enum animation_state damage_animation_state; // Used during the damage recovery to toggle between showing and hidding the player sprite
@@ -568,7 +582,7 @@ void main(void){
 
   // Banking variables
   uint8_t last_bank;
-
+  
   while (1){
     // Load the window contents
     bullets_arr_idx = 0;
@@ -595,8 +609,6 @@ void main(void){
     }
     progressbar_tiles[9] = progressbar_tilemap_offset + 3; // right edge of bar
 
-    score = 0;
-    score2tile(score, score_tiles);
     set_win_tiles(2, 0, 5, 1, powerups_top_tiles);
     set_win_tiles(2, 1, 5, 1, powerups_bot_tiles);
     set_win_tiles(8, 0, 10, 1, progressbar_tiles);
@@ -676,7 +688,6 @@ void main(void){
     scroll_thresh = 0x3; // Scroll when this is set
     col_count = 0;  // counter for number of columns scrolled. Used to calculate screen_count
     screen_count = 0; // number of screens scrolled
-    score = 0; 
     player_collision = 0;
     bullet_collision = 0;
     damage_animation_state = HIDDEN;
@@ -704,6 +715,22 @@ void main(void){
 
     copy_bkgmap_to_vram = false;
 
+    // Reset score
+    isr_frame_counter = 0;
+    playtime_seconds = 0;
+    playtime_minutes = 0;
+    playtime_hours = 0;
+    playtime_days = 0;
+    playtime_years = 0;
+    game_paused = 0;
+    
+    // Reset score tiles
+    for (int i=0; i < 12; i++){
+      score_tiles[i] = 0;
+    }
+
+    score2tile(score_tiles, extra_font_offset);
+
     while(1) {
       current_input = joypad();
       player_collision = 0;
@@ -712,6 +739,7 @@ void main(void){
 
       // D-PAD
       if (KEY_PRESSED(J_START)){
+        game_paused = 1;
         hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
         hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
         waitpadup();
@@ -720,6 +748,7 @@ void main(void){
         hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
         hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
         damage_animation_state = SHOWN;
+        game_paused = 0;
       }
 
       if (!KEY_PRESSED(J_UP) && !KEY_PRESSED(J_DOWN) && \
@@ -1039,7 +1068,6 @@ void main(void){
           // Check that the bullet collided with something it can destroy
           if (bullet_collision == 2) {
             // Hit a block
-            score += 2;
             // Force to 1 so the next || works
             bullet_collision = 1;
           }
@@ -1189,17 +1217,9 @@ void main(void){
             col_count = 0;
             screen_count++;
 
-            // Increment score at full screen
-            score += 5;
-
-            // score2tile(score, score_tiles);
-
             // if (screen_count == (scroll_thresh*20)){
             if (screen_count == 20){
               screen_count = 0;
-              // Increase speed every 20 screens
-              // This logic is incorrect. FIX
-              // scroll_thresh = (scroll_thresh << 1) + 1;
 
               // Add one to every powerup
               if (n_bullets < MAX_BULLETS){
@@ -1227,10 +1247,6 @@ void main(void){
                 n_bombs++;
               }
             }
-          }
-          else if (col_count == 10){
-            // Increment score at half screen
-            score += 2;
           }
         }
       }
@@ -1280,7 +1296,7 @@ void main(void){
       // Wait for frame to finish drawing
       vsync();
       
-      score2tile(score, score_tiles);
+      score2tile(score_tiles, extra_font_offset);
       if (copy_bkgmap_to_vram){
         // Write the entire map to VRAM
         set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
