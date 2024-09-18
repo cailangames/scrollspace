@@ -12,10 +12,8 @@
 #define SCREEN_L 8
 #define SCREEN_R 160
 #define COLUMN_HEIGHT 16
-#define MAX_BULLETS 9
-#define MAX_BOMBS 9
-#define MAX_SHIELDS 9
-#define MAX_HEALTH 9
+#define MAX_BULLETS 2
+#define MAX_BOMBS 1
 
 enum powerup{
   GUN=0,

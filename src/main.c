@@ -429,9 +429,8 @@ void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_
       progressbar_tiles[i] = progressbar_tilemap_offset + 2; // center of bar
     }
     progressbar_tiles[9] = progressbar_tilemap_offset + 6; // right edge of bar
-
   }
-  else if ((player->health < 90) && (player->health >= 10)) {
+  else if (player->health >= 10) {
     idx = (player->health + 10) / 10;
     progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
     for (i=1; i < 9; i++){
@@ -519,8 +518,8 @@ void main(void){
   SHOW_BKG;
 
   uint8_t progressbar_tiles[10];
-  uint8_t powerups_top_tiles[5];
-  uint8_t powerups_bot_tiles[5];
+  uint8_t powerups_top_tiles[2];
+  uint8_t powerups_bot_tiles[2];
   // uint8_t score_tiles[12];
   uint8_t *score_tiles = calloc(12, sizeof(uint8_t));
 
@@ -537,8 +536,6 @@ void main(void){
   enum powerup active_powerup;
   uint8_t n_bullets;
   uint8_t n_bombs;
-  uint8_t n_shields;
-  uint8_t n_health;
 
   uint8_t gap_w_min;    // Minimum gap width
   uint8_t gap_w_start;
@@ -560,9 +557,11 @@ void main(void){
   uint8_t frame_count;
   uint8_t scroll_count;
   int16_t damage_animation_counter; // When hit, skip checking collisions for this long
-  uint8_t scroll_thresh; // Scroll when this is set
   uint8_t col_count;  // counter for number of columns scrolled. Used to calculate screen_count
   uint16_t screen_count; // number of screens scrolled
+  uint8_t scroll_frames_per_pixel;  // Slower scrolling: How many frames to wait before scrolling one pixel
+  uint8_t scroll_pixels_per_frame;  // Faster scrolling: How many pixels to scroll each frame
+  uint8_t scroll_frames_count;  // Counts frames for scroll_frames_per_pixel scrolling
   uint8_t player_collision;
   uint8_t bullet_collision;
   enum animation_state damage_animation_state; // Used during the damage recovery to toggle between showing and hidding the player sprite
@@ -577,7 +576,7 @@ void main(void){
   // Temporary variables (loop counters, array indices, etc)
   uint8_t tmpx; 
   uint8_t tmpy; 
-  uint8_t i, idx;
+  uint8_t i;
   uint16_t ii;
 
   // Banking variables
@@ -588,20 +587,12 @@ void main(void){
     bullets_arr_idx = 0;
     n_bullets = MAX_BULLETS;
     n_bombs = MAX_BOMBS;
-    n_shields = MAX_SHIELDS;
-    n_health = MAX_HEALTH;
 
     powerups_top_tiles[0] = powerups_tilemap_offset + 4;  // Deselected ammo
     powerups_top_tiles[1] = n_bullets + 1;
-    powerups_top_tiles[2] = 0;
-    powerups_top_tiles[3] = powerups_tilemap_offset + 3;  // Deselected health kit
-    powerups_top_tiles[4] = n_health + 1;
 
     powerups_bot_tiles[0] = powerups_tilemap_offset + 1;  // Deselected bomb
     powerups_bot_tiles[1] = n_bombs + 1;
-    powerups_bot_tiles[2] = 0;
-    powerups_bot_tiles[3] = powerups_tilemap_offset + 2;  // Deselected shield
-    powerups_bot_tiles[4] = n_shields + 1;
 
     progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
     for (i = 1; i < 9; i++){
@@ -609,8 +600,8 @@ void main(void){
     }
     progressbar_tiles[9] = progressbar_tilemap_offset + 3; // right edge of bar
 
-    set_win_tiles(2, 0, 5, 1, powerups_top_tiles);
-    set_win_tiles(2, 1, 5, 1, powerups_bot_tiles);
+    set_win_tiles(2, 0, 2, 1, powerups_top_tiles);
+    set_win_tiles(2, 1, 2, 1, powerups_bot_tiles);
     set_win_tiles(8, 0, 10, 1, progressbar_tiles);
 
     /*
@@ -685,9 +676,11 @@ void main(void){
     frame_count = 0;
     scroll_count = 0;
     damage_animation_counter = 0; // When hit, skip checking collisions for this long
-    scroll_thresh = 0x3; // Scroll when this is set
     col_count = 0;  // counter for number of columns scrolled. Used to calculate screen_count
     screen_count = 0; // number of screens scrolled
+    scroll_frames_per_pixel = 2;
+    scroll_pixels_per_frame = 0;
+    scroll_frames_count = 0;
     player_collision = 0;
     bullet_collision = 0;
     damage_animation_state = HIDDEN;
@@ -804,207 +797,46 @@ void main(void){
         }
       }
 
-      if (KEY_FIRST_PRESS(J_A)){
-        switch (active_powerup)
-        {
-          case GUN:
-          {
-            if (n_bullets > 0)
-            {
-              bullets_fired = true;
-              n_bullets--;
+      if (KEY_FIRST_PRESS(J_A) && n_bullets > 0) {
+        bullets_fired = true;
+        n_bullets--;
 
-              b.type = BULLET;
-              b.sprite_id = bullets_arr_idx + 1; // +1 so we dont override the player (always sprite_id 0)
-              b.speed = 4;
-              b.x = player.x;
-              b.y = player.y;
+        b.type = BULLET;
+        b.sprite_id = bullets_arr_idx + 1; // +1 so we dont override the player (always sprite_id 0)
+        b.speed = 4;
+        b.x = player.x;
+        b.y = player.y;
 
-              // Collision box
-              b.cb.x = b.x;
-              b.cb.y = b.y;
-              b.cb_x_offset = 0;
-              b.cb_y_offset = 2;
-              b.cb.h = 4;
-              b.cb.w = 8;
-              b.active = true;
-              b.lifespan = 20;
+        // Collision box
+        b.cb.x = b.x;
+        b.cb.y = b.y;
+        b.cb_x_offset = 0;
+        b.cb_y_offset = 2;
+        b.cb.h = 4;
+        b.cb.w = 8;
+        b.active = true;
+        b.lifespan = 20;
 
-              b.sprite_tile_id = bullet_sprite_base_id;
-              set_sprite_tile(b.sprite_id, b.sprite_tile_id);
-              move_sprite(b.sprite_id, b.x, b.y);
+        b.sprite_tile_id = bullet_sprite_base_id;
+        set_sprite_tile(b.sprite_id, b.sprite_tile_id);
+        move_sprite(b.sprite_id, b.x, b.y);
 
-              *(bullets+bullets_arr_idx) = b;
+        *(bullets+bullets_arr_idx) = b;
 
-              bullets_arr_idx++;
-              bullets_active++;
+        bullets_arr_idx++;
+        bullets_active++;
 
-              // Check if index exceeded the array size and reset to 0
-              if (bullets_arr_idx >= MAX_BULLETS){
-                bullets_arr_idx = 0;
-              }
-              play_gun_sound();
-            }
-          }
-          break;
-          
-          case BOMB:
-          {
-            if (n_bombs > 0){
-              bomb_dropped = true;
-              n_bombs--;
-            }
-            play_bomb_sound();
-          }
-          break;
-
-          case SHIELD:
-          {
-            if ((n_shields > 0) && (!shield_active)){
-              shield_active = true;
-              damage_animation_counter = 8*20;
-              player_sprite_base_id += 10;
-              n_shields--;
-            }
-          }
-          break;
-
-          case HEALTH:
-          {
-            if (n_health > 0){
-              player.health += 10;
-              if (player.health > 100){
-                player.health = 100;
-              }
-              n_health--;
-              update_health_bar(&player, progressbar_tiles, &player_sprite_base_id, progressbar_tilemap_offset);
-              play_health_sound();
-            }
-          }
-          break;
+        // Check if index exceeded the array size and reset to 0
+        if (bullets_arr_idx >= MAX_BULLETS){
+          bullets_arr_idx = 0;
         }
+        play_gun_sound();
       }
-      if (KEY_FIRST_PRESS(J_B)){
-        switch (active_powerup)
-        {
-          case GUN:
-          {
-            if (n_bombs > 0){
-              // Deselect current tile
-              powerups_top_tiles[0] = powerups_tilemap_offset + active_powerup; 
 
-              // Change active powerup 
-              active_powerup = BOMB;
-              powerups_bot_tiles[0] = powerups_tilemap_offset + 4 + active_powerup;
-            }
-            else if (n_shields > 0){
-              // Deselect current tile
-              powerups_top_tiles[0] = powerups_tilemap_offset + active_powerup; 
-
-              // Change active powerup 
-              active_powerup = SHIELD;
-              powerups_bot_tiles[3] = powerups_tilemap_offset + 4 + active_powerup;
-            }
-            else if (n_health > 0){
-              // Deselect current tile
-              powerups_top_tiles[0] = powerups_tilemap_offset + active_powerup; 
-
-              // Change active powerup 
-              active_powerup = HEALTH;
-              powerups_top_tiles[3] = powerups_tilemap_offset + 4 + active_powerup;
-            }
-          }
-          break;
-          
-          case BOMB:
-          {
-            if (n_shields > 0){
-              // Deselect current tile
-              powerups_bot_tiles[0] = powerups_tilemap_offset + active_powerup; 
-
-              // Change active powerup 
-              active_powerup = SHIELD;
-              powerups_bot_tiles[3] = powerups_tilemap_offset + 4 + active_powerup;
-            }
-            else if (n_health > 0){
-              // Deselect current tile
-              powerups_bot_tiles[0] = powerups_tilemap_offset + active_powerup; 
-
-              // Change active powerup 
-              active_powerup = HEALTH;
-              powerups_top_tiles[3] = powerups_tilemap_offset + 4 + active_powerup;
-            }
-            else if (n_bullets > 0){
-              // Deselect current tile
-              powerups_bot_tiles[0] = powerups_tilemap_offset + active_powerup; 
-
-              // Change active powerup 
-              active_powerup = GUN;
-              powerups_top_tiles[0] = powerups_tilemap_offset + 4 + active_powerup;
-            }
-          }
-          break;
-
-          case SHIELD:
-          {
-            if (n_health > 0){
-              // Deselect current tile
-              powerups_bot_tiles[3] = powerups_tilemap_offset + active_powerup; 
-
-              // Change active powerup 
-              active_powerup = HEALTH;
-              powerups_top_tiles[3] = powerups_tilemap_offset + 4 + active_powerup;
-            }
-            else if (n_bullets > 0){
-              // Deselect current tile
-              powerups_bot_tiles[3] = powerups_tilemap_offset + active_powerup; 
-
-              // Change active powerup 
-              active_powerup = GUN;
-              powerups_top_tiles[0] = powerups_tilemap_offset + 4 + active_powerup;
-            }
-            else if (n_bombs > 0){
-              // Deselect current tile
-              powerups_bot_tiles[3] = powerups_tilemap_offset + active_powerup; 
-
-              // Change active powerup 
-              active_powerup = BOMB;
-              powerups_bot_tiles[0] = powerups_tilemap_offset + 4 + active_powerup;
-            }
-          }
-          break;
-
-          case HEALTH:
-          {
-            if (n_bullets > 0){
-              // Deselect current tile
-              powerups_top_tiles[3] = powerups_tilemap_offset + active_powerup; 
-
-              // Change active powerup 
-              active_powerup = GUN;
-              powerups_top_tiles[0] = powerups_tilemap_offset + 4 + active_powerup;
-            }
-            else if (n_bombs > 0){
-              // Deselect current tile
-              powerups_top_tiles[3] = powerups_tilemap_offset + active_powerup; 
-
-              // Change active powerup 
-              active_powerup = BOMB;
-              powerups_bot_tiles[0] = powerups_tilemap_offset + 4 + active_powerup;
-            }
-            else if (n_shields > 0){
-              // Deselect current tile
-              powerups_top_tiles[3] = powerups_tilemap_offset + active_powerup; 
-
-              // Change active powerup 
-              active_powerup = SHIELD;
-              powerups_bot_tiles[3] = powerups_tilemap_offset + 4 + active_powerup;
-            }
-          }
-          break;
-        }
-        set_win_tiles(2, 0, 5, 1, powerups_top_tiles);
-        set_win_tiles(2, 1, 5, 1, powerups_bot_tiles);
+      if (KEY_FIRST_PRESS(J_B) && n_bombs > 0) {
+        bomb_dropped = true;
+        n_bombs--;
+        play_bomb_sound();
       }
 
       old_input = current_input;
@@ -1200,87 +1032,68 @@ void main(void){
         }
       }
 
-      if ((frame_count & scroll_thresh)){
-        scroll_bkg(1,0);
-        scroll_count++;
+      // Scroll the screen.
+      if (scroll_frames_per_pixel != 0) {
+        ++scroll_frames_count;
+        if (scroll_frames_count == scroll_frames_per_pixel) {
+          scroll_frames_count = 0;
+          scroll_bkg(1, 0);
+          ++scroll_count;
+        }
+      } else {
+        scroll_bkg(scroll_pixels_per_frame, 0);
+        scroll_count += scroll_pixels_per_frame;
+      }
 
-        if (scroll_count == 8){
-          scroll_count = 0;
-          last_bank = CURRENT_BANK;
-          SWITCH_ROM(1);
-          generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map, bkg_map);
-          SWITCH_ROM(last_bank);
-          copy_bkgmap_to_vram = true;
+      if (scroll_count >= 8){
+        scroll_count = 0;
+        last_bank = CURRENT_BANK;
+        SWITCH_ROM(1);
+        generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map, bkg_map);
+        SWITCH_ROM(last_bank);
+        copy_bkgmap_to_vram = true;
 
-          col_count++;
-          if (col_count == 20){
-            col_count = 0;
-            screen_count++;
+        ++col_count;
+        // Add a bullet every few columns we scroll.
+        if (col_count % 2 == 0 && n_bullets < MAX_BULLETS) {
+          ++n_bullets;
+        }
 
-            // if (screen_count == (scroll_thresh*20)){
-            if (screen_count == 20){
-              screen_count = 0;
+        if (col_count == 20) {
+          col_count = 0;
+          ++screen_count;
 
-              // Add one to every powerup
-              if (n_bullets < MAX_BULLETS){
-                n_bullets++;
-              }
-              if (n_bombs < MAX_BOMBS){
-                n_bombs++;
-              }
-              if (n_shields < MAX_SHIELDS){
-                n_shields++;
-              }
-              if (n_health < MAX_HEALTH){
-                n_health++;
-              }
-            }
-            else if (screen_count == 5){
-              // Add a bullet every 5 screens
-              if (n_bullets < MAX_BULLETS){
-                n_bullets++;
-              }
-            }
-            else if (screen_count == 10){
-              // Add a bomb every 10 screens
-              if (n_bombs < MAX_BOMBS){
-                n_bombs++;
-              }
-            }
+          // Add a bomb every few screens we scroll.
+          if (screen_count % 3 == 0 && n_bombs < MAX_BOMBS) {
+            ++n_bombs;
+          }
+
+          // Increase scroll speed after some time.
+          if (screen_count == 10) {
+            scroll_frames_per_pixel = 0;
+            scroll_frames_count = 0;
+            scroll_pixels_per_frame = 1;
+          } else if (screen_count == 40) {
+            scroll_pixels_per_frame = 2;
           }
         }
       }
-      else if ((frame_count & 0x3) == 0) { // %4
+
+      if ((frame_count & 0x3) == 0) { // %4
         // Update HUD
-        if (n_bullets > 0){
-          powerups_top_tiles[1] = n_bullets + 1;  
+        if (n_bullets > 0) {
+          powerups_top_tiles[1] = n_bullets + 1;
+        } else {
+          powerups_top_tiles[1] = 1;
         }
-        else{
-          powerups_top_tiles[1] = 1;  
-        }
+        set_win_tiles(2, 0, 2, 1, powerups_top_tiles);
 
-        if (n_health > 0){
-          powerups_top_tiles[4] = n_health + 1;  
+        if (n_bombs > 0) {
+          powerups_bot_tiles[1] = n_bombs + 1;
+        } else {
+          powerups_bot_tiles[1] = 1;
         }
-        else{
-          powerups_top_tiles[4] = 1;  
-        }
-        set_win_tiles(2, 0, 5, 1, powerups_top_tiles);
-
-        if (n_bombs > 0){
-          powerups_bot_tiles[1] = n_bombs + 1;  
-        }
-        else{
-          powerups_bot_tiles[1] = 1;  
-        }
-
-        if (n_shields > 0){
-          powerups_bot_tiles[4] = n_shields + 1;  
-        }
-        else{
-          powerups_bot_tiles[4] = 1;  
-        }
-        set_win_tiles(2, 1, 5, 1, powerups_bot_tiles);
+        set_win_tiles(2, 1, 2, 1, powerups_bot_tiles);
       }
       
       frame_count++;
