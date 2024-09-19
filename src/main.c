@@ -1069,7 +1069,7 @@ void main(void){
           }
 
           // Increase scroll speed after some time.
-          if (screen_count == 10) {
+          if (screen_count == 5) {
             scroll_frames_per_pixel = 0;
             scroll_frames_count = 0;
             scroll_pixels_per_frame = 1;

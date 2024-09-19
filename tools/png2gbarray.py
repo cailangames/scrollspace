@@ -220,13 +220,13 @@ def get_background_data_and_map(im, name, gb_code, offset=37, debug=False):
 
     return tile_data_array, tilemap_array
 
-#fn_path = "../assets/block.png"
+fn_path = "../assets/block.png"
 #fn_path = "../assets/projectiles.png"
 #fn_path = "../assets/powerups.png"
 #fn_path = "../assets/player.png"
 #fn_path = "../assets/player_shield.png"
 #fn_path = "../assets/progressbar.png"
-fn_path = "../assets/font-extras.png" 
+#fn_path = "../assets/font-extras.png" 
 
 filename = os.path.splitext(os.path.split(fn_path)[-1])[0].lower()
 filename = filename.replace("-","_")
