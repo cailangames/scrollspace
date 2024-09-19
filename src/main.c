@@ -1075,6 +1075,7 @@ void main(void){
             scroll_pixels_per_frame = 1;
           } else if (screen_count == 40) {
             scroll_pixels_per_frame = 2;
+            player.speed = 2;
           }
         }
       }
