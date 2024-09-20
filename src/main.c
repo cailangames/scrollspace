@@ -284,6 +284,8 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
   uint16_t col_topl, col_topr;
   uint16_t col_botl, col_botr;
   uint8_t collision = 0;
+  uint8_t collision_block = 0;
+  int8_t block_health = 0;
 
   row_topl = (sprite->cb.y - 16) / 8;
   col_topl = ((SCX_REG + sprite->cb.x - 8) %256) / 8;
@@ -307,106 +309,178 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
 
   if (coll_map[cm_idx_topl] > 0){
     collision = coll_map[cm_idx_topl];
-    if (collision == 1) {
-      // Hit a wall
-      if (sprite->dir & UP){
-        // Top Left collision detected while sprite is moving up 
-        sprite->y += 8;
+    collision_block = bkg_map[bkg_idx_topl];
+
+    // Check if it is not a power up
+    if (collision < 235){
+      // Apply damage to the background element
+      if (player_sprite){
+        block_health = coll_map[cm_idx_topl] - 2;
       }
-      
-      if (sprite->dir & LEFT){
-        // Top Left collision detected while sprite is moving up 
-        sprite->x += 8;
+      else{
+        // Bullet 
+        block_health = coll_map[cm_idx_topl] - 1;
       }
-    }
-    else if (collision < 10) {
-      // Hit a block
-      // Replace obstacle tile and remove collision
-      bkg_map[bkg_idx_topl] = 0;
-      coll_map[cm_idx_topl] = 0;
+
+      if (block_health > 0) {
+        // Hit a wall
+        if (sprite->dir & UP){
+          // Top Left collision detected while sprite is moving up 
+          sprite->y += 8;
+        }
+        if (sprite->dir & LEFT){
+          // Top Left collision detected while sprite is moving up 
+          sprite->x += 8;
+        }
+      }
+
+      if (block_health <= 0) {
+        // Background element destroyed
+        // Replace obstacle tile and remove collision
+        bkg_map[bkg_idx_topl] = 0;
+        coll_map[cm_idx_topl] = 0;
+      }
+      else {
+        coll_map[cm_idx_topl] = block_health;
+      }
     }
     else if (player_sprite) {
+      // Pick up power up
       bkg_map[bkg_idx_topl] = 0;
       coll_map[cm_idx_topl] = 0;
     }
   }
   else if (coll_map[cm_idx_topr] > 0) {
     collision = coll_map[cm_idx_topr]; 
-    if (collision == 1) {
-      // Hit a wall
-      if (sprite->dir & UP){
-        // Top Right collision detected while sprite is moving up 
-        sprite->y += 8;
+    collision_block = bkg_map[bkg_idx_topr];
+
+    // Check if it is not a power up
+    if (collision < 235){
+      // Apply damage to the background element
+      if (player_sprite){
+        block_health = coll_map[cm_idx_topr] - 2;
+      }
+      else{
+        // Bullet 
+        block_health = coll_map[cm_idx_topr] - 1;
       }
 
-      if (sprite->dir & RIGHT){
-        // Top Right collision detected while sprite is moving up 
-        sprite->x -= 8;
+      if (block_health > 0) {
+        // Hit a wall
+        if (sprite->dir & UP){
+          // Top Right collision detected while sprite is moving up 
+          sprite->y += 8;
+        }
+        if (sprite->dir & RIGHT){
+          // Top Right collision detected while sprite is moving up 
+          sprite->x -= 8;
+        }
+      }
+
+      if (block_health <= 0) {
+        // Background element destroyed
+        // Replace obstacle tile and remove collision
+        bkg_map[bkg_idx_topr] = 0;
+        coll_map[cm_idx_topr] = 0;
+      }
+      else {
+        coll_map[cm_idx_topr] = block_health;
       }
     }
-    else if (collision < 10) {
-      // Hit an obstacle
-      // Replace obstacle tile and remove collision
-      bkg_map[bkg_idx_topr] = 0;
-      coll_map[cm_idx_topr] = 0;
-    }
     else if (player_sprite) {
+      // Pick up power up
       bkg_map[bkg_idx_topr] = 0;
       coll_map[cm_idx_topr] = 0;
     }
   }
   else if(coll_map[cm_idx_botl] > 0){
     collision = coll_map[cm_idx_botl];
-    if (collision == 1) {
-      // Hit a wall
-      if (sprite->dir & DOWN){
-        // Bottom Left collision detected while sprite is moving down 
-        sprite->y -= 8;
+    collision_block = bkg_map[bkg_idx_botl];
+
+    // Check if it is not a power up
+    if (collision < 235){
+      // Apply damage to the background element
+      if (player_sprite){
+        block_health = coll_map[cm_idx_botl] - 2;
+      }
+      else{
+        // Bullet 
+        block_health = coll_map[cm_idx_botl] - 1;
       }
 
-      if (sprite->dir & LEFT){
-        // Bottom Left collision detected while sprite is moving down 
-        sprite->x += 8;
+      if (block_health > 0) {
+        // Hit a wall
+        if (sprite->dir & DOWN){
+          // Bottom Left collision detected while sprite is moving down 
+          sprite->y -= 8;
+        }
+        if (sprite->dir & LEFT){
+          // Bottom Left collision detected while sprite is moving down 
+          sprite->x += 8;
+        }
+      }
+
+      if (block_health <= 0) {
+        // Background element destroyed
+        // Replace obstacle tile and remove collision
+        bkg_map[bkg_idx_botl] = 0;
+        coll_map[cm_idx_botl] = 0;
+      }
+      else {
+        coll_map[cm_idx_botl] = block_health;
       }
     }
-    else if (collision < 10) {
-      // Hit an obstacle
-      // Replace obstacle tile and remove collision
+    else if (player_sprite) {
+      // Pick up power up
       bkg_map[bkg_idx_botl] = 0;
       coll_map[cm_idx_botl] = 0;
-    }
-    else if (player_sprite) {
-      bkg_map[bkg_idx_botl] = 0;
-      coll_map[bkg_idx_botl] = 0;
     }
   } 
   else if (coll_map[cm_idx_botr] > 0){
     collision = coll_map[cm_idx_botr];
-    if (collision == 1) {
-      // Hit a wall
-      if (sprite->dir & DOWN){
-        // Bottom Right collision detected while sprite is moving down 
-        sprite->y -= 8;
+    collision_block = bkg_map[bkg_idx_botr];
+
+    // Check if it is not a power up
+    if (collision < 235){
+      // Apply damage to the background element
+      if (player_sprite){
+        block_health = coll_map[cm_idx_botl] - 2;
+      }
+      else{
+        // Bullet 
+        block_health = coll_map[cm_idx_botl] - 1;
       }
 
-      if (sprite->dir & RIGHT){
-        // Bottom Right collision detected while sprite is moving down 
-        sprite->x -= 8;
+      if (block_health > 0) {
+        // Hit a wall
+        if (sprite->dir & DOWN){
+          // Bottom Right collision detected while sprite is moving down 
+          sprite->y -= 8;
+        }
+        if (sprite->dir & RIGHT){
+          // Bottom Right collision detected while sprite is moving down 
+          sprite->x -= 8;
+        }
+      }
+
+      if (block_health <= 0) {
+        // Background element destroyed
+        // Replace obstacle tile and remove collision
+        bkg_map[bkg_idx_botr] = 0;
+        coll_map[cm_idx_botr] = 0;
+      }
+      else {
+        coll_map[cm_idx_botr] = block_health;
       }
     }
-    else if (collision < 10) {
-      // Hit an obstacle
-      // Replace obstacle tile and remove collision
-      bkg_map[bkg_idx_botr] = 0;
-      coll_map[cm_idx_botr] = 0;
-    }
     else if (player_sprite) {
+      // Pick up power up
       bkg_map[bkg_idx_botr] = 0;
       coll_map[cm_idx_botr] = 0;
     }
   }
   
-  if ((collision == 1) && (player_sprite)){
+  if ((block_health > 2) && (player_sprite)){
     // Move the player sprite after collision
     move_sprite(sprite->sprite_id, sprite->x, sprite->y);
   }
@@ -527,7 +601,7 @@ void main(void){
   /**
    * Create bullet sprite array 
    */
-  struct Sprite bullets[MAX_BULLETS];
+  struct Sprite bullets[BULLET_ARR_SIZE];
   uint8_t bullets_arr_idx;
   uint8_t bullets_active;
   bool bullets_fired;
@@ -898,13 +972,13 @@ void main(void){
 
           bullet_collision = check_collisions(b_ptr, coll_map, bkg_map, false);
           // Check that the bullet collided with something it can destroy
-          if (bullet_collision == 2) {
-            // Hit a block
+          if ((bullet_collision > 0) && (bullet_collision < 235)) {
+            // Hit something
             // Force to 1 so the next || works
             bullet_collision = 1;
           }
-          else if (bullet_collision > 2) {
-            // Collided with something it can't destroy.
+          else {
+            // Collided with a pickup (can't destroy)
             // Force to 0 so the next || works
             bullet_collision = 0;
           }
@@ -956,16 +1030,12 @@ void main(void){
         }
 
         player_collision = check_collisions(&player, coll_map, bkg_map, true);
-        if (player_collision == 1) {
-          player.health -= 10;
-          damage_animation_counter = 16;
-        }
-        else if (player_collision == 2) {
+        if ((player_collision > 0) && (player_collision < 235)) {
           player.health -= 5;
           damage_animation_counter = 16;
           player_collision = 1;
         }
-        else if (player_collision == 11) {
+        else if (player_collision == 255) {
           if (player.health < 100){
             // Prevent health overflow (int8 maxes at 128)
             if ((100 - player.health) >= 10){
@@ -978,7 +1048,7 @@ void main(void){
           player_collision = 1;
           play_health_sound();
         }
-        else if (player_collision == 10) {
+        else if (player_collision == 254) {
           shield_active = true;
           damage_animation_counter = 8*20;
           player_sprite_base_id += 10;
@@ -1069,11 +1139,11 @@ void main(void){
           }
 
           // Increase scroll speed after some time.
-          if (screen_count == 5) {
+          if (screen_count == 3) {
             scroll_frames_per_pixel = 0;
             scroll_frames_count = 0;
             scroll_pixels_per_frame = 1;
-          } else if (screen_count == 40) {
+          } else if (screen_count == 400) {
             scroll_pixels_per_frame = 2;
             player.speed = 2;
           }
