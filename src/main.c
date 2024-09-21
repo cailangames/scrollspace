@@ -25,8 +25,6 @@ uint8_t isr_frame_counter;
 uint8_t playtime_seconds;
 uint8_t playtime_minutes;
 uint8_t playtime_hours;
-uint16_t playtime_days;  // uint8_t is too small (max 255) for 365 days in a year
-uint8_t playtime_years;
 uint8_t game_paused;
 
 void increment_score_isr(void){
@@ -47,16 +45,6 @@ void increment_score_isr(void){
       if (playtime_minutes == 60){
         playtime_hours++;
         playtime_minutes = 0;
-
-        if (playtime_hours == 24){
-          playtime_days++;
-          playtime_hours = 0;
-
-          if (playtime_days == 365){
-            playtime_years++;
-            playtime_days = 0;
-          }
-        }
       }
     }
   }
@@ -173,40 +161,27 @@ void fadein(void){
   }
 }
 
-void score2tile(uint8_t* score_tiles, uint8_t colon_offset){
+void score2tile(uint8_t* score_time_tiles, uint8_t colon_offset){
   uint8_t tens;
-  uint8_t hundreds;
 
   // Seconds
   tens = playtime_seconds/10;
-  score_tiles[11] = (playtime_seconds - 10*tens) + 0x01;
-  score_tiles[10] = tens + 0x01; 
-  score_tiles[9] = colon_offset;
+  score_time_tiles[7] = (playtime_seconds - 10*tens) + 0x01;
+  score_time_tiles[6] = tens + 0x01; 
+  score_time_tiles[5] = colon_offset;
   
   // Minutes
   tens = playtime_minutes/10;
-  score_tiles[8] = (playtime_minutes - 10*tens) + 0x01;
-  score_tiles[7] = tens + 0x01; 
+  score_time_tiles[4] = (playtime_minutes - 10*tens) + 0x01;
+  score_time_tiles[3] = tens + 0x01; 
   
-  if (playtime_hours > 0){
-    // Hours
-    tens = playtime_hours/10;
-    score_tiles[6] = colon_offset;
-    score_tiles[5] = (playtime_hours - 10*tens) + 0x01;
-    score_tiles[4] = tens + 0x01; 
-  }
+  // Hours
+  tens = playtime_hours/10;
+  score_time_tiles[2] = colon_offset;
+  score_time_tiles[1] = (playtime_hours - 10*tens) + 0x01;
+  score_time_tiles[0] = tens + 0x01; 
   
-  if (playtime_days > 0) {
-    // Days
-    hundreds = playtime_days / 100;
-    tens = (playtime_days - 100*hundreds)/10;
-    score_tiles[3] = colon_offset;
-    score_tiles[2] = (playtime_days - 100*hundreds - 10*tens) + 0x01;
-    score_tiles[1] = tens + 0x01; 
-    score_tiles[0] = hundreds + 0x01;
-  }
-  
-  set_win_tiles(7, 1, 12, 1, score_tiles);
+  set_win_tiles(12, 0, 8, 1, score_time_tiles);
 }
 
 void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8_t radius){
@@ -492,22 +467,22 @@ void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_
   uint8_t i, idx;
   if (player->health == 100){
     progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
-    for (i = 1; i < 9; i++){
+    for (i = 1; i < 7; i++){
       progressbar_tiles[i] = progressbar_tilemap_offset + 2; // center of bar
     }
-    progressbar_tiles[9] = progressbar_tilemap_offset + 3; // right edge of bar
+    progressbar_tiles[7] = progressbar_tilemap_offset + 3; // right edge of bar
   }
-  else if (player->health >= 90) {
+  else if (player->health >= 87) {
     progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
-    for (i = 1; i < 9; i++){
+    for (i = 1; i < 7; i++){
       progressbar_tiles[i] = progressbar_tilemap_offset + 2; // center of bar
     }
-    progressbar_tiles[9] = progressbar_tilemap_offset + 6; // right edge of bar
+    progressbar_tiles[7] = progressbar_tilemap_offset + 6; // right edge of bar
   }
   else if (player->health >= 10) {
-    idx = (player->health + 10) / 10;
+    idx = (player->health + 10) / 8;
     progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
-    for (i=1; i < 9; i++){
+    for (i=1; i < 7; i++){
       if (i < idx){
         progressbar_tiles[i] = progressbar_tilemap_offset + 2; // fill 
       }
@@ -515,13 +490,13 @@ void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_
         progressbar_tiles[i] = progressbar_tilemap_offset + 5; // clear
       }
     }
-    progressbar_tiles[9] = progressbar_tilemap_offset + 6; // clear right edge of bar
+    progressbar_tiles[7] = progressbar_tilemap_offset + 6; // clear right edge of bar
   }
   else {
     progressbar_tiles[1] = progressbar_tilemap_offset + 5; // Clear bottom 2 tiles 
     progressbar_tiles[0] = progressbar_tilemap_offset + 4;
   }
-  set_win_tiles(8, 0, 10, 1, progressbar_tiles);
+  set_win_tiles(0, 0, 8, 1, progressbar_tiles);
 
   if (player->health > 50){
     *player_sprite_base_id = 0;
@@ -565,7 +540,7 @@ void main(void){
   set_bkg_tiles(0,0,20,COLUMN_HEIGHT,game_titlescreen);
 
   // Load Window
-  move_win(7,128);
+  move_win(7,136);
 
   /**
    * Load music 
@@ -591,11 +566,9 @@ void main(void){
   DISPLAY_ON;
   SHOW_BKG;
 
-  uint8_t progressbar_tiles[10];
-  uint8_t powerups_top_tiles[2];
-  uint8_t powerups_bot_tiles[2];
-  // uint8_t score_tiles[12];
-  uint8_t *score_tiles = calloc(12, sizeof(uint8_t));
+  uint8_t bomb_tiles[2];
+  uint8_t progressbar_tiles[8];
+  uint8_t *score_time_tiles = calloc(8, sizeof(uint8_t));
 
   struct Sprite player;
   /**
@@ -662,21 +635,17 @@ void main(void){
     n_bullets = MAX_BULLETS;
     n_bombs = MAX_BOMBS;
 
-    powerups_top_tiles[0] = powerups_tilemap_offset + 4;  // Deselected ammo
-    powerups_top_tiles[1] = n_bullets + 1;
-
-    powerups_bot_tiles[0] = powerups_tilemap_offset + 1;  // Deselected bomb
-    powerups_bot_tiles[1] = n_bombs + 1;
+    bomb_tiles[0] = powerups_tilemap_offset + 1;  // Deselected bomb
+    bomb_tiles[1] = n_bombs + 1;
 
     progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
-    for (i = 1; i < 9; i++){
+    for (i = 1; i < 7; i++){
       progressbar_tiles[i] = progressbar_tilemap_offset + 2; // center of bar
     }
-    progressbar_tiles[9] = progressbar_tilemap_offset + 3; // right edge of bar
+    progressbar_tiles[7] = progressbar_tilemap_offset + 3; // right edge of bar
 
-    set_win_tiles(2, 0, 2, 1, powerups_top_tiles);
-    set_win_tiles(2, 1, 2, 1, powerups_bot_tiles);
-    set_win_tiles(8, 0, 10, 1, progressbar_tiles);
+    set_win_tiles(9, 0, 2, 1, bomb_tiles);
+    set_win_tiles(0, 0, 8, 1, progressbar_tiles);
 
     /*
     * Create a player and display the sprite 
@@ -787,16 +756,14 @@ void main(void){
     playtime_seconds = 0;
     playtime_minutes = 0;
     playtime_hours = 0;
-    playtime_days = 0;
-    playtime_years = 0;
     game_paused = 0;
     
     // Reset score tiles
-    for (int i=0; i < 12; i++){
-      score_tiles[i] = 0;
+    for (int i=0; i < 8; i++){
+      score_time_tiles[i] = 0;
     }
 
-    score2tile(score_tiles, extra_font_offset);
+    score2tile(score_time_tiles, extra_font_offset);
 
     while(1) {
       current_input = joypad();
@@ -1152,19 +1119,12 @@ void main(void){
 
       if ((frame_count & 0x3) == 0) { // %4
         // Update HUD
-        if (n_bullets > 0) {
-          powerups_top_tiles[1] = n_bullets + 1;
-        } else {
-          powerups_top_tiles[1] = 1;
-        }
-        set_win_tiles(2, 0, 2, 1, powerups_top_tiles);
-
         if (n_bombs > 0) {
-          powerups_bot_tiles[1] = n_bombs + 1;
+          bomb_tiles[1] = n_bombs + 1;
         } else {
-          powerups_bot_tiles[1] = 1;
+          bomb_tiles[1] = 1;
         }
-        set_win_tiles(2, 1, 2, 1, powerups_bot_tiles);
+        set_win_tiles(9, 0, 2, 1, bomb_tiles);
       }
       
       frame_count++;
@@ -1180,7 +1140,7 @@ void main(void){
       // Wait for frame to finish drawing
       vsync();
       
-      score2tile(score_tiles, extra_font_offset);
+      score2tile(score_time_tiles, extra_font_offset);
       if (copy_bkgmap_to_vram){
         // Write the entire map to VRAM
         set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
