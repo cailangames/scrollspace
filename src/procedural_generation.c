@@ -15,7 +15,7 @@
 
 // Data for biome columns.
 // Format: 20 [top, bottom] pairs for each biome
-static uint8_t biome_columns[BIOME_COUNT][COLUMNS_PER_BIOME * 2] = {
+static const uint8_t biome_columns[BIOME_COUNT][COLUMNS_PER_BIOME * 2] = {
   /* BIOME_OPEN_AREA */       { 3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13},
   /* BIOME_DOWNWARD_STRIPE */ { 1,  3,  1,  3,  2,  4,  2,  4,  3,  5,  4,  6,  5,  7,  5,  7,  6,  8,  7,  9,  8, 10,  8, 10,  9, 11, 10, 12, 10, 12, 11, 13, 11, 13, 12, 14, 13, 15, 13, 15},
   /* BIOME_UPWARD_STRIPE */   {13, 15, 13, 15, 12, 14, 11, 13, 11, 13, 10, 12,  9, 11,  9, 11,  8, 10,  8, 10,  7,  9,  6,  8,  6,  8,  5,  7,  4,  6,  4,  6,  3,  5,  2,  4,  2,  4,  1,  3},
@@ -23,7 +23,7 @@ static uint8_t biome_columns[BIOME_COUNT][COLUMNS_PER_BIOME * 2] = {
 };
 
 // Defines how much variance each "cave" in a column is allowed.
-static uint8_t biome_variances[BIOME_COUNT] = {
+static const uint8_t biome_variances[BIOME_COUNT] = {
   /* BIOME_OPEN_AREA */       2,
   /* BIOME_DOWNWARD_STRIPE */ 2,
   /* BIOME_UPWARD_STRIPE */   2,
@@ -31,7 +31,7 @@ static uint8_t biome_variances[BIOME_COUNT] = {
 
 // Defines which biomes are valid after the current biome.
 // TODO: Fix this.
-static uint8_t next_possible_biomes[BIOME_COUNT][1] = {
+static const uint8_t next_possible_biomes[BIOME_COUNT][1] = {
   /* BIOME_OPEN_AREA */       {BIOME_DOWNWARD_STRIPE},
   /* BIOME_DOWNWARD_STRIPE */ {BIOME_UPWARD_STRIPE},
   /* BIOME_UPWARD_STRIPE */   {BIOME_OPEN_AREA},

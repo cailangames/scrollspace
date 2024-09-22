@@ -13,6 +13,7 @@
 #define SCREEN_B 144
 #define SCREEN_L 8
 #define SCREEN_R 160
+#define SCREEN_TILE_WIDTH 20
 #define ROW_WIDTH 32
 #define COLUMN_HEIGHT 17
 #define BULLET_ARR_SIZE 9

@@ -745,7 +745,7 @@ void main(void){
 
     last_bank = CURRENT_BANK;
     SWITCH_ROM(1);
-    for (int i = 0; i < 11; ++i) {
+    for (uint8_t i = 0; i < ROW_WIDTH - SCREEN_TILE_WIDTH; ++i) {
       generate_next_column(&gen_state, coll_map+gen_column_index, bkg_map+gen_column_index);
       set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
       if (++gen_column_index >= ROW_WIDTH) {

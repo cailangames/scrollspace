@@ -2,6 +2,8 @@ SHELL := /bin/bash
 
 GBDK_HOME	= /opt/gbdk/
 HUGE_HOME = /opt/hUGEDriver-6/
+# GBDK_HOME	= /mnt/c/Users/smark/gbdk/linux64/
+# HUGE_HOME = /mnt/c/Users/smark/gbdk/hUGEDriver-6.1.3/
 
 LCC	= $(GBDK_HOME)bin/lcc
 
