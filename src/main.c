@@ -209,8 +209,7 @@ void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8
    * the coll_map and bkg_map entries with 0.
    * The bomb is dropped in front of the player
    */
-  uint16_t cm_idx; 
-  uint16_t bkg_idx; 
+  uint16_t idx; 
   uint16_t row_top, row_bot;
   uint16_t col_left, col_right;
 
@@ -251,11 +250,11 @@ void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8
   uint16_t row, col;
   for (row=row_top; row < row_bot; row++){
     for (col=col_left; col < col_right; col++){
-      cm_idx = col*COLUMN_HEIGHT + row;
-      bkg_idx = col + row*32;
+      // idx = col*COLUMN_HEIGHT + row;
+      idx = col + row*32;
 
-      coll_map[cm_idx] = 0;
-      bkg_map[bkg_idx] = CRATERBLOCK_IDX; // 0;  // Index 0 is the blank tile, index 4 is the crater tile
+      coll_map[idx] = 0;
+      bkg_map[idx] = CRATERBLOCK_IDX; // 0;  // Index 0 is the blank tile, index 4 is the crater tile
     }
   }
 
@@ -269,10 +268,8 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
    * bottom_left, and bottom right corners.
    */
 
-  uint16_t cm_idx_topl, cm_idx_topr; 
-  uint16_t cm_idx_botl, cm_idx_botr; 
-  uint16_t bkg_idx_topl, bkg_idx_topr; 
-  uint16_t bkg_idx_botl, bkg_idx_botr; 
+  uint16_t idx_topl, idx_topr; 
+  uint16_t idx_botl, idx_botr; 
   uint16_t row_topl, row_topr;
   uint16_t row_botl, row_botr;
   uint16_t col_topl, col_topr;
@@ -283,37 +280,33 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
 
   row_topl = (sprite->cb.y - 16) / 8;
   col_topl = ((SCX_REG + sprite->cb.x - 8) %256) / 8;
-  cm_idx_topl = col_topl*COLUMN_HEIGHT + row_topl;
-  bkg_idx_topl = col_topl + row_topl*32;
+  idx_topl = col_topl + row_topl*32;
 
   row_topr = row_topl;
   col_topr = ((SCX_REG + sprite->cb.x + sprite->cb.w - 8)%256) / 8;
-  cm_idx_topr = col_topr*COLUMN_HEIGHT + row_topr;
-  bkg_idx_topr = col_topr + row_topr*32;
+  idx_topr = col_topr + row_topr*32;
 
   row_botl = ((sprite->cb.y + sprite->cb.h - 16)%256) / 8;
   col_botl = col_topl; 
-  cm_idx_botl = col_botl*COLUMN_HEIGHT + row_botl;
-  bkg_idx_botl = col_botl + row_botl*32;
+  idx_botl = col_botl + row_botl*32;
 
   row_botr = row_botl;
   col_botr = col_topr; 
-  cm_idx_botr = col_botr*COLUMN_HEIGHT + row_botr;
-  bkg_idx_botr = col_botr + row_botr*32;
+  idx_botr = col_botr + row_botr*32;
 
-  if (coll_map[cm_idx_topl] > 0){
-    collision = coll_map[cm_idx_topl];
-    collision_block = bkg_map[bkg_idx_topl];
+  if (coll_map[idx_topl] > 0){
+    collision = coll_map[idx_topl];
+    collision_block = bkg_map[idx_topl];
 
     // Check if it is not a power up
     if (collision < 235){
       // Apply damage to the background element
       if (player_sprite){
-        block_health = coll_map[cm_idx_topl] - 2;
+        block_health = coll_map[idx_topl] - 2;
       }
       else{
         // Bullet 
-        block_health = coll_map[cm_idx_topl] - 1;
+        block_health = coll_map[idx_topl] - 1;
       }
 
       if (block_health > 0) {
@@ -331,36 +324,36 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       if (block_health <= 0) {
         // Background element destroyed
         // Replace obstacle tile and remove collision
-        bkg_map[bkg_idx_topl] = 0;
-        coll_map[cm_idx_topl] = 0;
+        bkg_map[idx_topl] = 0;
+        coll_map[idx_topl] = 0;
 
         if (collision_block == MAPBLOCK_IDX + 2){
           score += 2;
         }
       }
       else {
-        coll_map[cm_idx_topl] = block_health;
+        coll_map[idx_topl] = block_health;
       }
     }
     else if (player_sprite) {
       // Pick up power up
-      bkg_map[bkg_idx_topl] = 0;
-      coll_map[cm_idx_topl] = 0;
+      bkg_map[idx_topl] = 0;
+      coll_map[idx_topl] = 0;
     }
   }
-  else if (coll_map[cm_idx_topr] > 0) {
-    collision = coll_map[cm_idx_topr]; 
-    collision_block = bkg_map[bkg_idx_topr];
+  else if (coll_map[idx_topr] > 0) {
+    collision = coll_map[idx_topr]; 
+    collision_block = bkg_map[idx_topr];
 
     // Check if it is not a power up
     if (collision < 235){
       // Apply damage to the background element
       if (player_sprite){
-        block_health = coll_map[cm_idx_topr] - 2;
+        block_health = coll_map[idx_topr] - 2;
       }
       else{
         // Bullet 
-        block_health = coll_map[cm_idx_topr] - 1;
+        block_health = coll_map[idx_topr] - 1;
       }
 
       if (block_health > 0) {
@@ -378,36 +371,36 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       if (block_health <= 0) {
         // Background element destroyed
         // Replace obstacle tile and remove collision
-        bkg_map[bkg_idx_topr] = 0;
-        coll_map[cm_idx_topr] = 0;
+        bkg_map[idx_topr] = 0;
+        coll_map[idx_topr] = 0;
 
         if (collision_block == MAPBLOCK_IDX + 2){
           score += 2;
         }
       }
       else {
-        coll_map[cm_idx_topr] = block_health;
+        coll_map[idx_topr] = block_health;
       }
     }
     else if (player_sprite) {
       // Pick up power up
-      bkg_map[bkg_idx_topr] = 0;
-      coll_map[cm_idx_topr] = 0;
+      bkg_map[idx_topr] = 0;
+      coll_map[idx_topr] = 0;
     }
   }
-  else if ((player_sprite) && (coll_map[cm_idx_botl] > 0)){
-    collision = coll_map[cm_idx_botl];
-    collision_block = bkg_map[bkg_idx_botl];
+  else if ((player_sprite) && (coll_map[idx_botl] > 0)){
+    collision = coll_map[idx_botl];
+    collision_block = bkg_map[idx_botl];
 
     // Check if it is not a power up
     if (collision < 235){
       // Apply damage to the background element
       if (player_sprite){
-        block_health = coll_map[cm_idx_botl] - 2;
+        block_health = coll_map[idx_botl] - 2;
       }
       else{
         // Bullet 
-        block_health = coll_map[cm_idx_botl] - 1;
+        block_health = coll_map[idx_botl] - 1;
       }
 
       if (block_health > 0) {
@@ -425,36 +418,36 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       if (block_health <= 0) {
         // Background element destroyed
         // Replace obstacle tile and remove collision
-        bkg_map[bkg_idx_botl] = 0;
-        coll_map[cm_idx_botl] = 0;
+        bkg_map[idx_botl] = 0;
+        coll_map[idx_botl] = 0;
 
         if (collision_block == MAPBLOCK_IDX + 2){
           score += 2;
         }
       }
       else {
-        coll_map[cm_idx_botl] = block_health;
+        coll_map[idx_botl] = block_health;
       }
     }
     else if (player_sprite) {
       // Pick up power up
-      bkg_map[bkg_idx_botl] = 0;
-      coll_map[cm_idx_botl] = 0;
+      bkg_map[idx_botl] = 0;
+      coll_map[idx_botl] = 0;
     }
   } 
-  else if ((player_sprite) && (coll_map[cm_idx_botr] > 0)){
-    collision = coll_map[cm_idx_botr];
-    collision_block = bkg_map[bkg_idx_botr];
+  else if ((player_sprite) && (coll_map[idx_botr] > 0)){
+    collision = coll_map[idx_botr];
+    collision_block = bkg_map[idx_botr];
 
     // Check if it is not a power up
     if (collision < 235){
       // Apply damage to the background element
       if (player_sprite){
-        block_health = coll_map[cm_idx_botl] - 2;
+        block_health = coll_map[idx_botl] - 2;
       }
       else{
         // Bullet 
-        block_health = coll_map[cm_idx_botl] - 1;
+        block_health = coll_map[idx_botl] - 1;
       }
 
       if (block_health > 0) {
@@ -472,21 +465,21 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       if (block_health <= 0) {
         // Background element destroyed
         // Replace obstacle tile and remove collision
-        bkg_map[bkg_idx_botr] = 0;
-        coll_map[cm_idx_botr] = 0;
+        bkg_map[idx_botr] = 0;
+        coll_map[idx_botr] = 0;
 
         if (collision_block == MAPBLOCK_IDX + 2){
           score += 2;
         }
       }
       else {
-        coll_map[cm_idx_botr] = block_health;
+        coll_map[idx_botr] = block_health;
       }
     }
     else if (player_sprite) {
       // Pick up power up
-      bkg_map[bkg_idx_botr] = 0;
-      coll_map[cm_idx_botr] = 0;
+      bkg_map[idx_botr] = 0;
+      coll_map[idx_botr] = 0;
     }
   }
   
@@ -629,7 +622,7 @@ void main(void){
   // Collision map. The first 18 elements correspond to the first col in background tile map
   uint8_t col_idx;   // First column to populate
   uint8_t *coll_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));  // 32x16
-  uint8_t *bkg_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));  // 16x32
+  uint8_t *bkg_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));  // 32x16
   uint8_t new_column[COLUMN_HEIGHT];  // Placeholder for new column array
   bool copy_bkgmap_to_vram; 
 

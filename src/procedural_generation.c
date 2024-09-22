@@ -111,12 +111,14 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
     if ((i >= *gap_row_idx) && (i < *gap_row_idx+*gap_w)){
       new_column[i] = 0;
       bkg_map[(*col_idx) + i*32] = 0;
-      coll_map[(*col_idx)*COLUMN_HEIGHT + i] = 0;
+      // coll_map[(*col_idx)*COLUMN_HEIGHT + i] = 0;
+      coll_map[(*col_idx) + i*32] = 0;
     }
     else{
       new_column[i] = MAPBLOCK_IDX;
       bkg_map[(*col_idx) + i*32] = MAPBLOCK_IDX;
-      coll_map[(*col_idx)*COLUMN_HEIGHT + i] = 3;
+      // coll_map[(*col_idx)*COLUMN_HEIGHT + i] = 3;
+      coll_map[(*col_idx) + i*32] = 3;
     }
   }
 
@@ -129,7 +131,8 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
       for (i=0; i<obs_w_max; i++){
         new_column[idx+i] = MAPBLOCK_IDX + 2;
         bkg_map[(*col_idx) + (idx+i)*32] = MAPBLOCK_IDX + 2;
-        coll_map[(*col_idx)*COLUMN_HEIGHT + idx + i] = 1; 
+        // coll_map[(*col_idx)*COLUMN_HEIGHT + idx + i] = 1; 
+        coll_map[(*col_idx) + (idx+i)*32] = 1; 
       }
     }
   }
@@ -139,13 +142,15 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
       // Shield
       new_column[*gap_row_idx] = MAPBLOCK_IDX + 6;
       bkg_map[(*col_idx) + (*gap_row_idx + (*gap_w >> 1))*32] = MAPBLOCK_IDX + 6;
-      coll_map[(*col_idx)*COLUMN_HEIGHT + (*gap_row_idx +(*gap_w >> 1))] = 254;
+      coll_map[(*col_idx) + (*gap_row_idx + (*gap_w >> 1))*32] = 254;
+      // coll_map[(*col_idx)*COLUMN_HEIGHT + (*gap_row_idx +(*gap_w >> 1))] = 254;
     }
     else if (n >= 253) {
       // Health
       new_column[*gap_row_idx] = MAPBLOCK_IDX + 7;
       bkg_map[(*col_idx) + (*gap_row_idx + (*gap_w >> 1))*32] = MAPBLOCK_IDX + 7;
-      coll_map[(*col_idx)*COLUMN_HEIGHT + (*gap_row_idx + (*gap_w >> 1))] = 255;
+      coll_map[(*col_idx) + (*gap_row_idx + (*gap_w >> 1))*32] = 255;
+      // coll_map[(*col_idx)*COLUMN_HEIGHT + (*gap_row_idx + (*gap_w >> 1))] = 255;
     }
   }
 
