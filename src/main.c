@@ -298,15 +298,16 @@ void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8
   uint16_t row, col;
   for (row=row_top; row < row_bot; row++){
     for (col=col_left; col < col_right; col++){
-      // idx = col*COLUMN_HEIGHT + row;
       idx = col + row*32;
 
+      if ((bkg_map[idx] == MAPBLOCK_IDX) || (bkg_map[idx] == (MAPBLOCK_IDX+2))){
+        // If we are destroying a wall or a mine, increment score
+        score += 1;
+      }
       coll_map[idx] = 0;
       bkg_map[idx] = CRATERBLOCK_IDX; // 0;  // Index 0 is the blank tile, index 4 is the crater tile
     }
   }
-
-  // set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
 }
 
 uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8_t player_sprite){
