@@ -116,7 +116,7 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
     else{
       new_column[i] = MAPBLOCK_IDX;
       bkg_map[(*col_idx) + i*32] = MAPBLOCK_IDX;
-      coll_map[(*col_idx)*COLUMN_HEIGHT + i] = 127; // Walls are hard to destroy. 127 was picked to not overflow the int8 block_health variable in check_collisions
+      coll_map[(*col_idx)*COLUMN_HEIGHT + i] = 3;
     }
   }
 
@@ -129,7 +129,7 @@ void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx,
       for (i=0; i<obs_w_max; i++){
         new_column[idx+i] = MAPBLOCK_IDX + 2;
         bkg_map[(*col_idx) + (idx+i)*32] = MAPBLOCK_IDX + 2;
-        coll_map[(*col_idx)*COLUMN_HEIGHT + idx + i] = 3; // Obstacles take 2 bullets to destroy
+        coll_map[(*col_idx)*COLUMN_HEIGHT + idx + i] = 1; 
       }
     }
   }

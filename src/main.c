@@ -26,6 +26,7 @@ uint8_t playtime_seconds;
 uint8_t playtime_minutes;
 uint8_t playtime_hours;
 uint8_t game_paused;
+uint16_t score;
 
 void increment_score_isr(void){
   if (game_paused){
@@ -161,25 +162,43 @@ void fadein(void){
   }
 }
 
-void score2tile(uint8_t* score_time_tiles, uint8_t colon_offset){
+void score2tile(uint8_t* score_time_tiles, uint8_t colon_offset, uint8_t show_time){
   uint8_t tens;
 
-  // Seconds
-  tens = playtime_seconds/10;
-  score_time_tiles[7] = (playtime_seconds - 10*tens) + 0x01;
-  score_time_tiles[6] = tens + 0x01; 
-  score_time_tiles[5] = colon_offset;
-  
-  // Minutes
-  tens = playtime_minutes/10;
-  score_time_tiles[4] = (playtime_minutes - 10*tens) + 0x01;
-  score_time_tiles[3] = tens + 0x01; 
-  
-  // Hours
-  tens = playtime_hours/10;
-  score_time_tiles[2] = colon_offset;
-  score_time_tiles[1] = (playtime_hours - 10*tens) + 0x01;
-  score_time_tiles[0] = tens + 0x01; 
+  if (show_time){
+    // Seconds
+    tens = playtime_seconds/10;
+    score_time_tiles[7] = (playtime_seconds - 10*tens) + 0x01;
+    score_time_tiles[6] = tens + 0x01; 
+    score_time_tiles[5] = colon_offset;
+    
+    // Minutes
+    tens = playtime_minutes/10;
+    score_time_tiles[4] = (playtime_minutes - 10*tens) + 0x01;
+    score_time_tiles[3] = tens + 0x01; 
+    
+    // Hours
+    tens = playtime_hours/10;
+    score_time_tiles[2] = colon_offset;
+    score_time_tiles[1] = (playtime_hours - 10*tens) + 0x01;
+    score_time_tiles[0] = tens + 0x01; 
+  }
+  else {
+    uint8_t tenk = score/10000;
+    uint8_t onek = (score - tenk*10000) / 1000;
+    uint8_t oneh = (score - tenk*10000 - onek*1000) / 100;
+    tens = (score - tenk*10000 - onek*1000 - oneh*100) / 10;
+    uint8_t single = (score - tenk*10000 - onek*1000 - oneh*100 - tens*10);
+
+    score_time_tiles[0] = 0;
+    score_time_tiles[1] = 0;
+    score_time_tiles[2] = 0;
+    score_time_tiles[3] = tenk + 0x01;
+    score_time_tiles[4] = onek + 0x1;
+    score_time_tiles[5] = oneh + 0x1;
+    score_time_tiles[6] = tens + 0x1;
+    score_time_tiles[7] = single + 0x1;
+  }
   
   set_win_tiles(12, 0, 8, 1, score_time_tiles);
 }
@@ -314,6 +333,10 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
         // Replace obstacle tile and remove collision
         bkg_map[bkg_idx_topl] = 0;
         coll_map[cm_idx_topl] = 0;
+
+        if (collision_block == MAPBLOCK_IDX + 2){
+          score += 2;
+        }
       }
       else {
         coll_map[cm_idx_topl] = block_health;
@@ -357,6 +380,10 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
         // Replace obstacle tile and remove collision
         bkg_map[bkg_idx_topr] = 0;
         coll_map[cm_idx_topr] = 0;
+
+        if (collision_block == MAPBLOCK_IDX + 2){
+          score += 2;
+        }
       }
       else {
         coll_map[cm_idx_topr] = block_health;
@@ -368,7 +395,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       coll_map[cm_idx_topr] = 0;
     }
   }
-  else if(coll_map[cm_idx_botl] > 0){
+  else if ((player_sprite) && (coll_map[cm_idx_botl] > 0)){
     collision = coll_map[cm_idx_botl];
     collision_block = bkg_map[bkg_idx_botl];
 
@@ -400,6 +427,10 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
         // Replace obstacle tile and remove collision
         bkg_map[bkg_idx_botl] = 0;
         coll_map[cm_idx_botl] = 0;
+
+        if (collision_block == MAPBLOCK_IDX + 2){
+          score += 2;
+        }
       }
       else {
         coll_map[cm_idx_botl] = block_health;
@@ -411,7 +442,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       coll_map[cm_idx_botl] = 0;
     }
   } 
-  else if (coll_map[cm_idx_botr] > 0){
+  else if ((player_sprite) && (coll_map[cm_idx_botr] > 0)){
     collision = coll_map[cm_idx_botr];
     collision_block = bkg_map[bkg_idx_botr];
 
@@ -443,6 +474,10 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
         // Replace obstacle tile and remove collision
         bkg_map[bkg_idx_botr] = 0;
         coll_map[cm_idx_botr] = 0;
+
+        if (collision_block == MAPBLOCK_IDX + 2){
+          score += 2;
+        }
       }
       else {
         coll_map[cm_idx_botr] = block_health;
@@ -494,7 +529,7 @@ void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_
   }
   else {
     progressbar_tiles[1] = progressbar_tilemap_offset + 5; // Clear bottom 2 tiles 
-    progressbar_tiles[0] = progressbar_tilemap_offset + 4;
+    progressbar_tiles[0] = progressbar_tilemap_offset + 1;
   }
   set_win_tiles(0, 0, 8, 1, progressbar_tiles);
 
@@ -569,6 +604,7 @@ void main(void){
   uint8_t bomb_tiles[2];
   uint8_t progressbar_tiles[8];
   uint8_t *score_time_tiles = calloc(8, sizeof(uint8_t));
+  uint8_t show_time;
 
   struct Sprite player;
   /**
@@ -631,6 +667,7 @@ void main(void){
   
   while (1){
     // Load the window contents
+    show_time = 1;
     bullets_arr_idx = 0;
     n_bullets = MAX_BULLETS;
     n_bombs = MAX_BOMBS;
@@ -762,8 +799,9 @@ void main(void){
     for (int i=0; i < 8; i++){
       score_time_tiles[i] = 0;
     }
+    score = 0;
 
-    score2tile(score_time_tiles, extra_font_offset);
+    score2tile(score_time_tiles, extra_font_offset, show_time);
 
     while(1) {
       current_input = joypad();
@@ -783,6 +821,11 @@ void main(void){
         hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
         damage_animation_state = SHOWN;
         game_paused = 0;
+      }
+
+      if (KEY_PRESSED(J_SELECT)){
+        waitpadup();
+        show_time = ~(show_time) & 0x1;
       }
 
       if (!KEY_PRESSED(J_UP) && !KEY_PRESSED(J_DOWN) && \
@@ -1091,6 +1134,7 @@ void main(void){
         copy_bkgmap_to_vram = true;
 
         ++col_count;
+
         // Add a bullet every few columns we scroll.
         if (col_count % 2 == 0 && n_bullets < MAX_BULLETS) {
           ++n_bullets;
@@ -1099,6 +1143,7 @@ void main(void){
         if (col_count == 20) {
           col_count = 0;
           ++screen_count;
+          score += 5;
 
           // Add a bomb every few screens we scroll.
           if (screen_count % 3 == 0 && n_bombs < MAX_BOMBS) {
@@ -1140,7 +1185,7 @@ void main(void){
       // Wait for frame to finish drawing
       vsync();
       
-      score2tile(score_time_tiles, extra_font_offset);
+      score2tile(score_time_tiles, extra_font_offset, show_time);
       if (copy_bkgmap_to_vram){
         // Write the entire map to VRAM
         set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
