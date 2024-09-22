@@ -12,7 +12,7 @@ LCC	= $(GBDK_HOME)bin/lcc
 # "make pocket" and "make pocket-clean"
 TARGETS = gb pocket
 
-LCCFLAGS_gb = -Wa-l -Wl-m -Wm-yoA -Wm-yt0x1B -Wf-bo1 -Wf-bo2 -Wb-ext=.rel -Wm-yS
+LCCFLAGS_gb = -Wa-l -Wl-m -Wm-yoA -Wm-yt0x1B -Wf-bo1 -Wf-bo2 -Wb-ext=.rel -Wm-yS -Wm-ya4 
 LCCFLAGS_pocket = $(LCCFLAGS_gb) 
 
 LCCFLAGS += $(LCCFLAGS_$(EXT))
