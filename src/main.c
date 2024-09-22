@@ -500,15 +500,15 @@ void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_
     }
     progressbar_tiles[7] = progressbar_tilemap_offset + 3; // right edge of bar
   }
-  else if (player->health >= 87) {
+  else if (player->health >= 88) {
     progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
     for (i = 1; i < 7; i++){
       progressbar_tiles[i] = progressbar_tilemap_offset + 2; // center of bar
     }
     progressbar_tiles[7] = progressbar_tilemap_offset + 6; // right edge of bar
   }
-  else if (player->health >= 10) {
-    idx = (player->health + 10) / 8;
+  else if (player->health >= 16) {
+    idx = player->health / 12;
     progressbar_tiles[0] = progressbar_tilemap_offset + 1; // left edge of bar
     for (i=1; i < 7; i++){
       if (i < idx){
