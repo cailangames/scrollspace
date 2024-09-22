@@ -586,6 +586,8 @@ void main(void){
   
   // Add hUGE driver to VBL Interrupt handler
   add_VBL(hUGE_dosound);
+
+  // Add score incrementer to VBL interrupt handler.
   add_VBL(increment_score_isr);
 
   /*
@@ -613,18 +615,14 @@ void main(void){
   uint8_t n_bullets;
   uint8_t n_bombs;
 
-  uint8_t gap_w_min;    // Minimum gap width
-  uint8_t gap_w_start;
-  uint8_t obs_w_max;  // Maximum width of obstacles
-  uint8_t gap_row_idx;   // Start of gap
-  uint8_t gap_w; // Gap width
-
   // Collision map. The first 18 elements correspond to the first col in background tile map
-  uint8_t col_idx;   // First column to populate
   uint8_t *coll_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));  // 32x16
   uint8_t *bkg_map = calloc(COLUMN_HEIGHT*32, sizeof(uint8_t));  // 32x16
-  uint8_t new_column[COLUMN_HEIGHT];  // Placeholder for new column array
   bool copy_bkgmap_to_vram; 
+
+  // Map generation variables.
+  struct GenerationState gen_state;
+  uint8_t gen_column_index;  // The index of the next column to generate.
 
   uint8_t current_input;
   uint8_t old_input;
@@ -706,38 +704,12 @@ void main(void){
     bomb_dropped = false;
     shield_active = false;
     active_powerup = GUN;
-
-    /*
-    * Initialize map by filling in the remaining tiles in the 
-    * 32x32 memory space
-    */
-    gap_w_min = 6;    // Minimum gap width
-    gap_w_start = 10;
-    obs_w_max = update_obstacle_max_width(gap_w_min);  // Maximum width of obstacles
-    gap_row_idx = 4;   // Start of gap
-    gap_w = gap_w_start; // Gap width
-    col_idx = 20;   // First column to populate
   
     // Clear collision map and background map
-    for (ii=0; ii<32*COLUMN_HEIGHT;ii++){
+    for (ii=0; ii<32*COLUMN_HEIGHT; ++ii) {
       coll_map[ii] = 0;
       bkg_map[ii] = 0;
     }
-
-    // Collision map. The first 18 elements correspond to the first col in background tile map
-    for (i=0; i<COLUMN_HEIGHT;i++){
-      if ((i >= gap_row_idx) & (i < gap_row_idx+gap_w)){
-        new_column[i] = 0;
-        bkg_map[col_idx + i*32] = 0;
-        coll_map[col_idx*COLUMN_HEIGHT + i] = 0;
-      }
-      else{
-        new_column[i] = MAPBLOCK_IDX;
-        bkg_map[col_idx + i*32] = MAPBLOCK_IDX;
-        coll_map[col_idx*COLUMN_HEIGHT + i] = 1;
-      }
-    }
-    set_bkg_tiles(col_idx, 0, 1, COLUMN_HEIGHT, new_column);
 
     /*
     * Game Looop
@@ -757,6 +729,9 @@ void main(void){
     player_collision = 0;
     bullet_collision = 0;
     damage_animation_state = HIDDEN;
+    gen_state.biome_id = 0;
+    gen_state.biome_column_index = 0;
+    gen_column_index = 20;
 
     waitpad(J_START);
     waitpadup();
@@ -770,9 +745,12 @@ void main(void){
 
     last_bank = CURRENT_BANK;
     SWITCH_ROM(1);
-    for (int i=0; i<11; i++){
-      generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map, bkg_map);
-      set_bkg_tiles(col_idx, 0, 1, COLUMN_HEIGHT, new_column);
+    for (int i = 0; i < 11; ++i) {
+      generate_next_column(&gen_state, coll_map+gen_column_index, bkg_map+gen_column_index);
+      set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+      if (++gen_column_index >= ROW_WIDTH) {
+        gen_column_index = 0;
+      }
     }
     SWITCH_ROM(last_bank);
 
@@ -1122,7 +1100,10 @@ void main(void){
         scroll_count = 0;
         last_bank = CURRENT_BANK;
         SWITCH_ROM(1);
-        generate_new_column(&col_idx, &gap_row_idx, &gap_w, new_column, gap_w_min, obs_w_max, coll_map, bkg_map);
+        generate_next_column(&gen_state, coll_map+gen_column_index, bkg_map+gen_column_index);
+        if (++gen_column_index >= ROW_WIDTH) {
+          gen_column_index = 0;
+        }
         SWITCH_ROM(last_bank);
         copy_bkgmap_to_vram = true;
 

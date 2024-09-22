@@ -1,17 +1,22 @@
+// Code for the procedural map generation.
+
 #ifndef _PROCEDURAL_GENERATION_H_
 #define _PROCEDURAL_GENERATION_H_
 
 #pragma bank 1
 
-#include "common.h"
+#include <gb/gb.h>
+#include <stdint.h>
 
-extern uint8_t update_obstacle_max_width(uint8_t new_gap_w_min) BANKED;
-extern int8_t new_gap_row_idx_offset(void) BANKED;
-extern int8_t new_w_offset(void) BANKED;
-extern uint8_t new_obstacle_idx(uint8_t gap_w, uint8_t gap_row_idx) BANKED;
-extern void generate_new_column(uint8_t *col_idx, uint8_t *gap_row_idx, 
-                         uint8_t *gap_w, uint8_t *new_column, 
-                         uint8_t gap_w_min, uint8_t obs_w_max,
-                         uint8_t *coll_map, uint8_t *bkg_map) BANKED;
-                         
+// Struct to hold state data in between calls to `generate_next_column()`.
+struct GenerationState {
+  uint8_t biome_id;
+  uint8_t biome_column_index;
+};
+
+// Generates the next column and writes the output to collision and background maps.
+// Important: `coll_map` and `bkg_map` should be pointers to the first index of the column that
+// should be generated.
+extern void generate_next_column(struct GenerationState* gen_state, uint8_t* coll_map, uint8_t* bkg_map) BANKED;
+
 #endif
