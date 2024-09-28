@@ -343,54 +343,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
   col_botr = col_topr; 
   idx_botr = col_botr + row_botr*32;
 
-  if (coll_map[idx_topl] > 0){
-    collision = coll_map[idx_topl];
-    collision_block = bkg_map[idx_topl];
-
-    // Check if it is not a power up
-    if (collision < 235){
-      // Apply damage to the background element
-      if (player_sprite){
-        block_health = coll_map[idx_topl] - 2;
-      }
-      else{
-        // Bullet 
-        block_health = coll_map[idx_topl] - 1;
-      }
-
-      if (block_health > 0) {
-        // Hit a wall
-        if (sprite->dir & UP){
-          // Top Left collision detected while sprite is moving up 
-          sprite->y += 8;
-        }
-        if (sprite->dir & LEFT){
-          // Top Left collision detected while sprite is moving up 
-          sprite->x += 8;
-        }
-      }
-
-      if (block_health <= 0) {
-        // Background element destroyed
-        // Replace obstacle tile and remove collision
-        bkg_map[idx_topl] = 0;
-        coll_map[idx_topl] = 0;
-
-        if (collision_block == MAPBLOCK_IDX + 2){
-          score += 2;
-        }
-      }
-      else {
-        coll_map[idx_topl] = block_health;
-      }
-    }
-    else if (player_sprite) {
-      // Pick up power up
-      bkg_map[idx_topl] = 0;
-      coll_map[idx_topl] = 0;
-    }
-  }
-  else if (coll_map[idx_topr] > 0) {
+  if (coll_map[idx_topr] > 0) {
     collision = coll_map[idx_topr]; 
     collision_block = bkg_map[idx_topr];
 
@@ -437,54 +390,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       coll_map[idx_topr] = 0;
     }
   }
-  else if ((player_sprite) && (coll_map[idx_botl] > 0)){
-    collision = coll_map[idx_botl];
-    collision_block = bkg_map[idx_botl];
-
-    // Check if it is not a power up
-    if (collision < 235){
-      // Apply damage to the background element
-      if (player_sprite){
-        block_health = coll_map[idx_botl] - 2;
-      }
-      else{
-        // Bullet 
-        block_health = coll_map[idx_botl] - 1;
-      }
-
-      if (block_health > 0) {
-        // Hit a wall
-        if (sprite->dir & DOWN){
-          // Bottom Left collision detected while sprite is moving down 
-          sprite->y -= 8;
-        }
-        if (sprite->dir & LEFT){
-          // Bottom Left collision detected while sprite is moving down 
-          sprite->x += 8;
-        }
-      }
-
-      if (block_health <= 0) {
-        // Background element destroyed
-        // Replace obstacle tile and remove collision
-        bkg_map[idx_botl] = 0;
-        coll_map[idx_botl] = 0;
-
-        if (collision_block == MAPBLOCK_IDX + 2){
-          score += 2;
-        }
-      }
-      else {
-        coll_map[idx_botl] = block_health;
-      }
-    }
-    else if (player_sprite) {
-      // Pick up power up
-      bkg_map[idx_botl] = 0;
-      coll_map[idx_botl] = 0;
-    }
-  } 
-  else if ((player_sprite) && (coll_map[idx_botr] > 0)){
+  else if (coll_map[idx_botr] > 0){
     collision = coll_map[idx_botr];
     collision_block = bkg_map[idx_botr];
 
@@ -531,6 +437,102 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
       coll_map[idx_botr] = 0;
     }
   }
+  else if ((player_sprite) && (coll_map[idx_topl] > 0)){
+    // Only the player has left side collisions
+    collision = coll_map[idx_topl];
+    collision_block = bkg_map[idx_topl];
+
+    // Check if it is not a power up
+    if (collision < 235){
+      // Apply damage to the background element
+      if (player_sprite){
+        block_health = coll_map[idx_topl] - 2;
+      }
+      else{
+        // Bullet 
+        block_health = coll_map[idx_topl] - 1;
+      }
+
+      if (block_health > 0) {
+        // Hit a wall
+        if (sprite->dir & UP){
+          // Top Left collision detected while sprite is moving up 
+          sprite->y += 8;
+        }
+        if (sprite->dir & LEFT){
+          // Top Left collision detected while sprite is moving up 
+          sprite->x += 8;
+        }
+      }
+
+      if (block_health <= 0) {
+        // Background element destroyed
+        // Replace obstacle tile and remove collision
+        bkg_map[idx_topl] = 0;
+        coll_map[idx_topl] = 0;
+
+        if (collision_block == MAPBLOCK_IDX + 2){
+          score += 2;
+        }
+      }
+      else {
+        coll_map[idx_topl] = block_health;
+      }
+    }
+    else if (player_sprite) {
+      // Pick up power up
+      bkg_map[idx_topl] = 0;
+      coll_map[idx_topl] = 0;
+    }
+  }
+  else if ((player_sprite) && (coll_map[idx_botl] > 0)){
+    // Only the player has left side collisions
+    collision = coll_map[idx_botl];
+    collision_block = bkg_map[idx_botl];
+
+    // Check if it is not a power up
+    if (collision < 235){
+      // Apply damage to the background element
+      if (player_sprite){
+        block_health = coll_map[idx_botl] - 2;
+      }
+      else{
+        // Bullet 
+        block_health = coll_map[idx_botl] - 1;
+      }
+
+      if (block_health > 0) {
+        // Hit a wall
+        if (sprite->dir & DOWN){
+          // Bottom Left collision detected while sprite is moving down 
+          sprite->y -= 8;
+        }
+        if (sprite->dir & LEFT){
+          // Bottom Left collision detected while sprite is moving down 
+          sprite->x += 8;
+        }
+      }
+
+      if (block_health <= 0) {
+        // Background element destroyed
+        // Replace obstacle tile and remove collision
+        bkg_map[idx_botl] = 0;
+        coll_map[idx_botl] = 0;
+
+        if (collision_block == MAPBLOCK_IDX + 2){
+          score += 2;
+        }
+      }
+      else {
+        coll_map[idx_botl] = block_health;
+      }
+    }
+    else if (player_sprite) {
+      // Pick up power up
+      bkg_map[idx_botl] = 0;
+      coll_map[idx_botl] = 0;
+    }
+  } 
   
   if ((block_health > 2) && (player_sprite)){
     // Move the player sprite after collision
@@ -727,7 +729,7 @@ void main(void){
 
   // Banking variables
   uint8_t last_bank;
-  
+
   while (1){
     // Load the window contents
     show_time = 1;
@@ -792,7 +794,7 @@ void main(void){
     damage_animation_counter = 0; // When hit, skip checking collisions for this long
     col_count = 0;  // counter for number of columns scrolled. Used to calculate screen_count
     screen_count = 0; // number of screens scrolled
-    scroll_frames_per_pixel = 2;
+    scroll_frames_per_pixel = 1;
     scroll_pixels_per_frame = 0;
     scroll_frames_count = 0;
     player_collision = 0;
@@ -854,6 +856,7 @@ void main(void){
       bullet_collision = 0;
       copy_bkgmap_to_vram = false;
 
+
       // D-PAD
       if (KEY_PRESSED(J_START)){
         game_paused = 1;
@@ -879,9 +882,12 @@ void main(void){
         dx = 0;
         dy = 0;
         player.sprite_tile_id = player_sprite_base_id;
+
+        // Reset player collision box to default
         player.cb_x_offset = 1;
         player.cb_y_offset = 2;
         player.cb.h = 4;
+        player.cb.w = 5;
         player.dir = RIGHT;
       }
       else {
@@ -937,11 +943,11 @@ void main(void){
         b.y = player.y;
 
         // Collision box
-        b.cb.x = b.x;
-        b.cb.y = b.y;
         b.cb_x_offset = 0;
-        b.cb_y_offset = 2;
-        b.cb.h = 4;
+        b.cb_y_offset = 0;
+        b.cb.x = b.x + b.cb_x_offset;
+        b.cb.y = b.y + b.cb_y_offset;
+        b.cb.h = 8;
         b.cb.w = 8;
         b.active = true;
         b.lifespan = 20;
@@ -1093,8 +1099,8 @@ void main(void){
         else if (player_collision == 255) {
           if (player.health < 100){
             // Prevent health overflow (int8 maxes at 128)
-            if ((100 - player.health) >= 10){
-              player.health += 10;
+            if ((100 - player.health) >= HEALTH_KIT_VALUE){
+              player.health += HEALTH_KIT_VALUE;
             }
             else {
               player.health += 100 - player.health;
@@ -1130,6 +1136,7 @@ void main(void){
           // Load title screen
           set_bkg_tiles(0,0,20,COLUMN_HEIGHT,game_titlescreen);
           move_bkg(0,0);
+          player_sprite_base_id = 0; // Reset to initial sprite
           player.sprite_tile_id = player_sprite_base_id;
           set_sprite_tile(player.sprite_id, player.sprite_tile_id);
           highscore2tile(high_score_tiles);

@@ -9,6 +9,8 @@
 #define MAPBLOCK_IDX  FONT_OFFSET
 #define MINE_IDX MAPBLOCK_IDX+2
 #define CRATERBLOCK_IDX MAPBLOCK_IDX+3
+#define SHIELD_TILE MAPBLOCK_IDX+6
+#define HEALTH_KIT_TILE MAPBLOCK_IDX+7
 #define SCREEN_T  16
 #define SCREEN_B 144
 #define SCREEN_L 8
@@ -17,10 +19,13 @@
 #define ROW_WIDTH 32
 #define COLUMN_HEIGHT 17
 #define BULLET_ARR_SIZE 9
-#define MAX_BULLETS 3 // Cannot exceed BULLET_ARR_SIZE
+#define MAX_BULLETS 5 // Cannot exceed BULLET_ARR_SIZE
 #define MAX_BOMBS 1
 #define BLOCK_HEALTH 3
 #define MINE_HEALTH 1
+#define SHIELD_HEALTH 254
+#define HELATH_KIT_HEALTH 255
+#define HEALTH_KIT_VALUE 10
 
 enum powerup{
   GUN=0,
