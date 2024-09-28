@@ -2,45 +2,24 @@
 
 #include <gb/gb.h>
 #include <stdint.h>
+#include <rand.h>
 
 #include "common.h"
 #include "procedural_generation.h"
 
-#define BIOME_COUNT 3
-#define COLUMNS_PER_BIOME 20
+// #define BIOME_COUNT 32
+// #define COLUMNS_PER_BIOME 20
 
-#define BIOME_OPEN_AREA 0
-#define BIOME_DOWNWARD_STRIPE 1
-#define BIOME_UPWARD_STRIPE 2
-
-// Data for biome columns.
-// Format: 20 [top, bottom] pairs for each biome
-static const uint8_t biome_columns[BIOME_COUNT][COLUMNS_PER_BIOME * 2] = {
-  /* BIOME_OPEN_AREA */       { 3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13,  3, 13},
-  /* BIOME_DOWNWARD_STRIPE */ { 1,  3,  1,  3,  2,  4,  2,  4,  3,  5,  4,  6,  5,  7,  5,  7,  6,  8,  7,  9,  8, 10,  8, 10,  9, 11, 10, 12, 10, 12, 11, 13, 11, 13, 12, 14, 13, 15, 13, 15},
-  /* BIOME_UPWARD_STRIPE */   {13, 15, 13, 15, 12, 14, 11, 13, 11, 13, 10, 12,  9, 11,  9, 11,  8, 10,  8, 10,  7,  9,  6,  8,  6,  8,  5,  7,  4,  6,  4,  6,  3,  5,  2,  4,  2,  4,  1,  3},
-  // TODO: Inward funnel, outward funnel, stalagmite
-};
-
-// Defines how much variance each "cave" in a column is allowed.
-static const uint8_t biome_variances[BIOME_COUNT] = {
-  /* BIOME_OPEN_AREA */       2,
-  /* BIOME_DOWNWARD_STRIPE */ 2,
-  /* BIOME_UPWARD_STRIPE */   2,
-};
-
-// Defines which biomes are valid after the current biome.
-// TODO: Fix this.
-static const uint8_t next_possible_biomes[BIOME_COUNT][1] = {
-  /* BIOME_OPEN_AREA */       {BIOME_DOWNWARD_STRIPE},
-  /* BIOME_DOWNWARD_STRIPE */ {BIOME_UPWARD_STRIPE},
-  /* BIOME_UPWARD_STRIPE */   {BIOME_OPEN_AREA},
-};
+// #define BIOME_OPEN_AREA 0
+// #define BIOME_DOWNWARD_STRIPE 1
+// #define BIOME_UPWARD_STRIPE 2
 
 void generate_next_column(struct GenerationState* gen_state, uint8_t* coll_map, uint8_t* bkg_map) BANKED {
   // Add tiles to collision and background maps.
   uint8_t cave_top = biome_columns[gen_state->biome_id][gen_state->biome_column_index * 2];
   uint8_t cave_bottom = biome_columns[gen_state->biome_id][gen_state->biome_column_index * 2 + 1];
+  uint16_t n;
+
   for (uint16_t row = 0; row < COLUMN_HEIGHT; ++row) {
     // TODO: Add random variance.
     uint16_t map_index = row*ROW_WIDTH;
@@ -50,9 +29,29 @@ void generate_next_column(struct GenerationState* gen_state, uint8_t* coll_map, 
       bkg_map[map_index] = MAPBLOCK_IDX;
       continue;
     }
-    // Create an empty tile.
-    coll_map[map_index] = 0;
-    bkg_map[map_index] = EMPTY_TILE_IDX;
+
+    n = randw();
+    if (n > 65300){
+      // Create a health tile.
+      coll_map[map_index] = HELATH_KIT_HEALTH;
+      bkg_map[map_index] = HEALTH_KIT_TILE;
+    }
+    else if (n > 65000) {
+      // Create a shield tile.
+      coll_map[map_index] = SHIELD_HEALTH;
+      bkg_map[map_index] = SHIELD_TILE;
+    }
+    else if (n > 55000){
+      // Create a mine tile.
+      coll_map[map_index] = MINE_HEALTH;
+      bkg_map[map_index] = MINE_IDX;
+    }
+    else{
+      // Create an empty tile.
+      coll_map[map_index] = 0;
+      bkg_map[map_index] = EMPTY_TILE_IDX;
+
+    }
   }
 
   // Update GenerationState.
@@ -61,3 +60,82 @@ void generate_next_column(struct GenerationState* gen_state, uint8_t* coll_map, 
     gen_state->biome_column_index = 0;
   }
 }
+
+// Defines how much variance each "cave" in a column is allowed.
+static const uint8_t biome_variances[BIOME_COUNT] = {
+  /* BIOME_OPEN_AREA */       2,
+  /* BIOME_DOWNWARD_STRIPE */ 2,
+  /* BIOME_UPWARD_STRIPE */   2,
+};
+
+
+// Data for biome columns.
+// Format: 20 [top, #bottom] pairs for each biome
+// static const uint8_t biome_columns[BIOME_COUNT][COLUMNS_PER_BIOME * 2] = {
+    // {7, 9, 7, 9, 8, 10, 9, 11, 10, 12, 10, 12, 11, 13, 11, 13, 11, 13, 12, 14, 11, 13, 11, 14, 11, 15, 11, 15, 11, 15, 10, 14, 9, 13, 8, 12, 7, 11, 6, 10},
+    // {6, 10, 7, 11, 7, 11, 7, 11, 8, 12, 7, 11, 6, 10, 7, 11, 6, 10, 6, 10, 5, 9, 6, 10, 6, 10, 6, 10, 5, 9, 5, 9, 4, 8, 5, 9, 6, 10, 7, 11},
+    // {8, 12, 8, 12, 8, 12, 9, 13, 9, 13, 9, 13, 8, 12, 8, 12, 9, 13, 9, 13, 9, 13, 10, 14, 11, 15, 10, 14, 9, 13, 8, 12, 7, 11, 6, 10, 7, 11, 6, 10},
+    // {5, 9, 5, 9, 5, 9, 4, 8, 3, 7, 3, 7, 2, 6, 1, 5, 2, 6, 2, 6, 3, 7, 3, 7, 2, 6, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5},
+    // {1, 5, 1, 4, 1, 5, 2, 6, 1, 5, 1, 5, 1, 5, 1, 5, 2, 6, 2, 5, 2, 5, 1, 4, 2, 5, 3, 6, 3, 7, 2, 6, 3, 7, 3, 7, 3, 7, 3, 7},
+    // {2, 6, 2, 6, 3, 7, 3, 7, 2, 6, 2, 6, 2, 6, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 2, 6, 2, 6, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5},
+    // {1, 5, 2, 6, 3, 7, 3, 7, 3, 7, 4, 8, 4, 8, 3, 7, 3, 7, 4, 8, 3, 7, 2, 6, 2, 6, 1, 5, 1, 5, 1, 5, 1, 5, 2, 6, 1, 5, 1, 5},
+    // {1, 5, 1, 5, 2, 6, 3, 7, 4, 8, 5, 9, 6, 10, 7, 11, 7, 11, 6, 10, 7, 11, 7, 11, 7, 11, 7, 10, 6, 9, 7, 10, 8, 11, 8, 11, 7, 10, 7, 9},
+    // {7, 10, 8, 11, 9, 12, 9, 12, 9, 12, 8, 11, 8, 12, 7, 11, 8, 12, 8, 12, 7, 11, 7, 11, 7, 11, 6, 10, 5, 9, 5, 9, 5, 9, 4, 8, 4, 8, 4, 8},
+    // {3, 7, 3, 7, 4, 8, 4, 7, 5, 8, 6, 9, 6, 9, 6, 10, 7, 11, 6, 10, 6, 10, 7, 11, 7, 11, 7, 11, 7, 11, 7, 11, 6, 10, 6, 10, 6, 10, 5, 9},
+    // {6, 10, 5, 9, 6, 10, 6, 9, 6, 9, 7, 10, 7, 9, 8, 10, 8, 11, 9, 12, 9, 12, 9, 12, 10, 13, 11, 14, 12, 15, 13, 16, 13, 16, 12, 15, 13, 16, 12, 15},
+    // {11, 14, 11, 14, 11, 14, 12, 15, 13, 17, 13, 17, 12, 16, 12, 16, 12, 16, 13, 17, 13, 17, 12, 16, 12, 16, 11, 15, 12, 15, 12, 14, 12, 14, 11, 13, 10, 12, 11, 13},
+    // {12, 14, 12, 15, 12, 15, 11, 14, 11, 14, 12, 15, 12, 16, 12, 16, 11, 15, 11, 14, 11, 14, 12, 15, 13, 16, 13, 16, 12, 15, 12, 16, 12, 16, 12, 15, 12, 16, 12, 16},
+    // {11, 15, 10, 14, 10, 14, 11, 15, 11, 14, 11, 14, 11, 14, 11, 13, 10, 12, 10, 12, 10, 12, 10, 13, 9, 12, 9, 13, 10, 14, 9, 13, 8, 12, 8, 12, 7, 11, 7, 11},
+    // {7, 11, 7, 10, 6, 9, 6, 9, 5, 9, 6, 10, 6, 10, 6, 10, 6, 9, 7, 10, 6, 9, 6, 9, 5, 8, 5, 9, 6, 10, 5, 9, 5, 9, 4, 8, 3, 7, 2, 6},
+    // {2, 6, 3, 7, 3, 7, 2, 6, 2, 6, 3, 7, 4, 8, 5, 9, 6, 10, 7, 11, 6, 10, 7, 11, 8, 12, 8, 12, 8, 12, 8, 12, 8, 12, 8, 12, 8, 12, 9, 13},
+    // {9, 13, 9, 13, 9, 13, 9, 13, 10, 14, 10, 14, 10, 14, 10, 14, 11, 15, 11, 15, 11, 15, 12, 16, 12, 16, 12, 16, 11, 15, 11, 15, 11, 15, 11, 15, 11, 15, 10, 14},
+    // {10, 14, 11, 15, 12, 16, 13, 17, 13, 17, 13, 17, 13, 17, 13, 17, 13, 17, 13, 17, 13, 17, 13, 17, 13, 17, 13, 17, 12, 16, 11, 15, 12, 16, 11, 15, 11, 14, 11, 14},
+    // {11, 14, 11, 14, 11, 15, 10, 14, 10, 13, 10, 13, 10, 14, 11, 15, 10, 14, 10, 14, 10, 14, 9, 13, 9, 13, 9, 13, 9, 13, 9, 13, 8, 12, 7, 11, 6, 10, 5, 9},
+    // {6, 10, 6, 10, 6, 10, 5, 9, 4, 8, 4, 8, 5, 9, 6, 10, 6, 10, 5, 9, 5, 9, 5, 8, 5, 8, 4, 7, 5, 8, 5, 9, 5, 9, 5, 9, 6, 10, 7, 11},
+    // {7, 11, 7, 10, 7, 11, 6, 10, 6, 10, 6, 10, 6, 10, 6, 10, 7, 10, 7, 10, 7, 11, 7, 10, 7, 10, 7, 10, 7, 10, 8, 11, 9, 12, 9, 13, 8, 12, 7, 11},
+    // {7, 11, 7, 11, 7, 11, 7, 11, 6, 10, 5, 9, 4, 8, 4, 8, 4, 8, 4, 8, 4, 8, 5, 9, 4, 8, 3, 7, 2, 6, 3, 7, 2, 6, 2, 6, 2, 5, 3, 6},
+    // {3, 7, 3, 7, 3, 7, 3, 7, 3, 7, 3, 7, 3, 7, 4, 8, 4, 8, 3, 7, 3, 7, 3, 7, 3, 7, 4, 8, 4, 8, 5, 9, 4, 8, 5, 9, 5, 9, 6, 10},
+    // {7, 11, 6, 10, 7, 11, 7, 11, 6, 10, 7, 11, 7, 11, 8, 12, 9, 13, 10, 14, 9, 13, 9, 13, 10, 14, 10, 14, 11, 15, 11, 15, 11, 15, 11, 15, 12, 16, 11, 15},
+    // {10, 13, 10, 13, 11, 14, 11, 15, 11, 15, 11, 15, 12, 16, 12, 16, 12, 16, 12, 16, 12, 16, 13, 17, 13, 17, 12, 15, 13, 16, 13, 16, 12, 15, 11, 13, 11, 13, 10, 12},
+    // {9, 11, 10, 12, 9, 11, 9, 12, 9, 13, 9, 13, 8, 12, 8, 12, 7, 11, 7, 11, 7, 11, 7, 11, 7, 11, 6, 10, 6, 10, 7, 11, 7, 11, 7, 11, 7, 11, 6, 10},
+    // {6, 10, 5, 8, 4, 7, 5, 8, 4, 7, 3, 6, 3, 5, 4, 6, 4, 7, 4, 6, 3, 5, 4, 6, 3, 5, 2, 4, 3, 5, 3, 6, 3, 6, 3, 6, 3, 6, 3, 7},
+    // {3, 7, 3, 7, 4, 8, 4, 8, 5, 9, 5, 9, 6, 10, 5, 9, 5, 9, 4, 8, 4, 8, 3, 7, 4, 8, 4, 8, 5, 9, 6, 10, 7, 11, 7, 11, 6, 10, 5, 9},
+    // {4, 8, 3, 7, 4, 8, 5, 9, 5, 8, 6, 9, 6, 10, 6, 10, 7, 11, 7, 11, 6, 10, 5, 9, 6, 10, 6, 10, 6, 10, 6, 10, 6, 10, 5, 9, 5, 9, 5, 9},
+    // {6, 10, 5, 9, 5, 9, 4, 8, 4, 8, 4, 8, 5, 9, 4, 8, 3, 7, 4, 8, 3, 7, 3, 6, 3, 6, 4, 7, 4, 7, 4, 8, 3, 7, 3, 7, 4, 8, 5, 9},
+    // {5, 9, 4, 8, 4, 8, 4, 8, 4, 8, 4, 8, 4, 7, 4, 7, 4, 7, 3, 6, 2, 5, 3, 6, 4, 7, 4, 7, 4, 7, 5, 8, 5, 9, 5, 9, 5, 9, 6, 10},
+    // {5, 9, 5, 9, 6, 10, 6, 10, 6, 10, 5, 9, 5, 9, 5, 9, 4, 8, 5, 9, 5, 8, 5, 9, 6, 10, 5, 9, 5, 9, 4, 8, 5, 9, 5, 9, 5, 9, 5, 9}
+// };
+// static const uint8_t next_possible_biomes[BIOME_COUNT][1] = {
+    // {1},
+    // {2},
+    // {3},
+    // {4},
+    // {5},
+    // {6},
+    // {7},
+    // {8},
+    // {9},
+    // {10},
+    // {11},
+    // {12},
+    // {13},
+    // {14},
+    // {15},
+    // {16},
+    // {17},
+    // {18},
+    // {19},
+    // {20},
+    // {21},
+    // {22},
+    // {23},
+    // {24},
+    // {25},
+    // {26},
+    // {27},
+    // {28},
+    // {29},
+    // {30},
+    // {31},
+    // {0}
+// };
