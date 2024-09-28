@@ -21,8 +21,8 @@
 #define BULLET_ARR_SIZE 9
 #define MAX_BULLETS 5 // Cannot exceed BULLET_ARR_SIZE
 #define MAX_BOMBS 1
-#define BLOCK_HEALTH 3
-#define MINE_HEALTH 1
+#define BLOCK_HEALTH 4
+#define MINE_HEALTH 2
 #define SHIELD_HEALTH 254
 #define HELATH_KIT_HEALTH 255
 #define HEALTH_KIT_VALUE 10

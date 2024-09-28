@@ -107,6 +107,23 @@ void play_bomb_sound(void){
 
 }
 
+void play_shield_sound(void){
+  // Stop Channel before playing FX
+  hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
+
+  NR42_REG = 0x0;
+  NR44_REG = 0x0;
+
+  // Play FX
+  NR41_REG = 0X3F;
+  NR42_REG = 0X74;
+  NR43_REG = 0X2C;
+  NR44_REG = 0XC0;
+
+  // Restart channel
+  hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
+
+}
 void wait(uint8_t n){
   uint8_t i;
   for (i=0; i < n; i++){
@@ -1114,6 +1131,7 @@ void main(void){
           damage_animation_counter = 8*20;
           player_sprite_base_id += 10;
           player_collision = 0;
+          play_shield_sound();
         }
 
         if (player.health <= 0){
