@@ -2,6 +2,7 @@
 
 #include <gb/gb.h>
 #include <stdint.h>
+#include <rand.h>
 
 #include "common.h"
 #include "procedural_generation.h"
@@ -41,6 +42,8 @@ void generate_next_column(struct GenerationState* gen_state, uint8_t* coll_map, 
   // Add tiles to collision and background maps.
   uint8_t cave_top = biome_columns[gen_state->biome_id][gen_state->biome_column_index * 2];
   uint8_t cave_bottom = biome_columns[gen_state->biome_id][gen_state->biome_column_index * 2 + 1];
+  uint16_t n;
+
   for (uint16_t row = 0; row < COLUMN_HEIGHT; ++row) {
     // TODO: Add random variance.
     uint16_t map_index = row*ROW_WIDTH;
@@ -50,9 +53,28 @@ void generate_next_column(struct GenerationState* gen_state, uint8_t* coll_map, 
       bkg_map[map_index] = MAPBLOCK_IDX;
       continue;
     }
-    // Create an empty tile.
-    coll_map[map_index] = 0;
-    bkg_map[map_index] = EMPTY_TILE_IDX;
+
+    n = randw();
+    if (n > 65300){
+      // Create a health tile.
+      coll_map[map_index] = HELATH_KIT_HEALTH;
+      bkg_map[map_index] = HEALTH_KIT_TILE;
+    }
+    else if (n > 65000) {
+      // Create a shield tile.
+      coll_map[map_index] = SHIELD_HEALTH;
+      bkg_map[map_index] = SHIELD_TILE;
+    }
+    else if (n > 55000){
+      // Create a mine tile.
+      coll_map[map_index] = MINE_HEALTH;
+      bkg_map[map_index] = MINE_IDX;
+    }
+    else{
+      // Create an empty tile.
+      coll_map[map_index] = 0;
+      bkg_map[map_index] = EMPTY_TILE_IDX;
+    }
   }
 
   // Update GenerationState.
