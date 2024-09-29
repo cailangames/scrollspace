@@ -107,6 +107,19 @@ void play_bomb_sound(void){
 
 }
 
+void play_gameover_sound(void){
+  // Stop Channel before playing FX
+  NR12_REG = 0x0;
+  NR14_REG = 0x0;
+
+  // Play FX
+  NR10_REG = 0x1C;
+  NR11_REG = 0X89;
+  NR12_REG = 0XF7;
+  NR13_REG = 0X75;
+  NR14_REG = 0X86;
+}
+
 void play_shield_sound(void){
   // Stop Channel before playing FX
   hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
@@ -124,11 +137,147 @@ void play_shield_sound(void){
   hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
 
 }
+
 void wait(uint8_t n){
   uint8_t i;
   for (i=0; i < n; i++){
     wait_vbl_done();
   }
+}
+
+void gameover_screen(uint8_t* score_time_tiles, uint8_t colon_offset, uint16_t *high_score_ptr){
+  uint8_t last_playtime_seconds;
+  uint8_t last_playtime_minutes;
+  uint8_t last_playtime_hours;
+  uint16_t last_score;
+  uint8_t new_highscore;
+
+  uint8_t tenk;
+  uint8_t onek;
+  uint8_t oneh;
+  uint8_t tens;
+  uint8_t single;
+
+  set_bkg_tiles(0,0,20,18,gameover_titlescreen);
+  move_bkg(0,0);
+
+  // Last Best Score
+  last_score = high_score_ptr[0];
+  last_playtime_hours = high_score_ptr[1] >> 8;
+  last_playtime_minutes = high_score_ptr[1] & 0xFF;
+  last_playtime_seconds = high_score_ptr[2] >> 8;
+
+  // Current Score
+  // Seconds
+  tens = playtime_seconds/10;
+  score_time_tiles[7] = (playtime_seconds - 10*tens) + 0x01;
+  score_time_tiles[6] = tens + 0x01; 
+  score_time_tiles[5] = colon_offset;
+  
+  // Minutes
+  tens = playtime_minutes/10;
+  score_time_tiles[4] = (playtime_minutes - 10*tens) + 0x01;
+  score_time_tiles[3] = tens + 0x01; 
+  
+  // Hours
+  tens = playtime_hours/10;
+  score_time_tiles[2] = colon_offset;
+  score_time_tiles[1] = (playtime_hours - 10*tens) + 0x01;
+  score_time_tiles[0] = tens + 0x01; 
+
+  set_bkg_tiles(6, 5, 8, 1, score_time_tiles);
+
+  new_highscore = 0;
+  if (last_playtime_hours < playtime_hours){
+    new_highscore = 1;
+  }
+  else if (last_playtime_minutes < playtime_minutes){
+    new_highscore = 1;
+  }
+  else if (last_playtime_seconds < playtime_seconds){
+    new_highscore = 1;
+  }
+
+  if (new_highscore == 1){
+    //Write the current score as the new high score
+    set_bkg_tiles(6, 10, 8, 1, score_time_tiles);
+
+    // Update in RAM
+    high_score_ptr[1] = playtime_hours << 8 | playtime_minutes;
+    high_score_ptr[2] = playtime_seconds << 8;
+  }
+  else{
+    // Write the score from RAM
+    // Seconds
+    tens = last_playtime_seconds/10;
+    score_time_tiles[7] = (last_playtime_seconds - 10*tens) + 0x01;
+    score_time_tiles[6] = tens + 0x01; 
+    score_time_tiles[5] = colon_offset;
+    
+    // Minutes
+    tens = last_playtime_minutes/10;
+    score_time_tiles[4] = (last_playtime_minutes - 10*tens) + 0x01;
+    score_time_tiles[3] = tens + 0x01; 
+    
+    // Hours
+    tens = last_playtime_hours/10;
+    score_time_tiles[2] = colon_offset;
+    score_time_tiles[1] = (last_playtime_hours - 10*tens) + 0x01;
+    score_time_tiles[0] = tens + 0x01; 
+
+    set_bkg_tiles(6, 10, 8, 1, score_time_tiles);
+  }
+
+  tenk = score/10000;
+  onek = (score - tenk*10000) / 1000;
+  oneh = (score - tenk*10000 - onek*1000) / 100;
+  tens = (score - tenk*10000 - onek*1000 - oneh*100) / 10;
+  single = (score - tenk*10000 - onek*1000 - oneh*100 - tens*10);
+
+  score_time_tiles[0] = 0;
+  score_time_tiles[1] = 0;
+  score_time_tiles[2] = 0;
+  score_time_tiles[3] = tenk + 0x01;
+  score_time_tiles[4] = onek + 0x1;
+  score_time_tiles[5] = oneh + 0x1;
+  score_time_tiles[6] = tens + 0x1;
+  score_time_tiles[7] = single + 0x1;
+  
+  set_bkg_tiles(6, 6, 8, 1, score_time_tiles);
+
+  if (last_score < score){
+    //Write the current score as the new high score
+    set_bkg_tiles(6, 11, 8, 1, score_time_tiles);
+
+    // Update in RAM
+    high_score_ptr[0] = score;
+  }
+  else{
+    // Write the score from RAM
+    tenk = last_score/10000;
+    onek = (last_score - tenk*10000) / 1000;
+    oneh = (last_score - tenk*10000 - onek*1000) / 100;
+    tens = (last_score - tenk*10000 - onek*1000 - oneh*100) / 10;
+    single = (last_score - tenk*10000 - onek*1000 - oneh*100 - tens*10);
+
+    score_time_tiles[0] = 0;
+    score_time_tiles[1] = 0;
+    score_time_tiles[2] = 0;
+    score_time_tiles[3] = tenk + 0x01;
+    score_time_tiles[4] = onek + 0x1;
+    score_time_tiles[5] = oneh + 0x1;
+    score_time_tiles[6] = tens + 0x1;
+    score_time_tiles[7] = single + 0x1;
+    
+    set_bkg_tiles(6, 11, 8, 1, score_time_tiles);
+
+  }
+  SHOW_BKG;
+  fadein();
+  waitpad(J_START);
+  waitpadup();
+  fadeout();
+  HIDE_BKG;
 }
 
 void fadeout(void){
@@ -179,13 +328,20 @@ void fadein(void){
   }
 }
 
-void highscore2tile(uint8_t* high_score_tiles){
+void highscore2tile(uint8_t* high_score_tiles, uint16_t *high_score_ptr){
   uint8_t tenk;
   uint8_t onek;
   uint8_t oneh;
   uint8_t tens;
   uint8_t single;
 
+  // Best Score from RAM
+  score = high_score_ptr[0];
+  playtime_hours = high_score_ptr[1] >> 8;
+  playtime_minutes = high_score_ptr[1] & 0xFF;
+  playtime_seconds = high_score_ptr[2] >> 8;
+
+  // Write out BEST
   high_score_tiles[0] = 0xC;
   high_score_tiles[1] = 0xF;
   high_score_tiles[2] = 0x1D;
@@ -683,13 +839,9 @@ void main(void){
     high_score_ptr[2] = 0;
   }
   else{
-    SHOW_WIN;
-    score = high_score_ptr[0];
-    playtime_hours = high_score_ptr[1] >> 8;
-    playtime_minutes = high_score_ptr[1] & 0xFF;
-    playtime_seconds = high_score_ptr[2] >> 8;
     set_win_tiles(0, 0, 20, 1, blank_win_tiles); 
-    highscore2tile(high_score_tiles);
+    highscore2tile(high_score_tiles, high_score_ptr);
+    SHOW_WIN;
   }
 
   struct Sprite player;
@@ -1135,12 +1287,7 @@ void main(void){
         }
 
         if (player.health <= 0){
-          // End game in the future
-          // For now, reset to full health
           game_paused = 1;
-          high_score_ptr[0] = score;
-          high_score_ptr[1] = playtime_hours << 8 | playtime_minutes;
-          high_score_ptr[2] = playtime_seconds << 8;
 
           hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
           hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
@@ -1148,16 +1295,21 @@ void main(void){
           set_sprite_tile(player.sprite_id, player.sprite_tile_id);
           wait(10);
           HIDE_BKG;
+          play_gameover_sound();
           fadeout();
           HIDE_SPRITES;
-          // HIDE_WIN;
+
+          gameover_screen(score_time_tiles, extra_font_offset, high_score_ptr);
+
           // Load title screen
           set_bkg_tiles(0,0,20,COLUMN_HEIGHT,game_titlescreen);
           move_bkg(0,0);
           player_sprite_base_id = 0; // Reset to initial sprite
           player.sprite_tile_id = player_sprite_base_id;
           set_sprite_tile(player.sprite_id, player.sprite_tile_id);
-          highscore2tile(high_score_tiles);
+          set_win_tiles(0, 0, 20, 1, blank_win_tiles); 
+          highscore2tile(high_score_tiles, high_score_ptr);
+          SHOW_WIN;
           SHOW_BKG;
           wait(60);
           fadein();
