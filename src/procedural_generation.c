@@ -33,12 +33,12 @@ void generate_next_column(struct GenerationState* gen_state, uint8_t* coll_map, 
     n = randw();
     if (n > 65300){
       // Create a health tile.
-      coll_map[map_index] = HELATH_KIT_HEALTH;
+      coll_map[map_index] = HELATH_KIT_ID;
       bkg_map[map_index] = HEALTH_KIT_TILE;
     }
     else if (n > 65000) {
       // Create a shield tile.
-      coll_map[map_index] = SHIELD_HEALTH;
+      coll_map[map_index] = SHIELD_ID;
       bkg_map[map_index] = SHIELD_TILE;
     }
     else if (n > 55000){

@@ -1,2 +1,4 @@
 build/
 obj/
+*.mp3
+*.wav

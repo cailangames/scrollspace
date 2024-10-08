@@ -798,7 +798,7 @@ void main(void){
    * Load music 
    */
   extern const hUGESong_t main_song;
-  // hUGE_init(&main_song);
+  extern const hUGESong_t intro_song;
 
   NR52_REG = 0x80;
   NR51_REG = 0xFF;
@@ -973,16 +973,26 @@ void main(void){
     gen_state.biome_column_index = 0;
     gen_column_index = 20;
 
+    hUGE_init(&intro_song);
+    hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
+    hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
+    hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
     waitpad(J_START);
     waitpadup();
     
     set_win_tiles(0, 0, 20, 1, blank_win_tiles); 
     set_win_tiles(9, 0, 2, 1, bomb_tiles);
     set_win_tiles(0, 0, 8, 1, progressbar_tiles);
+    hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
+    hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
+    hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
+
+    wait(10);
     
     hUGE_init(&main_song);
     hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
     hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
+    hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
 
     SHOW_SPRITES;
     SHOW_WIN;
@@ -1031,11 +1041,13 @@ void main(void){
         game_paused = 1;
         hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
         hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
+        hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
         waitpadup();
         waitpad(J_START);
         waitpadup();
         hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
         hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
+        hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
         damage_animation_state = SHOWN;
         game_paused = 0;
       }
@@ -1117,7 +1129,7 @@ void main(void){
         b.cb.x = b.x + b.cb_x_offset;
         b.cb.y = b.y + b.cb_y_offset;
         b.cb.h = 8;
-        b.cb.w = 8;
+        b.cb.w = 4;
         b.active = true;
         b.lifespan = 20;
 
@@ -1261,15 +1273,23 @@ void main(void){
 
         player_collision = check_collisions(&player, coll_map, bkg_map, true);
         if ((player_collision > 0) && (player_collision < 235)) {
-          player.health -= 5;
-          damage_animation_counter = 16;
+          player.health -= COLLISION_DAMAGE;
+          damage_animation_counter = COLLISION_TIMEOUT;
           player_collision = 1;
         }
-        else if (player_collision == 255) {
+        else if (player_collision == HELATH_KIT_ID) {
           if (player.health < 100){
             // Prevent health overflow (int8 maxes at 128)
             if ((100 - player.health) >= HEALTH_KIT_VALUE){
-              player.health += HEALTH_KIT_VALUE;
+              if(player.health < 50){
+                player.health += 2*HEALTH_KIT_VALUE;
+              }
+              else if (player.health < 20){
+                player.health += 4*HEALTH_KIT_VALUE;
+              }
+              else{
+                player.health += HEALTH_KIT_VALUE;
+              }
             }
             else {
               player.health += 100 - player.health;
@@ -1278,9 +1298,9 @@ void main(void){
           player_collision = 1;
           play_health_sound();
         }
-        else if (player_collision == 254) {
+        else if (player_collision == SHIELD_ID) {
           shield_active = true;
-          damage_animation_counter = 8*20;
+          damage_animation_counter = SHIELD_DURATION;
           player_sprite_base_id += 10;
           player_collision = 0;
           play_shield_sound();
@@ -1291,6 +1311,7 @@ void main(void){
 
           hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
           hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
+          hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
           player.sprite_tile_id = 9;
           set_sprite_tile(player.sprite_id, player.sprite_tile_id);
           wait(10);
