@@ -148,11 +148,14 @@ void wait(uint8_t n){
 }
 
 void gameover_screen(uint8_t* score_time_tiles, uint8_t colon_offset, uint16_t *high_score_ptr){
-  uint8_t last_playtime_seconds;
-  uint8_t last_playtime_minutes;
-  uint8_t last_playtime_hours;
+  uint16_t last_playtime_total_seconds;
+  uint16_t current_playtime_total_seconds;
   uint16_t last_score;
   uint8_t new_highscore;
+
+  uint8_t last_playtime_hours;
+  uint8_t last_playtime_minutes;
+  uint8_t last_playtime_seconds;
 
   uint8_t tenk;
   uint8_t onek;
@@ -168,8 +171,10 @@ void gameover_screen(uint8_t* score_time_tiles, uint8_t colon_offset, uint16_t *
   last_playtime_hours = high_score_ptr[1] >> 8;
   last_playtime_minutes = high_score_ptr[1] & 0xFF;
   last_playtime_seconds = high_score_ptr[2] >> 8;
+  last_playtime_total_seconds = last_playtime_hours*3600 + last_playtime_minutes*60 + last_playtime_seconds;
 
   // Current Score
+  current_playtime_total_seconds = playtime_hours*3600 + playtime_minutes*60 + playtime_seconds;
   // Seconds
   tens = playtime_seconds/10;
   score_time_tiles[7] = (playtime_seconds - 10*tens) + 0x01;
@@ -189,16 +194,7 @@ void gameover_screen(uint8_t* score_time_tiles, uint8_t colon_offset, uint16_t *
 
   set_bkg_tiles(6, 5, 8, 1, score_time_tiles);
 
-  new_highscore = 0;
-  if (last_playtime_hours < playtime_hours){
-    new_highscore = 1;
-  }
-  else if (last_playtime_minutes < playtime_minutes){
-    new_highscore = 1;
-  }
-  else if (last_playtime_seconds < playtime_seconds){
-    new_highscore = 1;
-  }
+  new_highscore = last_playtime_total_seconds < current_playtime_total_seconds;
 
   if (new_highscore == 1){
     //Write the current score as the new high score
@@ -999,7 +995,7 @@ void main(void){
 
     while (1){
       current_input = joypad();
-      if (KEY_FIRST_PRESS(J_UP)){
+      if (KEY_FIRST_PRESS(J_UP) || KEY_FIRST_PRESS(J_RIGHT)){
         if (scroll_pixels_per_frame == 1){
           move_sprite(0, 32, 88);
           scroll_pixels_per_frame = 2;
@@ -1009,7 +1005,7 @@ void main(void){
           scroll_pixels_per_frame = 1;
         }
       }
-      else if (KEY_FIRST_PRESS(J_DOWN)){
+      else if (KEY_FIRST_PRESS(J_DOWN) || KEY_FIRST_PRESS(J_LEFT)){
         if (scroll_pixels_per_frame == 2){
           move_sprite(0, 32, 72);
           scroll_pixels_per_frame = 1;
@@ -1019,7 +1015,7 @@ void main(void){
           scroll_pixels_per_frame = 2;
         }
       }
-      else if (KEY_FIRST_PRESS(J_START)){
+      else if (KEY_FIRST_PRESS(J_START) || KEY_FIRST_PRESS(J_A) || KEY_FIRST_PRESS(J_B)){
         break;
       }
       vsync();
