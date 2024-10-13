@@ -225,8 +225,11 @@ def get_background_data_and_map(im, name, gb_code, offset=37, debug=False):
 #fn_path = "../assets/powerups.png"
 #fn_path = "../assets/player.png"
 #fn_path = "../assets/player_shield.png"
-fn_path = "../assets/progressbar.png"
+#fn_path = "../assets/progressbar.png"
 #fn_path = "../assets/font-extras.png" 
+fn_path = "../assets/tutorial-screen.png" 
+
+tilemap_offset = 57 #37
 
 filename = os.path.splitext(os.path.split(fn_path)[-1])[0].lower()
 filename = filename.replace("-","_")
@@ -272,7 +275,7 @@ if image_type == "sprite":
         f.write(array_string)
 
 else:
-    background_tiles, background_map = get_background_data_and_map(im, filename, gb_code, debug=True)
+    background_tiles, background_map = get_background_data_and_map(im, filename, gb_code, debug=True, offset=tilemap_offset)
     tiles_header = background_tiles.split("\n")[0].replace(" =", ";")
     map_header = background_map.split("\n")[0].replace(" =", ";")
     print(tiles_header, background_tiles, map_header, background_map)

@@ -13,6 +13,8 @@
 #include "font_extras_tiles.h"
 #include "sprites.h"
 #include "title_screens.h"
+#include "tutorial_screen_tiles.h"
+#include "tutorial_screen_map.h"
 #include "player_sprites.h"
 #include "player_shield_sprites.h"
 #include "block_tiles.h"
@@ -352,7 +354,7 @@ void highscore2tile(uint8_t* high_score_tiles, uint16_t *high_score_ptr){
   tens = playtime_seconds/10;
   high_score_tiles[12] = (playtime_seconds - 10*tens) + 0x01;
   high_score_tiles[11] = tens + 0x01; 
-  high_score_tiles[10] = 0x37;
+  high_score_tiles[10] = 0x38;
   
   // Minutes
   tens = playtime_minutes/10;
@@ -361,7 +363,7 @@ void highscore2tile(uint8_t* high_score_tiles, uint16_t *high_score_ptr){
   
   // Hours
   tens = playtime_hours/10;
-  high_score_tiles[7] = 0x37;
+  high_score_tiles[7] = 0x38;
   high_score_tiles[6] = (playtime_hours - 10*tens) + 0x01;
   high_score_tiles[5] = tens + 0x01; 
 
@@ -775,9 +777,11 @@ void main(void){
   uint8_t blocks_tilemap_offset = FONT_OFFSET;
   uint8_t powerups_tilemap_offset = blocks_tilemap_offset + 4;
   uint8_t progressbar_tilemap_offset = powerups_tilemap_offset + 8;
+  uint8_t tutorialscreen_tilemap_offset = progressbar_tilemap_offset + 8;
   set_bkg_data(blocks_tilemap_offset, 4, block_tiles);
   set_bkg_data(powerups_tilemap_offset, 8, powerups_tiles);
   set_bkg_data(progressbar_tilemap_offset, 7, progressbar_tiles);
+  set_bkg_data(tutorialscreen_tilemap_offset, tutorial_screen_ntiles, tutorial_screen_tiles);
 
   // Load extra font characters
   uint8_t extra_font_offset = progressbar_tilemap_offset + 7;
@@ -893,7 +897,7 @@ void main(void){
   // Temporary variables (loop counters, array indices, etc)
   uint8_t tmpx; 
   uint8_t tmpy; 
-  uint8_t i;
+  uint8_t i, j;
   uint16_t ii;
 
   // Banking variables
@@ -980,6 +984,13 @@ void main(void){
     waitpad(J_START);
     waitpadup();
     
+    for (i=0; i<COLUMN_HEIGHT; i++){
+      for (j=0; j<SCREEN_TILE_WIDTH; j++){
+        bkg_map[i*ROW_WIDTH+j] = tutorial_screen_map[i*SCREEN_TILE_WIDTH+j];
+      }
+    }
+    set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+
     set_win_tiles(0, 0, 20, 1, blank_win_tiles); 
     set_win_tiles(9, 0, 2, 1, bomb_tiles);
     set_win_tiles(0, 0, 8, 1, progressbar_tiles);
@@ -1002,11 +1013,11 @@ void main(void){
     SWITCH_ROM(1);
     for (uint8_t i = 0; i < ROW_WIDTH - SCREEN_TILE_WIDTH; ++i) {
       generate_next_column(&gen_state, coll_map+gen_column_index, bkg_map+gen_column_index);
-      set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
       if (++gen_column_index >= ROW_WIDTH) {
         gen_column_index = 0;
       }
     }
+    set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     SWITCH_ROM(last_bank);
 
     player_sprite_base_id = 0;

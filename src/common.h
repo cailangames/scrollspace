@@ -4,7 +4,7 @@
 #define KEY_PRESSED(K) (current_input & K)
 #define KEY_HELD(K) ((current_input & K) && (old_input & K))
 #define KEY_FIRST_PRESS(K) ((current_input & K) && !(old_input & K))
-#define FONT_OFFSET 36
+#define FONT_OFFSET 37
 #define SCREEN_T  16
 #define SCREEN_B 144
 #define SCREEN_L 8
