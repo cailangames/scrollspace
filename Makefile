@@ -17,7 +17,7 @@ LCCFLAGS_pocket = $(LCCFLAGS_gb)
 
 LCCFLAGS += $(LCCFLAGS_$(EXT))
 
-PROJECT_NAME = PGIS
+PROJECT_NAME = ScrollSpace
 
 SRCDIR = src
 OBJDIR = obj/$(EXT)

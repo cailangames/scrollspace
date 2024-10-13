@@ -1341,11 +1341,11 @@ void main(void){
           if (player.health < 100){
             // Prevent health overflow (int8 maxes at 128)
             if ((100 - player.health) >= HEALTH_KIT_VALUE){
-              if(player.health < 50){
-                player.health += 2*HEALTH_KIT_VALUE;
-              }
-              else if (player.health < 20){
+              if(player.health < 20){
                 player.health += 4*HEALTH_KIT_VALUE;
+              }
+              else if (player.health < 50){
+                player.health += 2*HEALTH_KIT_VALUE;
               }
               else{
                 player.health += HEALTH_KIT_VALUE;
