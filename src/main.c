@@ -1113,7 +1113,7 @@ void main(void){
         game_paused = 0;
       }
 
-      if (KEY_PRESSED(J_SELECT)){
+      if (KEY_FIRST_PRESS(J_SELECT)){
         show_time = ~(show_time) & 0x1;
       }
 
@@ -1424,6 +1424,7 @@ void main(void){
         if (damage_animation_counter < 0){
           damage_animation_counter = 0;
         }
+
         if (!shield_active){
           if (damage_animation_state == HIDDEN){
             // SHOW_SPRITES;
@@ -1434,6 +1435,39 @@ void main(void){
             // HIDE_SPRITES;
             move_sprite(player.sprite_id, 0, 0);
             damage_animation_state = HIDDEN;
+          }
+
+          // Check for collision and process pickups if the shield is not active
+          // This will allow the player to pick up items while the flashing animation is playing
+          player_collision = check_collisions(&player, coll_map, bkg_map, true);
+
+          if (player_collision == HELATH_KIT_ID) {
+            if (player.health < 100){
+              // Prevent health overflow (int8 maxes at 128)
+              if ((100 - player.health) >= HEALTH_KIT_VALUE){
+                if(player.health < 20){
+                  player.health += 4*HEALTH_KIT_VALUE;
+                }
+                else if (player.health < 50){
+                  player.health += 2*HEALTH_KIT_VALUE;
+                }
+                else{
+                  player.health += HEALTH_KIT_VALUE;
+                }
+              }
+              else {
+                player.health += 100 - player.health;
+              }
+            }
+            player_collision = 1;
+            play_health_sound();
+          }
+          else if (player_collision == SHIELD_ID) {
+            shield_active = true;
+            damage_animation_counter = SHIELD_DURATION;
+            player_sprite_base_id += 10;
+            player_collision = 0;
+            play_shield_sound();
           }
         }
       }
