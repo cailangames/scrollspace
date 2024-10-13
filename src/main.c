@@ -746,9 +746,13 @@ void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_
     }
     progressbar_tiles[7] = progressbar_tilemap_offset + 6; // clear right edge of bar
   }
-  else {
-    progressbar_tiles[1] = progressbar_tilemap_offset + 5; // Clear bottom 2 tiles 
+  else if (player->health > 0){
+    progressbar_tiles[1] = progressbar_tilemap_offset + 5; 
     progressbar_tiles[0] = progressbar_tilemap_offset + 1;
+  }
+  else{
+    progressbar_tiles[1] = progressbar_tilemap_offset + 5; // Clear bottom 2 tiles 
+    progressbar_tiles[0] = progressbar_tilemap_offset + 4;
   }
   set_win_tiles(0, 0, 8, 1, progressbar_tiles);
 
@@ -1331,6 +1335,7 @@ void main(void){
           fadeout();
           HIDE_SPRITES;
 
+          update_health_bar(&player, progressbar_tiles, &player_sprite_base_id, progressbar_tilemap_offset);
           gameover_screen(score_time_tiles, extra_font_offset, high_score_ptr);
 
           // Load title screen
