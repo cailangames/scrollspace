@@ -973,8 +973,8 @@ void main(void){
     damage_animation_counter = 0; // When hit, skip checking collisions for this long
     col_count = 0;  // counter for number of columns scrolled. Used to calculate screen_count
     screen_count = 0; // number of screens scrolled
-    scroll_frames_per_pixel = 1;
-    scroll_pixels_per_frame = 0;
+    scroll_frames_per_pixel = 0;
+    scroll_pixels_per_frame = 1;
     scroll_frames_count = 0;
     player_collision = 0;
     bullet_collision = 0;
@@ -983,13 +983,50 @@ void main(void){
     gen_state.biome_column_index = 0;
     gen_column_index = 20;
 
+    // Title Screen
     hUGE_init(&intro_song);
     hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
     hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
     hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
     waitpad(J_START);
     waitpadup();
-    
+
+    // Speed Selection Screen    
+    set_bkg_tiles(0,0,20,COLUMN_HEIGHT,speed_titlescreen);
+    set_sprite_tile(0, 0);
+    move_sprite(0, 32, 72);
+    SHOW_SPRITES;
+
+    while (1){
+      current_input = joypad();
+      if (KEY_FIRST_PRESS(J_UP)){
+        if (scroll_pixels_per_frame == 1){
+          move_sprite(0, 32, 88);
+          scroll_pixels_per_frame = 2;
+        }
+        else{
+          move_sprite(0, 32, 72);
+          scroll_pixels_per_frame = 1;
+        }
+      }
+      else if (KEY_FIRST_PRESS(J_DOWN)){
+        if (scroll_pixels_per_frame == 2){
+          move_sprite(0, 32, 72);
+          scroll_pixels_per_frame = 1;
+        }
+        else{
+          move_sprite(0, 32, 88);
+          scroll_pixels_per_frame = 2;
+        }
+      }
+      else if (KEY_FIRST_PRESS(J_START)){
+        break;
+      }
+      vsync();
+      old_input = current_input;
+    }
+
+    // Game Start
     for (i=0; i<COLUMN_HEIGHT; i++){
       for (j=0; j<SCREEN_TILE_WIDTH; j++){
         bkg_map[i*ROW_WIDTH+j] = tutorial_screen_map[i*SCREEN_TILE_WIDTH+j];
@@ -1006,7 +1043,12 @@ void main(void){
 
     wait(10);
     
-    hUGE_init(&main_song);
+    if (scroll_pixels_per_frame == 1){
+      hUGE_init(&main_song);
+    }
+    else{
+      hUGE_init(&main_song_fast);
+    }
     hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
     hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
     hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
@@ -1025,6 +1067,8 @@ void main(void){
     }
     set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
     SWITCH_ROM(last_bank);
+
+    wait(15);
 
     player_sprite_base_id = 0;
     bullet_sprite_base_id = 19;
@@ -1052,7 +1096,6 @@ void main(void){
       bullet_collision = 0;
       copy_bkgmap_to_vram = false;
 
-
       // D-PAD
       if (KEY_PRESSED(J_START)){
         game_paused = 1;
@@ -1070,7 +1113,6 @@ void main(void){
       }
 
       if (KEY_PRESSED(J_SELECT)){
-        waitpadup();
         show_time = ~(show_time) & 0x1;
       }
 
