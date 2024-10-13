@@ -805,8 +805,9 @@ void main(void){
   /**
    * Load music 
    */
-  extern const hUGESong_t main_song;
   extern const hUGESong_t intro_song;
+  extern const hUGESong_t main_song;
+  extern const hUGESong_t main_song_fast;
 
   NR52_REG = 0x80;
   NR51_REG = 0xFF;
@@ -815,6 +816,7 @@ void main(void){
   // Start both channels
   hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
   hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
+  hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
   
   // Add hUGE driver to VBL Interrupt handler
   add_VBL(hUGE_dosound);
@@ -1140,10 +1142,10 @@ void main(void){
 
         // Collision box
         b.cb_x_offset = 0;
-        b.cb_y_offset = 0;
+        b.cb_y_offset = 2;
         b.cb.x = b.x + b.cb_x_offset;
         b.cb.y = b.y + b.cb_y_offset;
-        b.cb.h = 8;
+        b.cb.h = 4;
         b.cb.w = 4;
         b.active = true;
         b.lifespan = 20;
@@ -1424,8 +1426,16 @@ void main(void){
             scroll_frames_count = 0;
             scroll_pixels_per_frame = 1;
           } else if (screen_count == 400) {
+            hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
+            hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
+            hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
+            hUGE_init(&main_song_fast);
             scroll_pixels_per_frame = 2;
             player.speed = 2;
+            hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
+            hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
+            hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
+            
           }
         }
       }
