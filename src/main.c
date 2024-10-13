@@ -1380,6 +1380,22 @@ void main(void){
           fadeout();
           HIDE_SPRITES;
 
+          //Hide all bullets
+          b_ptr = bullets;
+          for (i=0; i < MAX_BULLETS; i++){
+            // If current bullet is not active, move to the next one
+            if (!b_ptr->active){
+              b_ptr++;
+              continue;
+            }
+
+            // Hide sprite
+            b_ptr->x = 0;
+            b_ptr->y = 0;
+            b_ptr->speed = 0;
+            b_ptr->active = false;
+          }
+
           update_health_bar(&player, progressbar_tiles, &player_sprite_base_id, progressbar_tilemap_offset);
           gameover_screen(score_time_tiles, extra_font_offset, high_score_ptr);
 
