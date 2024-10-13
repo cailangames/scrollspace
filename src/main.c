@@ -422,61 +422,48 @@ void score2tile(uint8_t* score_time_tiles, uint8_t colon_offset, uint8_t show_ti
   set_win_tiles(12, 0, 8, 1, score_time_tiles);
 }
 
-void drop_bomb(struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map, uint8_t radius){
-  /*
-   * Grab the corners of the player and move radius tiles away and replace 
-   * the coll_map and bkg_map entries with 0.
-   * The bomb is dropped in front of the player
-   */
-  uint16_t idx; 
-  uint16_t row_top, row_bot;
-  uint16_t col_left, col_right;
-
-  row_top = (player->y - 16)/8;
-  row_bot = row_top + 1;
-  col_left = ((SCX_REG + player->x - 8) % 256)/8;
-  col_left += radius+1; // drop in front of player 
-  col_right = col_left;
-
-  if (radius <= row_top){
-    row_top -= radius;
+// Updates the collision map and background map in response to a dropped bomb. The bomb explosion
+// is a square in front of the player with sides of length `2*BOMB_RADIUS+1` tiles.
+void drop_bomb(const struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map) {
+  uint8_t row_count = (BOMB_RADIUS * 2) + 1;  // +1 for the center row, which is centered on the ship.
+  uint8_t row_top = (player->y - SCREEN_T) >> 3;
+  // Because of integer division, the bomb explosion can look like it's not centered with the ship.
+  // The following code fixes that.
+  uint8_t row_pixel_delta = (player->y - SCREEN_T) - (row_top << 3);
+  if (row_pixel_delta >= 4) {
+    ++row_top;
   }
-  else {
+
+  if (row_top >= BOMB_RADIUS) {
+    row_top -= BOMB_RADIUS;
+  } else {
+    // The player is at the top of the screen, so we need to shorten the bomb explosion so that it
+    // doesn't go off screen.
+    row_count = row_count - (BOMB_RADIUS - row_top);
     row_top = 0;
   }
+  uint8_t col_left = (SCX_REG >> 3) + ((player->x - SCREEN_L) >> 3) + 1;  // Add 1 to be in front of the player.
+  for (uint8_t i = 0; i < row_count; ++i) {
+    uint8_t row = row_top + i;
+    if (row >= COLUMN_HEIGHT) {
+      // No need to calculate or draw the part of the bomb explosion that's off screen.
+      break;
+    }
+    uint16_t row_offset = MAP_ARRAY_INDEX_ROW_OFFSET(row);
+    for (uint8_t j = 0; j < (BOMB_RADIUS * 2) + 1; ++j) {
+      uint8_t col = col_left + j;
+      if (col >= ROW_WIDTH) {
+        // We're past the edge of the collision and background maps and need to wrap around.
+        col -= ROW_WIDTH;
+      }
 
-  if (COLUMN_HEIGHT >= row_bot + radius){
-    row_bot += radius;
-  }
-  else {
-    row_bot = COLUMN_HEIGHT;
-  }
-
-  if (radius <= col_left){
-    col_left -= radius;
-  }
-  else {
-    col_left = 0;
-  }
-
-  if (32 >= col_right + radius){
-    col_right += radius;
-  }
-  else {
-    col_right = 32;
-  }
-
-  uint16_t row, col;
-  for (row=row_top; row < row_bot; row++){
-    for (col=col_left; col < col_right; col++){
-      idx = col + row*32;
-
-      if ((bkg_map[idx] == MAPBLOCK_IDX) || (bkg_map[idx] == (MAPBLOCK_IDX+2))){
-        // If we are destroying a wall or a mine, increment score
+      uint16_t idx = col + row_offset;
+      // If we are destroying a wall or a mine, add to the score.
+      if (bkg_map[idx] == MAPBLOCK_IDX || bkg_map[idx] == MINE_IDX) {
         score += 1;
       }
       coll_map[idx] = 0;
-      bkg_map[idx] = CRATERBLOCK_IDX; // 0;  // Index 0 is the blank tile, index 4 is the crater tile
+      bkg_map[idx] = CRATERBLOCK_IDX;
     }
   }
 }
@@ -836,7 +823,7 @@ void main(void){
   /*
    * Turn on RAM and grab high score
    */
-  uint16_t *high_score_ptr = 0xA000; // RAM BANK 0 Address
+  uint16_t *high_score_ptr = (uint16_t*)0xA000; // RAM BANK 0 Address
   ENABLE_RAM;
   SWITCH_RAM(0);
   if (high_score_ptr[0] == 0xFFFF){
@@ -1084,7 +1071,7 @@ void main(void){
     game_paused = 0;
     
     // Reset score tiles
-    for (int i=0; i < 8; i++){
+    for (uint8_t i = 0; i < 8; i++){
       score_time_tiles[i] = 0;
     }
     score = 0;
@@ -1308,7 +1295,7 @@ void main(void){
         }
       }
       if (bomb_dropped){
-        drop_bomb(&player, coll_map, bkg_map, 3);
+        drop_bomb(&player, coll_map, bkg_map);
         copy_bkgmap_to_vram = true;
         bomb_dropped = false;
       }
@@ -1337,7 +1324,7 @@ void main(void){
           damage_animation_counter = COLLISION_TIMEOUT;
           player_collision = 1;
         }
-        else if (player_collision == HELATH_KIT_ID) {
+        else if (player_collision == HEALTH_KIT_ID) {
           if (player.health < 100){
             // Prevent health overflow (int8 maxes at 128)
             if ((100 - player.health) >= HEALTH_KIT_VALUE){
@@ -1441,7 +1428,7 @@ void main(void){
           // This will allow the player to pick up items while the flashing animation is playing
           player_collision = check_collisions(&player, coll_map, bkg_map, true);
 
-          if (player_collision == HELATH_KIT_ID) {
+          if (player_collision == HEALTH_KIT_ID) {
             if (player.health < 100){
               // Prevent health overflow (int8 maxes at 128)
               if ((100 - player.health) >= HEALTH_KIT_VALUE){
@@ -1534,11 +1521,7 @@ void main(void){
 
       if ((frame_count & 0x3) == 0) { // %4
         // Update HUD
-        if (n_bombs > 0) {
-          bomb_tiles[1] = n_bombs + 1;
-        } else {
-          bomb_tiles[1] = 1;
-        }
+        bomb_tiles[1] = n_bombs + 1;
         set_win_tiles(9, 0, 2, 1, bomb_tiles);
       }
       
