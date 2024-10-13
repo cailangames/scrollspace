@@ -1025,8 +1025,13 @@ void main(void){
       vsync();
       old_input = current_input;
     }
+    HIDE_SPRITES;
 
     // Game Start
+    // Set player start location
+    move_sprite(player.sprite_id, player.x, player.y);
+
+    // Copy tutorial screen to bkg_map
     for (i=0; i<COLUMN_HEIGHT; i++){
       for (j=0; j<SCREEN_TILE_WIDTH; j++){
         bkg_map[i*ROW_WIDTH+j] = tutorial_screen_map[i*SCREEN_TILE_WIDTH+j];
