@@ -468,7 +468,7 @@ void drop_bomb(const struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map)
   }
 }
 
-uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8_t player_sprite){
+uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8_t player_sprite, uint8_t pickups_only){
   /*
    * The player sprite can collide with up to 4 tiles.
    * Check the collision map on the top_left, top_right
@@ -506,7 +506,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
     collision_block = bkg_map[idx_topr];
 
     // Check if it is not a power up
-    if (collision < 235){
+    if ((collision < 235) && (!pickups_only)){
       // Apply damage to the background element
       if (player_sprite){
         block_health = coll_map[idx_topr] - 2;
@@ -542,7 +542,13 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
         coll_map[idx_topr] = block_health;
       }
     }
-    else if (player_sprite) {
+    else if ((collision < 235) && (pickups_only)){
+      // Clear collision for this object so we dont trigger
+      // on the next check (we entered this object with immunity
+      // so we can skip colliding with it later)
+      coll_map[idx_topr] = 0;
+    }
+    else if ((collision >= 235) && (player_sprite)) {
       // Pick up power up
       bkg_map[idx_topr] = 0;
       coll_map[idx_topr] = 0;
@@ -553,7 +559,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
     collision_block = bkg_map[idx_botr];
 
     // Check if it is not a power up
-    if (collision < 235){
+    if ((collision < 235) && (!pickups_only)){
       // Apply damage to the background element
       if (player_sprite){
         block_health = coll_map[idx_botl] - 2;
@@ -589,7 +595,13 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
         coll_map[idx_botr] = block_health;
       }
     }
-    else if (player_sprite) {
+    else if ((collision < 235) && (pickups_only)){
+      // Clear collision for this object so we dont trigger
+      // on the next check (we entered this object with immunity
+      // so we can skip colliding with it later)
+      coll_map[idx_botr] = 0;
+    }
+    else if ((collision >= 235) && (player_sprite)) {
       // Pick up power up
       bkg_map[idx_botr] = 0;
       coll_map[idx_botr] = 0;
@@ -601,7 +613,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
     collision_block = bkg_map[idx_topl];
 
     // Check if it is not a power up
-    if (collision < 235){
+    if ((collision < 235) && (!pickups_only)){
       // Apply damage to the background element
       if (player_sprite){
         block_health = coll_map[idx_topl] - 2;
@@ -637,7 +649,13 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
         coll_map[idx_topl] = block_health;
       }
     }
-    else if (player_sprite) {
+    else if ((collision < 235) && (pickups_only)){
+      // Clear collision for this object so we dont trigger
+      // on the next check (we entered this object with immunity
+      // so we can skip colliding with it later)
+      coll_map[idx_topl] = 0;
+    }
+    else if ((collision >= 235) && (player_sprite)) {
       // Pick up power up
       bkg_map[idx_topl] = 0;
       coll_map[idx_topl] = 0;
@@ -649,7 +667,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
     collision_block = bkg_map[idx_botl];
 
     // Check if it is not a power up
-    if (collision < 235){
+    if ((collision < 235) && (!pickups_only)){
       // Apply damage to the background element
       if (player_sprite){
         block_health = coll_map[idx_botl] - 2;
@@ -685,14 +703,20 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
         coll_map[idx_botl] = block_health;
       }
     }
-    else if (player_sprite) {
+    else if ((collision < 235) && (pickups_only)){
+      // Clear collision for this object so we dont trigger
+      // on the next check (we entered this object with immunity
+      // so we can skip colliding with it later)
+      coll_map[idx_botl] = 0;
+    }
+    else if ((collision >= 235) && (player_sprite)) {
       // Pick up power up
       bkg_map[idx_botl] = 0;
       coll_map[idx_botl] = 0;
     }
   } 
   
-  if ((block_health > 2) && (player_sprite)){
+  if ((collision > 0) && (block_health > 0) && (player_sprite)){
     // Move the player sprite after collision
     move_sprite(sprite->sprite_id, sprite->x, sprite->y);
   }
@@ -1259,7 +1283,7 @@ void main(void){
           b_ptr->cb.x = b_ptr->x + b_ptr->cb_x_offset;
           b_ptr->cb.y = b_ptr->y + b_ptr->cb_y_offset;
 
-          bullet_collision = check_collisions(b_ptr, coll_map, bkg_map, false);
+          bullet_collision = check_collisions(b_ptr, coll_map, bkg_map, false, false);
           // Check that the bullet collided with something it can destroy
           if ((bullet_collision > 0) && (bullet_collision < 235)) {
             // Hit something
@@ -1318,7 +1342,8 @@ void main(void){
           damage_animation_state = SHOWN;
         }
 
-        player_collision = check_collisions(&player, coll_map, bkg_map, true);
+        // Normal collision check for player
+        player_collision = check_collisions(&player, coll_map, bkg_map, true, false);
         if ((player_collision > 0) && (player_collision < 235)) {
           player.health -= COLLISION_DAMAGE;
           damage_animation_counter = COLLISION_TIMEOUT;
@@ -1424,9 +1449,9 @@ void main(void){
             damage_animation_state = HIDDEN;
           }
 
-          // Check for collision and process pickups if the shield is not active
+          // Check for collision and only process pickups if the shield is not active
           // This will allow the player to pick up items while the flashing animation is playing
-          player_collision = check_collisions(&player, coll_map, bkg_map, true);
+          player_collision = check_collisions(&player, coll_map, bkg_map, true, true);
 
           if (player_collision == HEALTH_KIT_ID) {
             if (player.health < 100){
