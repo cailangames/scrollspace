@@ -1,5 +1,8 @@
 // Code for playing sound effects.
 
+#ifndef _SOUND_EFFECTS_H_
+#define _SOUND_EFFECTS_H_
+
 // Mutes all the sound channels.
 void mute_all_channels(void);
 
@@ -20,3 +23,5 @@ void play_shield_sound(void);
 
 // Plays the game over sound effect.
 void play_gameover_sound(void);
+
+#endif
