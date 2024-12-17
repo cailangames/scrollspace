@@ -37,7 +37,7 @@
 #define COLLISION_DAMAGE 3
 #define COLLISION_TIMEOUT 24
 // A BOMB_RADIUS of N will create square bomb explosions of (2*N+1, 2*N+1) size in tiles.
-#define BOMB_RADIUS 2
+#define BOMB_RADIUS 3
 
 enum powerup{
   GUN=0,
