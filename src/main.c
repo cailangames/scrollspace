@@ -9,6 +9,7 @@
 #include "hUGEDriver.h"
 #include "common.h"
 #include "procedural_generation.h"
+#include "sound_effects.h"
 
 #include "font_extras_tiles.h"
 #include "sprites.h"
@@ -51,93 +52,6 @@ void increment_score_isr(void){
       }
     }
   }
-}
-
-void play_gun_sound(void){
-  // Stop Channel before playing FX
-  hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
-
-  NR12_REG = 0x0;
-  NR14_REG = 0x0;
-
-  // Play FX
-  NR10_REG = 0x4D;
-  NR11_REG = 0XC1;
-  NR12_REG = 0XF2;
-  NR13_REG = 0X9B;
-  NR14_REG = 0X87;
-
-  // Restart channel
-  hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
-
-}
-
-void play_health_sound(void){
-  // Stop Channel before playing FX
-  hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
-
-  NR12_REG = 0x0;
-  NR14_REG = 0x0;
-
-  // Play FX
-  NR10_REG = 0x75;
-  NR11_REG = 0X86;
-  NR12_REG = 0X5F;
-  NR13_REG = 0X62;
-  NR14_REG = 0X86;
-
-  // Restart channel
-  hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
-
-}
-
-void play_bomb_sound(void){
-  // Stop Channel before playing FX
-  hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
-
-  NR42_REG = 0x0;
-  NR44_REG = 0x0;
-
-  // Play FX
-  NR41_REG = 0X00;
-  NR42_REG = 0XF7;
-  NR43_REG = 0X71;
-  NR44_REG = 0X80;
-
-  // Restart channel
-  hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
-
-}
-
-void play_gameover_sound(void){
-  // Stop Channel before playing FX
-  NR12_REG = 0x0;
-  NR14_REG = 0x0;
-
-  // Play FX
-  NR10_REG = 0x1C;
-  NR11_REG = 0X89;
-  NR12_REG = 0XF7;
-  NR13_REG = 0X75;
-  NR14_REG = 0X86;
-}
-
-void play_shield_sound(void){
-  // Stop Channel before playing FX
-  hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
-
-  NR42_REG = 0x0;
-  NR44_REG = 0x0;
-
-  // Play FX
-  NR41_REG = 0X3F;
-  NR42_REG = 0X74;
-  NR43_REG = 0X2C;
-  NR44_REG = 0XC0;
-
-  // Restart channel
-  hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
-
 }
 
 void wait(uint8_t n){
@@ -816,16 +730,15 @@ void main(void){
   extern const hUGESong_t main_song;
   extern const hUGESong_t main_song_fast;
 
+  // Enable sound playback.
   NR52_REG = 0x80;
   NR51_REG = 0xFF;
   NR50_REG = 0x33;
 
-  // Start both channels
-  hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
-  hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
-  hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
+  // Mute all channels.
+  mute_all_channels();
   
-  // Add hUGE driver to VBL Interrupt handler
+  // Add hUGE driver to VBL Interrupt handler.
   add_VBL(hUGE_dosound);
 
   // Add score incrementer to VBL interrupt handler.
@@ -992,9 +905,7 @@ void main(void){
 
     // Title Screen
     hUGE_init(&intro_song);
-    hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
-    hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
-    hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
+    play_all_channels();
     waitpad(J_START);
     waitpadup();
 
@@ -1049,9 +960,7 @@ void main(void){
     set_win_tiles(0, 0, 20, 1, blank_win_tiles); 
     set_win_tiles(9, 0, 2, 1, bomb_tiles);
     set_win_tiles(0, 0, 8, 1, progressbar_tiles);
-    hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
-    hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
-    hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
+    mute_all_channels();
 
     wait(10);
     
@@ -1061,9 +970,7 @@ void main(void){
     else{
       hUGE_init(&main_song_fast);
     }
-    hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
-    hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
-    hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
+    play_all_channels();
 
     SHOW_SPRITES;
     SHOW_WIN;
@@ -1111,15 +1018,11 @@ void main(void){
       // D-PAD
       if (KEY_PRESSED(J_START)){
         game_paused = 1;
-        hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
-        hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
-        hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
+        mute_all_channels();
         waitpadup();
         waitpad(J_START);
         waitpadup();
-        hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
-        hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
-        hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
+        play_all_channels();
         damage_animation_state = SHOWN;
         game_paused = 0;
       }
@@ -1381,9 +1284,7 @@ void main(void){
         if (player.health <= 0){
           game_paused = 1;
 
-          hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
-          hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
-          hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
+          mute_all_channels();
           player.sprite_tile_id = 9;
           set_sprite_tile(player.sprite_id, player.sprite_tile_id);
           wait(10);
@@ -1531,15 +1432,11 @@ void main(void){
             // scroll_frames_count = 0;
             // scroll_pixels_per_frame = 1;
           // } else if (screen_count == 400) {
-            // hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
-            // hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
-            // hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
+            // mute_all_channels();
             // hUGE_init(&main_song_fast);
             // scroll_pixels_per_frame = 2;
             // player.speed = 2;
-            // hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
-            // hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
-            // hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
+            // play_all_channels();
           // }
         }
       }
