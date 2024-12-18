@@ -6,9 +6,9 @@
 /*
  * Keys
  */
-#define KEY_PRESSED(K) (current_input & K)
-#define KEY_HELD(K) ((current_input & K) && (old_input & K))
-#define KEY_FIRST_PRESS(K) ((current_input & K) && !(old_input & K))
+#define KEY_PRESSED(input, key) (input & key)
+#define KEY_HELD(input, old_input, key) ((input & key) && (old_input & key))
+#define KEY_FIRST_PRESS(input, old_input, key) ((input & key) && !(old_input & key))
 
 /*
  * Screen
@@ -45,9 +45,7 @@
 /*
  * Tunable parameters
  */
-#define BULLET_ARR_SIZE 9
-// MAX_BULLETS can't exceed BULLET_ARR_SIZE.
-#define MAX_BULLETS 5
+#define MAX_BULLETS 3
 #define MAX_BOMBS 1
 #define BLOCK_HEALTH 4
 #define MINE_HEALTH 2
@@ -59,6 +57,7 @@
 #define COLLISION_TIMEOUT 24
 // A BOMB_RADIUS of N will create square bomb explosions of (2*N+1, 2*N+1) size in tiles.
 #define BOMB_RADIUS 3
+#define BULLET_LIFESPAN 20
 
 enum powerup{
   GUN=0,

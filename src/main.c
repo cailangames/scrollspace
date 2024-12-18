@@ -24,6 +24,8 @@
 #include "projectiles_sprites.h"
 #include "powerups_tiles.h"
 
+static const uint8_t blank_win_tiles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
 static bool game_paused = true;
 
 static void increment_timer_score_isr(void) {
@@ -33,19 +35,15 @@ static void increment_timer_score_isr(void) {
   increment_timer_score();
 }
 
-void wait(uint8_t n){
-  uint8_t i;
-  for (i=0; i < n; i++){
-    wait_vbl_done();
+void wait(uint8_t num_frames) {
+  for (uint8_t i = 0; i < num_frames; ++i) {
+    vsync();
   }
 }
 
-void fadeout(void){
-  uint8_t i;
-
-  for (i=0; i<4; i++){
-    switch (i)
-    {
+void fadeout(void) {
+  for (uint8_t i = 0; i < 4; ++i) {
+    switch (i) {
     case 0:
       BGP_REG = 0xE4;
       break;
@@ -53,11 +51,11 @@ void fadeout(void){
     case 1:
       BGP_REG = 0xF9;
       break;
-    
+
     case 2:
       BGP_REG = 0xFE;
       break;
-    
+
     case 3:
       BGP_REG = 0xFF;
       break;
@@ -66,12 +64,9 @@ void fadeout(void){
   }
 }
 
-void fadein(void){
-  uint8_t i;
-
-  for (i=0; i<3; i++){
-    switch (i)
-    {
+void fadein(void) {
+  for (uint8_t i = 0; i < 3; ++i) {
+    switch (i) {
     case 0:
       BGP_REG = 0xFE;
       break;
@@ -79,7 +74,7 @@ void fadein(void){
     case 1:
       BGP_REG = 0xF9;
       break;
-    
+
     case 2:
       BGP_REG = 0xE4;
       break;
@@ -456,7 +451,7 @@ void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_
   }
 }
 
-void main(void){
+void main(void) {
   /*
    * Load background and sprite data
    */
@@ -520,7 +515,6 @@ void main(void){
 
   uint8_t bomb_tiles[2];
   uint8_t progressbar_tiles[8];
-  const uint8_t blank_win_tiles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   bool show_time = true;
 
   // Initialize high scores.
@@ -530,30 +524,24 @@ void main(void){
   }
 
   struct Sprite player;
-  /**
-   * Create bullet sprite array 
-   */
-  struct Sprite bullets[BULLET_ARR_SIZE];
-  uint8_t bullets_arr_idx;
-  uint8_t bullets_active;
-  bool bullets_fired;
+  struct Sprite bullets[MAX_BULLETS];
+  uint8_t active_bullet_count = 0;
   bool bomb_dropped;
   bool shield_active;
   enum powerup active_powerup;
-  uint8_t n_bullets;
   uint8_t n_bombs;
 
   // Collision and background maps
   uint8_t coll_map[COLUMN_HEIGHT*ROW_WIDTH];
   uint8_t bkg_map[COLUMN_HEIGHT*ROW_WIDTH];
-  bool copy_bkgmap_to_vram;
+  bool copy_bkgmap_to_vram = false;
 
   // Map generation variables.
   struct GenerationState gen_state;
   uint8_t gen_column_index;  // The index of the next column to generate.
 
-  uint8_t current_input;
-  uint8_t old_input;
+  uint8_t input;
+  uint8_t prev_input;
   uint8_t dx;
   uint8_t dy;
   uint8_t frame_count;
@@ -569,26 +557,17 @@ void main(void){
   enum animation_state damage_animation_state; // Used during the damage recovery to toggle between showing and hidding the player sprite
 
   uint8_t player_sprite_base_id;
-  uint8_t bullet_sprite_base_id;
-
-  // Bullet sprites and pointers
-  struct Sprite b;
-  struct Sprite *b_ptr;
 
   // Temporary variables (loop counters, array indices, etc)
-  uint8_t tmpx; 
-  uint8_t tmpy; 
   uint8_t i, j;
   uint16_t ii;
 
   // Banking variables
   uint8_t last_bank;
 
-  while (1){
+  while (true) {
     // Load the window contents
     show_time = true;
-    bullets_arr_idx = 0;
-    n_bullets = MAX_BULLETS;
     n_bombs = MAX_BOMBS;
 
     bomb_tiles[0] = BOMB_ICON_IDX;
@@ -620,18 +599,34 @@ void main(void){
     player.type = PLAYER;
     move_sprite(player.sprite_id, player.x, player.y);
 
-    /**
-     * Create bullet sprite array 
-     */
-    bullets_arr_idx = 0;
-    bullets_active = 0;
-    bullets_fired = false;
     bomb_dropped = false;
     shield_active = false;
     active_powerup = GUN;
+
+    // Create bullets.
+    for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
+      struct Sprite* b = &(bullets[i]);
+      b->active = false;
+      b->type = BULLET;
+      b->sprite_id = i + 1;  // +1 so we don't override the player (always sprite_id 0)
+      b->sprite_tile_id = 19;
+      b->lifespan = 0;
+      b->speed = 4;
+      b->x = 0;
+      b->y = 0;
+      // Collision box
+      b->cb_x_offset = 0;
+      b->cb_y_offset = 2;
+      b->cb.x = b->x + b->cb_x_offset;
+      b->cb.y = b->y + b->cb_y_offset;
+      b->cb.h = 4;
+      b->cb.w = 4;
+      set_sprite_tile(b->sprite_id, b->sprite_tile_id);
+      move_sprite(b->sprite_id, b->x, b->y);
+    }
   
     // Clear collision map and background map
-    for (ii=0; ii<32*COLUMN_HEIGHT; ++ii) {
+    for (ii=0; ii<COLUMN_HEIGHT*ROW_WIDTH; ++ii) {
       coll_map[ii] = 0;
       bkg_map[ii] = 0;
     }
@@ -639,8 +634,8 @@ void main(void){
     /*
     * Game Loop
     */
-    current_input;
-    old_input=0;
+    input = 0;
+    prev_input = 0;
     dx = 0;
     dy = 0;
     frame_count = 0;
@@ -670,33 +665,33 @@ void main(void){
     move_sprite(0, 32, 72);
     SHOW_SPRITES;
 
-    while (1){
-      current_input = joypad();
-      if (KEY_FIRST_PRESS(J_UP) || KEY_FIRST_PRESS(J_RIGHT)){
-        if (scroll_pixels_per_frame == 1){
+    while (true) {
+      input = joypad();
+      if (KEY_FIRST_PRESS(input, prev_input, J_UP) || KEY_FIRST_PRESS(input, prev_input, J_RIGHT)) {
+        if (scroll_pixels_per_frame == 1) {
           move_sprite(0, 32, 88);
           scroll_pixels_per_frame = 2;
         }
-        else{
+        else {
           move_sprite(0, 32, 72);
           scroll_pixels_per_frame = 1;
         }
       }
-      else if (KEY_FIRST_PRESS(J_DOWN) || KEY_FIRST_PRESS(J_LEFT)){
-        if (scroll_pixels_per_frame == 2){
+      else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN) || KEY_FIRST_PRESS(input, prev_input, J_LEFT)) {
+        if (scroll_pixels_per_frame == 2) {
           move_sprite(0, 32, 72);
           scroll_pixels_per_frame = 1;
         }
-        else{
+        else {
           move_sprite(0, 32, 88);
           scroll_pixels_per_frame = 2;
         }
       }
-      else if (KEY_FIRST_PRESS(J_START) || KEY_FIRST_PRESS(J_A) || KEY_FIRST_PRESS(J_B)){
+      else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A) || KEY_FIRST_PRESS(input, prev_input, J_B)) {
         break;
       }
       vsync();
-      old_input = current_input;
+      prev_input = input;
     }
     HIDE_SPRITES;
 
@@ -745,7 +740,6 @@ void main(void){
     wait(15);
 
     player_sprite_base_id = 0;
-    bullet_sprite_base_id = 19;
 
     copy_bkgmap_to_vram = false;
 
@@ -755,14 +749,13 @@ void main(void){
 
     game_paused = false;
 
-    while(1) {
-      current_input = joypad();
+    while (true) {
+      input = joypad();
       player_collision = 0;
       bullet_collision = 0;
       copy_bkgmap_to_vram = false;
 
-      // D-PAD
-      if (KEY_PRESSED(J_START)){
+      if (KEY_PRESSED(input, J_START)) {
         game_paused = true;
         mute_all_channels();
         waitpadup();
@@ -771,138 +764,94 @@ void main(void){
         play_all_channels();
         damage_animation_state = SHOWN;
         game_paused = false;
+        continue;
       }
 
-      if (KEY_FIRST_PRESS(J_SELECT)){
+      if (KEY_FIRST_PRESS(input, prev_input, J_SELECT)) {
         show_time = !show_time;
       }
 
-      if (!KEY_PRESSED(J_UP) && !KEY_PRESSED(J_DOWN) && \
-          !KEY_PRESSED(J_LEFT) && !KEY_PRESSED(J_RIGHT)) 
-      {
-        dx = 0;
-        dy = 0;
-        player.sprite_tile_id = player_sprite_base_id;
-
-        // Reset player collision box to default
-        player.cb_x_offset = 1;
-        player.cb_y_offset = 2;
-        player.cb.h = 4;
-        player.cb.w = 5;
-        player.dir = RIGHT;
+      dx = 0;
+      dy = 0;
+      player.sprite_tile_id = player_sprite_base_id;
+      player.dir = RIGHT;
+      // Reset player collision box to default.
+      player.cb_x_offset = 1;
+      player.cb_y_offset = 2;
+      player.cb.h = 4;
+      player.cb.w = 5;
+      if (KEY_PRESSED(input, J_RIGHT)) {
+        dx = player.speed;
       }
-      else {
-        // At least one key pressed
-        if (KEY_PRESSED(J_RIGHT)){
-          dx = player.speed;
-          // dy = 0;  // Keep in case i want to disable diagonal movement
-          player.sprite_tile_id = player_sprite_base_id;
-          player.dir |= RIGHT;
-        }
-        if (KEY_PRESSED(J_LEFT)){
-          dx = -player.speed;
-          // dy = 0;  // Keep in case i want to disable diagonal movement
-          player.sprite_tile_id = player_sprite_base_id;
-          player.dir |= LEFT;
-        }
-        if (KEY_PRESSED(J_UP)){
-          // dx = 0;  // Keep in case i want to disable diagonal movement
-          dy = -player.speed;
-          player.sprite_tile_id = player_sprite_base_id + 1;
-          player.dir |= UP;
-          
-          // Make collision box smaller when plane is "tilted"
-          // 3 wide x 1 high
-          player.cb_x_offset = 2;
-          player.cb_y_offset = 3;
-          player.cb.h = 1;
-          player.cb.w = 3;
-        }
-        if (KEY_PRESSED(J_DOWN)){
-          // dx = 0;  // Keep in case i want to disable diagonal movement
-          dy = player.speed;
-          player.sprite_tile_id = player_sprite_base_id + 2;
-          player.dir |= DOWN;
+      if (KEY_PRESSED(input, J_LEFT)) {
+        dx = -player.speed;
+        player.dir |= LEFT;
+      }
+      if (KEY_PRESSED(input, J_UP)) {
+        dy = -player.speed;
+        player.sprite_tile_id = player_sprite_base_id + 1;
+        player.dir |= UP;
+        
+        // Make collision box smaller when plane is "tilted".
+        player.cb_x_offset = 2;
+        player.cb_y_offset = 3;
+        player.cb.h = 1;
+        player.cb.w = 3;
+      }
+      if (KEY_PRESSED(input, J_DOWN)) {
+        dy = player.speed;
+        player.sprite_tile_id = player_sprite_base_id + 2;
+        player.dir |= DOWN;
 
-          // Make collision box smaller when plane is "tilted"
-          // 5 wide x 1 high
-          player.cb_x_offset = 2;
-          player.cb_y_offset = 4;
-          player.cb.h = 1;
-          player.cb.w = 3;
-        }
+        // Make collision box smaller when plane is "tilted".
+        player.cb_x_offset = 2;
+        player.cb_y_offset = 4;
+        player.cb.h = 1;
+        player.cb.w = 3;
       }
 
-      if (KEY_FIRST_PRESS(J_A) && n_bullets > 0) {
-        bullets_fired = true;
-        n_bullets--;
-
-        b.type = BULLET;
-        b.sprite_id = bullets_arr_idx + 1; // +1 so we dont override the player (always sprite_id 0)
-        b.speed = 4;
-        b.x = player.x;
-        b.y = player.y;
-
-        // Collision box
-        b.cb_x_offset = 0;
-        b.cb_y_offset = 2;
-        b.cb.x = b.x + b.cb_x_offset;
-        b.cb.y = b.y + b.cb_y_offset;
-        b.cb.h = 4;
-        b.cb.w = 4;
-        b.active = true;
-        b.lifespan = 20;
-
-        b.sprite_tile_id = bullet_sprite_base_id;
-        set_sprite_tile(b.sprite_id, b.sprite_tile_id);
-        move_sprite(b.sprite_id, b.x, b.y);
-
-        *(bullets+bullets_arr_idx) = b;
-
-        bullets_arr_idx++;
-        bullets_active++;
-
-        // Check if index exceeded the array size and reset to 0
-        if (bullets_arr_idx >= MAX_BULLETS){
-          bullets_arr_idx = 0;
+      if (KEY_FIRST_PRESS(input, prev_input, J_A) && active_bullet_count < MAX_BULLETS) {
+        // Find first non-active bullet in `bullets` array and activate it.
+        for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
+          if (bullets[i].active) {
+            continue;
+          }
+          struct Sprite* b = &(bullets[i]);
+          b->active = true;
+          b->lifespan = BULLET_LIFESPAN;
+          b->x = player.x;
+          b->cb.x = b->x + b->cb_x_offset;
+          b->y = player.y;
+          b->cb.y = b->y + b->cb_y_offset;
+          move_sprite(b->sprite_id, b->x, b->y);
+          ++active_bullet_count;
+          play_gun_sound();
+          break;
         }
-        play_gun_sound();
       }
 
-      if (KEY_FIRST_PRESS(J_B) && n_bombs > 0) {
+      if (KEY_FIRST_PRESS(input, prev_input, J_B) && n_bombs > 0) {
         bomb_dropped = true;
         n_bombs--;
         play_bomb_sound();
       }
 
-      old_input = current_input;
+      prev_input = input;
 
       // Update player position
-      // Bound check
-      tmpx = player.x + dx; 
-      if (tmpx <= SCREEN_L){
+      player.x += dx; 
+      // Bounds check
+      if (player.x < SCREEN_L) {
         player.x = SCREEN_L;
-        // dx = (player.x - SCREEN_L);
-      }
-      else if (tmpx >= SCREEN_R){
+      } else if (player.x > SCREEN_R) {
         player.x = SCREEN_R;
-        // dx = (SCREEN_R - player.x);
-      }
-      else{
-        player.x += dx;
       }
       
-      tmpy = player.y + dy; 
-      if (tmpy <= SCREEN_T){
+      player.y += dy; 
+      if (player.y < SCREEN_T) {
         player.y = SCREEN_T;
-        // dy = (player.y - SCREEN_T);
-      }
-      else if (tmpy >= SCREEN_B){
+      } else if (player.y > SCREEN_B) {
         player.y = SCREEN_B;
-        // dy = (SCREEN_B - player.y);
-      }
-      else{
-        player.y += dy;
       }
 
       // Update collision box
@@ -913,60 +862,40 @@ void main(void){
       move_sprite(player.sprite_id, player.x, player.y);
       
       /**
-       * Update bullets, if fired
+       * Update bullets, if any are active.
        */
-      if (bullets_fired){
-        // Update bullet positions
-        b_ptr = bullets;
-        for (i=0; i < MAX_BULLETS; i++){
-          // If current bullet is not active, move to the next one
-          if (!b_ptr->active){
-            b_ptr++;
+      if (active_bullet_count != 0) {
+        // Move bullets.
+        for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
+          if (!bullets[i].active) {
             continue;
           }
-
-          b_ptr->x += b_ptr->speed;
-          b_ptr->lifespan--;
-
-          // Update collision box
-          b_ptr->cb.x = b_ptr->x + b_ptr->cb_x_offset;
-          b_ptr->cb.y = b_ptr->y + b_ptr->cb_y_offset;
-
-          bullet_collision = check_collisions(b_ptr, coll_map, bkg_map, false, false);
-          // Check that the bullet collided with something it can destroy
-          if ((bullet_collision > 0) && (bullet_collision < 235)) {
-            // Hit something
-            // Force to 1 so the next || works
-            bullet_collision = 1;
+          struct Sprite* b = &(bullets[i]);
+          b->x += b->speed;
+          b->cb.x = b->x + b->cb_x_offset;
+          b->lifespan--;
+          if (b->x > SCREEN_R || b->lifespan == 0) {
+            // Hide sprite.
+            b->active = false;
+            b->x = 0;
+            b->y = 0;
+            --active_bullet_count;
+          } else {
+            bullet_collision = check_collisions(b, coll_map, bkg_map, false, false);
+            // Check that the bullet collided with something it can destroy
+            if (bullet_collision > 0 && bullet_collision < 235) {
+              // Hide sprite.
+              b->active = false;
+              b->x = 0;
+              b->y = 0;
+              --active_bullet_count;
+            }
           }
-          else {
-            // Collided with a pickup (can't destroy)
-            // Force to 0 so the next || works
-            bullet_collision = 0;
-          }
-
-          if ((b_ptr->x > SCREEN_R) || \
-              bullet_collision || \
-              (b_ptr->lifespan == 0))
-          {
-           // Hide sprite
-            b_ptr->x = 0;
-            b_ptr->y = 0;
-            b_ptr->speed = 0;
-            b_ptr->active = false;
-            bullets_active--;
-          }
-          
-          move_sprite(b_ptr->sprite_id, b_ptr->x, b_ptr->y);
-          b_ptr++;
-        }
-        
-        if (bullets_active == 0) 
-        {
-          // No active bullets
-          bullets_fired = false;
+          // Update bullet's sprite position.
+          move_sprite(b->sprite_id, b->x, b->y);
         }
       }
+
       if (bomb_dropped){
         drop_bomb(&player, coll_map, bkg_map);
         copy_bkgmap_to_vram = true;
@@ -1039,21 +968,15 @@ void main(void){
           fadeout();
           HIDE_SPRITES;
 
-          //Hide all bullets
-          b_ptr = bullets;
-          for (i=0; i < MAX_BULLETS; i++){
-            // If current bullet is not active, move to the next one
-            if (!b_ptr->active){
-              b_ptr++;
-              continue;
-            }
-
-            // Hide sprite
-            b_ptr->x = 0;
-            b_ptr->y = 0;
-            b_ptr->speed = 0;
-            b_ptr->active = false;
+          // Hide all bullets.
+          for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
+            struct Sprite* b = &(bullets[i]);
+            b->active = false;
+            b->x = 0;
+            b->y = 0;
+            move_sprite(b->sprite_id, b->x, b->y);
           }
+          active_bullet_count = 0;
 
           update_health_bar(&player, progressbar_tiles, &player_sprite_base_id);
           show_gameover_screen();
@@ -1155,12 +1078,6 @@ void main(void){
         copy_bkgmap_to_vram = true;
 
         ++col_count;
-
-        // Add a bullet every few columns we scroll.
-        if (col_count % 2 == 0 && n_bullets < MAX_BULLETS) {
-          ++n_bullets;
-        }
-
         if (col_count == 20) {
           col_count = 0;
           ++screen_count;
