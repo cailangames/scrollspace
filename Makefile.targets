@@ -1,8 +1,13 @@
 # Platform specific flags
 ifneq ($(strip $(PORT)),)
 ifneq ($(strip $(PLAT)),)
-CFLAGS += -m$(PORT):$(PLAT) -debug
+CFLAGS += -m$(PORT):$(PLAT)
 endif
+endif
+
+# Debug flag - Set to make a debug build of the game.
+ifeq ($(DEBUG), 1)
+CFLAGS += -debug
 endif
 
 VERSION = 1.0
@@ -17,12 +22,17 @@ clean-target:
 gb-clean:
 	${MAKE} clean-target EXT=gb
 
+gb-debug:
+	${MAKE} build-target PORT=sm83 PLAT=gb EXT=gb VERSION=$(VERSION) DEBUG=1
+
 gb:
 	${MAKE} build-target PORT=sm83 PLAT=gb EXT=gb VERSION=$(VERSION)
 
 pocket-clean:
 	${MAKE} clean-target EXT=pocket
 
+pocket-debug:
+	${MAKE} build-target PORT=sm83 PLAT=ap EXT=pocket VERSION=$(VERSION) DEBUG=1
+
 pocket:
 	${MAKE} build-target PORT=sm83 PLAT=ap EXT=pocket VERSION=$(VERSION)
-

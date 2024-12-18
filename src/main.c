@@ -751,11 +751,7 @@ void main(void){
 
     // Reset scores and window tiles.
     reset_scores();
-    if (show_time) {
-      display_timer_score();
-    } else {
-      display_point_score();
-    }
+    display_timer_score();
 
     game_paused = false;
 
