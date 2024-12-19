@@ -71,8 +71,4 @@ enum animation_state{
   SHOWN=1
 };
 
-void fadein(void);
-void fadeout(void);
-void wait(uint8_t);
-
 #endif

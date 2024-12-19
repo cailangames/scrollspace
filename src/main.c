@@ -24,24 +24,32 @@
 #include "projectiles_sprites.h"
 #include "powerups_tiles.h"
 
+// The following are used for performance testing of individual components.
+#define ENABLE_SCORING 1
+#define ENABLE_MUSIC 1
+#define ENABLE_WEAPONS 1
+#define ENABLE_COLLISIONS 1
+
 static const uint8_t blank_win_tiles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 static bool game_paused = true;
 
+#if ENABLE_SCORING
 static void increment_timer_score_isr(void) {
   if (game_paused) {
     return;
   }
   increment_timer_score();
 }
+#endif
 
-void wait(uint8_t num_frames) {
+static void wait(uint8_t num_frames) {
   for (uint8_t i = 0; i < num_frames; ++i) {
     vsync();
   }
 }
 
-void fadeout(void) {
+static void fadeout(void) {
   for (uint8_t i = 0; i < 4; ++i) {
     switch (i) {
     case 0:
@@ -64,7 +72,7 @@ void fadeout(void) {
   }
 }
 
-void fadein(void) {
+static void fadein(void) {
   for (uint8_t i = 0; i < 3; ++i) {
     switch (i) {
     case 0:
@@ -83,7 +91,8 @@ void fadein(void) {
   }
 }
 
-void show_gameover_screen(void) {
+#if ENABLE_COLLISIONS
+static void show_gameover_screen(void) {
   set_bkg_tiles(0,0,20,18,gameover_titlescreen);
   move_bkg(0,0);
 
@@ -96,10 +105,12 @@ void show_gameover_screen(void) {
   fadeout();
   HIDE_BKG;
 }
+#endif
 
+#if ENABLE_WEAPONS
 // Updates the collision map and background map in response to a dropped bomb. The bomb explosion
 // is a square in front of the player with sides of length `2*BOMB_RADIUS+1` tiles.
-void drop_bomb(const struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map) {
+static void drop_bomb(const struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map) {
   uint8_t row_count = (BOMB_RADIUS * 2) + 1;  // +1 for the center row, which is centered on the ship.
   uint8_t row_top = (player->y - SCREEN_T) >> 3;
   // Because of integer division, the bomb explosion can look like it's not centered with the ship.
@@ -144,8 +155,10 @@ void drop_bomb(const struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map)
   }
   increment_point_score(incremental_score);
 }
+#endif
 
-uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8_t player_sprite, uint8_t pickups_only){
+#if ENABLE_COLLISIONS
+static uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8_t player_sprite, uint8_t pickups_only){
   /*
    * The player sprite can collide with up to 4 tiles.
    * Check the collision map on the top_left, top_right
@@ -401,7 +414,7 @@ uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_
   return collision;
 }
 
-void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_t *player_sprite_base_id){
+static void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_t *player_sprite_base_id){
   uint8_t i, idx;
   if (player->health == 100){
     progressbar_tiles[0] = HEALTH_BAR_START; // left edge of bar
@@ -450,6 +463,7 @@ void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_
     *player_sprite_base_id = 6;
   }
 }
+#endif
 
 void main(void) {
   /*
@@ -486,6 +500,7 @@ void main(void) {
   // Load Window
   move_win(7,136);
 
+#if ENABLE_MUSIC
   /**
    * Load music 
    */
@@ -503,9 +518,12 @@ void main(void) {
   
   // Add hUGE driver to VBL interrupt handler.
   add_VBL(hUGE_dosound);
+#endif
 
+#if ENABLE_SCORING
   // Add timer score incrementer to VBL interrupt handler.
   add_VBL(increment_timer_score_isr);
+#endif
 
   /*
    * Turn on display and show background 
@@ -653,9 +671,11 @@ void main(void) {
     gen_state.biome_column_index = 0;
     gen_column_index = 20;
 
+#if ENABLE_MUSIC
     // Title Screen
     hUGE_init(&intro_song);
     play_all_channels();
+#endif
     waitpad(J_START);
     waitpadup();
 
@@ -710,10 +730,14 @@ void main(void) {
     set_win_tiles(0, 0, 20, 1, blank_win_tiles); 
     set_win_tiles(9, 0, 2, 1, bomb_tiles);
     set_win_tiles(0, 0, 8, 1, progressbar_tiles);
+
+#if ENABLE_MUSIC
     mute_all_channels();
+#endif
 
     wait(10);
     
+#if ENABLE_MUSIC
     if (scroll_pixels_per_frame == 1){
       hUGE_init(&main_song);
     }
@@ -721,6 +745,7 @@ void main(void) {
       hUGE_init(&main_song_fast);
     }
     play_all_channels();
+#endif
 
     SHOW_SPRITES;
     SHOW_WIN;
@@ -757,11 +782,15 @@ void main(void) {
 
       if (KEY_PRESSED(input, J_START)) {
         game_paused = true;
+#if ENABLE_MUSIC
         mute_all_channels();
+#endif
         waitpadup();
         waitpad(J_START);
         waitpadup();
+#if ENABLE_MUSIC
         play_all_channels();
+#endif
         damage_animation_state = SHOWN;
         game_paused = false;
         continue;
@@ -810,6 +839,7 @@ void main(void) {
         player.cb.w = 3;
       }
 
+#if ENABLE_WEAPONS
       if (KEY_FIRST_PRESS(input, prev_input, J_A) && active_bullet_count < MAX_BULLETS) {
         // Find first non-active bullet in `bullets` array and activate it.
         for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
@@ -835,6 +865,7 @@ void main(void) {
         n_bombs--;
         play_bomb_sound();
       }
+#endif
 
       prev_input = input;
 
@@ -861,6 +892,7 @@ void main(void) {
       set_sprite_tile(player.sprite_id, player.sprite_tile_id);
       move_sprite(player.sprite_id, player.x, player.y);
       
+#if ENABLE_WEAPONS
       /**
        * Update bullets, if any are active.
        */
@@ -880,7 +912,9 @@ void main(void) {
             b->x = 0;
             b->y = 0;
             --active_bullet_count;
-          } else {
+          }
+#if ENABLE_COLLISIONS
+          else {
             bullet_collision = check_collisions(b, coll_map, bkg_map, false, false);
             // Check that the bullet collided with something it can destroy
             if (bullet_collision > 0 && bullet_collision < 235) {
@@ -891,6 +925,7 @@ void main(void) {
               --active_bullet_count;
             }
           }
+#endif
           // Update bullet's sprite position.
           move_sprite(b->sprite_id, b->x, b->y);
         }
@@ -901,11 +936,13 @@ void main(void) {
         copy_bkgmap_to_vram = true;
         bomb_dropped = false;
       }
+#endif
 
       /*
        * Continue processing 
        */
 
+#if ENABLE_COLLISIONS
       if (damage_animation_counter == 0){
         // Damage animation or shield powerup expired.
         // Reset so that player is shown
@@ -1052,6 +1089,7 @@ void main(void) {
           }
         }
       }
+#endif
 
       // Scroll the screen.
       if (scroll_frames_per_pixel != 0) {
@@ -1083,10 +1121,12 @@ void main(void) {
           ++screen_count;
           increment_point_score(5);
 
+#if ENABLE_WEAPONS
           // Add a bomb every few screens we scroll.
           if (screen_count % 3 == 0 && n_bombs < MAX_BOMBS) {
             ++n_bombs;
           }
+#endif
 
           // // Increase scroll speed after some time.
           // if (screen_count == 3) {
@@ -1103,6 +1143,7 @@ void main(void) {
         }
       }
 
+#if ENABLE_WEAPONS
       if ((frame_count & 0x3) == 0) { // %4
         // Update HUD
         bomb_tiles[1] = n_bombs + 1;
@@ -1113,20 +1154,25 @@ void main(void) {
       if (frame_count >= 255){
         frame_count = 0;
       }
+#endif
 
+#if ENABLE_COLLISIONS
       if ((player_collision) || (bullet_collision)){
         // Update bkg_map if there are collisions
         copy_bkgmap_to_vram = true;
       }
+#endif
 
       // Wait for frame to finish drawing
       vsync();
       
+#if ENABLE_SCORING
       if (show_time) {
         display_timer_score();
       } else {
         display_point_score();
       }
+#endif
 
       if (copy_bkgmap_to_vram){
         // Write the entire map to VRAM
