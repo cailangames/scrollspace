@@ -1,9 +1,11 @@
 SHELL := /bin/bash
 
-GBDK_HOME	= /opt/gbdk/
-HUGE_HOME = /opt/hUGEDriver-6/
-# GBDK_HOME	= /mnt/c/Users/smark/gbdk/linux64/
-# HUGE_HOME = /mnt/c/Users/smark/gbdk/hUGEDriver-6.1.3/
+ifndef GBDK_HOME
+	GBDK_HOME = /opt/gbdk/
+endif
+ifndef HUGE_HOME
+	HUGE_HOME = /opt/hUGEDriver-6/
+endif
 
 LCC	= $(GBDK_HOME)bin/lcc
 
@@ -36,7 +38,7 @@ OBJS  = $(CSOURCES:%.c=$(OBJDIR)/%.o)
 # "make all"
 all: $(TARGETS)
 
-# Compule .c files in "src/" to .o object files
+# Compile .c files in "src/" to .o object files
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(LCC) $(CFLAGS) -c -I$(HUGE_H) -I$(GBDK_HOME) -o $@ $<
 
