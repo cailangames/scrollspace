@@ -91,6 +91,33 @@ static void fade_in(void) {
   }
 }
 
+// Loads sprite, tile, and font data.
+static void load_data(void) {
+  // Load font tiles to background map.
+  font_init();
+  font_t min_font = font_load(font_min);
+  font_set(min_font);
+
+  // Load background tiles.
+  uint8_t tile_index = MAPBLOCK_IDX;
+  set_bkg_data(tile_index, sizeof(block_tiles)/TILE_SIZE_BYTES, block_tiles);
+  tile_index += sizeof(block_tiles)/TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(powerups_tiles)/TILE_SIZE_BYTES, powerups_tiles);
+  tile_index += sizeof(powerups_tiles)/TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(progressbar_tiles)/TILE_SIZE_BYTES, progressbar_tiles);
+  tile_index += sizeof(progressbar_tiles)/TILE_SIZE_BYTES;
+  // Note: This is hardcoded to load only 1 tile for some reason, instead of loading all the tiles in
+  // font_extras_tiles.
+  set_bkg_data(tile_index, 1, font_extras_tiles);
+  tile_index += 1;
+  set_bkg_data(tile_index, sizeof(tutorial_screen_tiles)/TILE_SIZE_BYTES, tutorial_screen_tiles);
+
+  // Load sprite data.
+  set_sprite_data(0, 10, player_data);
+  set_sprite_data(10, 9, player_shield_data);
+  set_sprite_data(19, 3, projectiles_data);
+}
+
 #if ENABLE_COLLISIONS
 static void show_gameover_screen(void) {
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, 18, gameover_titlescreen);
@@ -467,38 +494,15 @@ static void update_health_bar(struct Sprite* player, uint8_t* progressbar_tiles,
 
 void main(void) {
   /*
-   * Load background and sprite data
+   * SETUP
    */
-  // Load font tiles to background map
-  font_t min_font;
-  font_init();
-  min_font = font_load(font_min);
-  font_set(min_font);
-
-  // Load background tiles
-  uint8_t tile_index = MAPBLOCK_IDX;
-  set_bkg_data(tile_index, sizeof(block_tiles)/TILE_SIZE_BYTES, block_tiles);
-  tile_index += sizeof(block_tiles)/TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(powerups_tiles)/TILE_SIZE_BYTES, powerups_tiles);
-  tile_index += sizeof(powerups_tiles)/TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(progressbar_tiles)/TILE_SIZE_BYTES, progressbar_tiles);
-  tile_index += sizeof(progressbar_tiles)/TILE_SIZE_BYTES;
-  // Note: This is hardcoded to load only 1 tile for some reason, instead of loading all the tiles in
-  // font_extras_tiles.
-  set_bkg_data(tile_index, 1, font_extras_tiles);
-  tile_index += 1;
-  set_bkg_data(tile_index, sizeof(tutorial_screen_tiles)/TILE_SIZE_BYTES, tutorial_screen_tiles);
-
-  // Load sprite data
-  set_sprite_data(0, 10, player_data);
-  set_sprite_data(10, 9, player_shield_data);
-  set_sprite_data(19, 3, projectiles_data);
-
-  // Load title screen
+  load_data();
+  // Load title screen.
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, game_titlescreen);
-
-  // Load Window
+  // Load Window.
   move_win(7, 136);
+  // Initialize high scores.
+  init_highscores();
 
 #if ENABLE_MUSIC
   /*
@@ -531,15 +535,12 @@ void main(void) {
   DISPLAY_ON;
   SHOW_BKG;
 
+  display_highscores();
+  SHOW_WIN;
+
   uint8_t bomb_tiles[2];
   uint8_t progressbar_tiles[8];
   bool show_time = true;
-
-  // Initialize high scores.
-  if (init_highscores()) {
-    display_highscores();
-    SHOW_WIN;
-  }
 
   struct Sprite player;
   struct Sprite bullets[MAX_BULLETS];
