@@ -1,28 +1,33 @@
-#include <gb/gb.h>
-#include <gbdk/font.h>
 #include <rand.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <gb/gb.h>
 #include <gbdk/bcd.h>
+#include <gbdk/font.h>
 
 #include "hUGEDriver.h"
+
 #include "common.h"
 #include "procedural_generation.h"
 #include "score.h"
 #include "sound_effects.h"
-
-#include "font_extras_tiles.h"
 #include "sprites.h"
-#include "title_screens.h"
-#include "tutorial_screen_tiles.h"
-#include "tutorial_screen_map.h"
-#include "player_sprites.h"
+
+// Sprite data
 #include "player_shield_sprites.h"
-#include "block_tiles.h"
-#include "progressbar_tiles.h"
+#include "player_sprites.h"
 #include "projectiles_sprites.h"
+
+// Tile data
+#include "block_tiles.h"
+#include "font_extras_tiles.h"
 #include "powerups_tiles.h"
+#include "progressbar_tiles.h"
+#include "title_screens.h"
+#include "tutorial_screen_map.h"
+#include "tutorial_screen_tiles.h"
 
 // The following are used for performance testing of individual components.
 #define ENABLE_SCORING 1
@@ -49,21 +54,18 @@ static void wait(uint8_t num_frames) {
   }
 }
 
-static void fadeout(void) {
+static void fade_out(void) {
   for (uint8_t i = 0; i < 4; ++i) {
     switch (i) {
     case 0:
       BGP_REG = 0xE4;
       break;
-
     case 1:
       BGP_REG = 0xF9;
       break;
-
     case 2:
       BGP_REG = 0xFE;
       break;
-
     case 3:
       BGP_REG = 0xFF;
       break;
@@ -72,17 +74,15 @@ static void fadeout(void) {
   }
 }
 
-static void fadein(void) {
+static void fade_in(void) {
   for (uint8_t i = 0; i < 3; ++i) {
     switch (i) {
     case 0:
       BGP_REG = 0xFE;
       break;
-
     case 1:
       BGP_REG = 0xF9;
       break;
-
     case 2:
       BGP_REG = 0xE4;
       break;
@@ -93,16 +93,16 @@ static void fadein(void) {
 
 #if ENABLE_COLLISIONS
 static void show_gameover_screen(void) {
-  set_bkg_tiles(0,0,20,18,gameover_titlescreen);
-  move_bkg(0,0);
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, 18, gameover_titlescreen);
+  move_bkg(0, 0);
 
   display_gameover_scores();
 
   SHOW_BKG;
-  fadein();
+  fade_in();
   waitpad(J_START);
   waitpadup();
-  fadeout();
+  fade_out();
   HIDE_BKG;
 }
 #endif
@@ -110,7 +110,7 @@ static void show_gameover_screen(void) {
 #if ENABLE_WEAPONS
 // Updates the collision map and background map in response to a dropped bomb. The bomb explosion
 // is a square in front of the player with sides of length `2*BOMB_RADIUS+1` tiles.
-static void drop_bomb(const struct Sprite *player, uint8_t *coll_map, uint8_t *bkg_map) {
+static void drop_bomb(const struct Sprite* player, uint8_t* coll_map, uint8_t* bkg_map) {
   uint8_t row_count = (BOMB_RADIUS * 2) + 1;  // +1 for the center row, which is centered on the ship.
   uint8_t row_top = (player->y - SCREEN_T) >> 3;
   // Because of integer division, the bomb explosion can look like it's not centered with the ship.
@@ -158,15 +158,15 @@ static void drop_bomb(const struct Sprite *player, uint8_t *coll_map, uint8_t *b
 #endif
 
 #if ENABLE_COLLISIONS
-static uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_t *bkg_map, uint8_t player_sprite, uint8_t pickups_only){
+static uint8_t check_collisions(struct Sprite* sprite, uint8_t* coll_map, uint8_t* bkg_map, uint8_t player_sprite, uint8_t pickups_only) {
   /*
    * The player sprite can collide with up to 4 tiles.
    * Check the collision map on the top_left, top_right
    * bottom_left, and bottom right corners.
    */
 
-  uint16_t idx_topl, idx_topr; 
-  uint16_t idx_botl, idx_botr; 
+  uint16_t idx_topl, idx_topr;
+  uint16_t idx_botl, idx_botr;
   uint16_t row_topl, row_topr;
   uint16_t row_botl, row_botr;
   uint16_t col_topl, col_topr;
@@ -176,44 +176,44 @@ static uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_
   int8_t block_health = 0;
 
   row_topl = (sprite->cb.y - 16) / 8;
-  col_topl = ((SCX_REG + sprite->cb.x - 8) %256) / 8;
+  col_topl = ((SCX_REG + sprite->cb.x - 8) % 256) / 8;
   idx_topl = col_topl + row_topl*32;
 
   row_topr = row_topl;
-  col_topr = ((SCX_REG + sprite->cb.x + sprite->cb.w - 8)%256) / 8;
+  col_topr = ((SCX_REG + sprite->cb.x + sprite->cb.w - 8) % 256) / 8;
   idx_topr = col_topr + row_topr*32;
 
-  row_botl = ((sprite->cb.y + sprite->cb.h - 16)%256) / 8;
-  col_botl = col_topl; 
+  row_botl = ((sprite->cb.y + sprite->cb.h - 16) % 256) / 8;
+  col_botl = col_topl;
   idx_botl = col_botl + row_botl*32;
 
   row_botr = row_botl;
-  col_botr = col_topr; 
+  col_botr = col_topr;
   idx_botr = col_botr + row_botr*32;
 
   if (coll_map[idx_topr] > 0) {
-    collision = coll_map[idx_topr]; 
+    collision = coll_map[idx_topr];
     collision_block = bkg_map[idx_topr];
 
     // Check if it is not a power up
-    if ((collision < 235) && (!pickups_only)){
+    if (collision < 235 && !pickups_only) {
       // Apply damage to the background element
-      if (player_sprite){
+      if (player_sprite) {
         block_health = coll_map[idx_topr] - 2;
       }
-      else{
-        // Bullet 
+      else {
+        // Bullet
         block_health = coll_map[idx_topr] - 1;
       }
 
       if (block_health > 0) {
         // Hit a wall
-        if (sprite->dir & UP){
-          // Top Right collision detected while sprite is moving up 
+        if (sprite->dir & UP) {
+          // Top Right collision detected while sprite is moving up
           sprite->y += 8;
         }
-        if (sprite->dir & RIGHT){
-          // Top Right collision detected while sprite is moving up 
+        if (sprite->dir & RIGHT) {
+          // Top Right collision detected while sprite is moving up
           sprite->x -= 8;
         }
       }
@@ -224,7 +224,7 @@ static uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_
         bkg_map[idx_topr] = 0;
         coll_map[idx_topr] = 0;
 
-        if (collision_block == MAPBLOCK_IDX + 2){
+        if (collision_block == MAPBLOCK_IDX + 2) {
           increment_point_score(2);
         }
       }
@@ -232,41 +232,41 @@ static uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_
         coll_map[idx_topr] = block_health;
       }
     }
-    else if ((collision < 235) && (pickups_only)){
+    else if (collision < 235 && pickups_only) {
       // Clear collision for this object so we dont trigger
       // on the next check (we entered this object with immunity
       // so we can skip colliding with it later)
       coll_map[idx_topr] = 0;
     }
-    else if ((collision >= 235) && (player_sprite)) {
+    else if (collision >= 235 && player_sprite) {
       // Pick up power up
       bkg_map[idx_topr] = 0;
       coll_map[idx_topr] = 0;
     }
   }
-  else if (coll_map[idx_botr] > 0){
+  else if (coll_map[idx_botr] > 0) {
     collision = coll_map[idx_botr];
     collision_block = bkg_map[idx_botr];
 
     // Check if it is not a power up
-    if ((collision < 235) && (!pickups_only)){
+    if (collision < 235 && !pickups_only) {
       // Apply damage to the background element
-      if (player_sprite){
+      if (player_sprite) {
         block_health = coll_map[idx_botl] - 2;
       }
-      else{
-        // Bullet 
+      else {
+        // Bullet
         block_health = coll_map[idx_botl] - 1;
       }
 
       if (block_health > 0) {
         // Hit a wall
-        if (sprite->dir & DOWN){
-          // Bottom Right collision detected while sprite is moving down 
+        if (sprite->dir & DOWN) {
+          // Bottom Right collision detected while sprite is moving down
           sprite->y -= 8;
         }
-        if (sprite->dir & RIGHT){
-          // Bottom Right collision detected while sprite is moving down 
+        if (sprite->dir & RIGHT) {
+          // Bottom Right collision detected while sprite is moving down
           sprite->x -= 8;
         }
       }
@@ -277,7 +277,7 @@ static uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_
         bkg_map[idx_botr] = 0;
         coll_map[idx_botr] = 0;
 
-        if (collision_block == MAPBLOCK_IDX + 2){
+        if (collision_block == MAPBLOCK_IDX + 2) {
           increment_point_score(2);
         }
       }
@@ -285,42 +285,42 @@ static uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_
         coll_map[idx_botr] = block_health;
       }
     }
-    else if ((collision < 235) && (pickups_only)){
+    else if (collision < 235 && pickups_only) {
       // Clear collision for this object so we dont trigger
       // on the next check (we entered this object with immunity
       // so we can skip colliding with it later)
       coll_map[idx_botr] = 0;
     }
-    else if ((collision >= 235) && (player_sprite)) {
+    else if (collision >= 235 && player_sprite) {
       // Pick up power up
       bkg_map[idx_botr] = 0;
       coll_map[idx_botr] = 0;
     }
   }
-  else if ((player_sprite) && (coll_map[idx_topl] > 0)){
+  else if (player_sprite && coll_map[idx_topl] > 0) {
     // Only the player has left side collisions
     collision = coll_map[idx_topl];
     collision_block = bkg_map[idx_topl];
 
     // Check if it is not a power up
-    if ((collision < 235) && (!pickups_only)){
+    if (collision < 235 && !pickups_only) {
       // Apply damage to the background element
-      if (player_sprite){
+      if (player_sprite) {
         block_health = coll_map[idx_topl] - 2;
       }
-      else{
-        // Bullet 
+      else {
+        // Bullet
         block_health = coll_map[idx_topl] - 1;
       }
 
       if (block_health > 0) {
         // Hit a wall
-        if (sprite->dir & UP){
-          // Top Left collision detected while sprite is moving up 
+        if (sprite->dir & UP) {
+          // Top Left collision detected while sprite is moving up
           sprite->y += 8;
         }
-        if (sprite->dir & LEFT){
-          // Top Left collision detected while sprite is moving up 
+        if (sprite->dir & LEFT) {
+          // Top Left collision detected while sprite is moving up
           sprite->x += 8;
         }
       }
@@ -331,7 +331,7 @@ static uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_
         bkg_map[idx_topl] = 0;
         coll_map[idx_topl] = 0;
 
-        if (collision_block == MAPBLOCK_IDX + 2){
+        if (collision_block == MAPBLOCK_IDX + 2) {
           increment_point_score(2);
         }
       }
@@ -339,42 +339,42 @@ static uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_
         coll_map[idx_topl] = block_health;
       }
     }
-    else if ((collision < 235) && (pickups_only)){
+    else if (collision < 235 && pickups_only) {
       // Clear collision for this object so we dont trigger
       // on the next check (we entered this object with immunity
       // so we can skip colliding with it later)
       coll_map[idx_topl] = 0;
     }
-    else if ((collision >= 235) && (player_sprite)) {
+    else if (collision >= 235 && player_sprite) {
       // Pick up power up
       bkg_map[idx_topl] = 0;
       coll_map[idx_topl] = 0;
     }
   }
-  else if ((player_sprite) && (coll_map[idx_botl] > 0)){
+  else if (player_sprite && coll_map[idx_botl] > 0) {
     // Only the player has left side collisions
     collision = coll_map[idx_botl];
     collision_block = bkg_map[idx_botl];
 
     // Check if it is not a power up
-    if ((collision < 235) && (!pickups_only)){
+    if (collision < 235 && !pickups_only) {
       // Apply damage to the background element
-      if (player_sprite){
+      if (player_sprite) {
         block_health = coll_map[idx_botl] - 2;
       }
-      else{
-        // Bullet 
+      else {
+        // Bullet
         block_health = coll_map[idx_botl] - 1;
       }
 
       if (block_health > 0) {
         // Hit a wall
-        if (sprite->dir & DOWN){
-          // Bottom Left collision detected while sprite is moving down 
+        if (sprite->dir & DOWN) {
+          // Bottom Left collision detected while sprite is moving down
           sprite->y -= 8;
         }
-        if (sprite->dir & LEFT){
-          // Bottom Left collision detected while sprite is moving down 
+        if (sprite->dir & LEFT) {
+          // Bottom Left collision detected while sprite is moving down
           sprite->x += 8;
         }
       }
@@ -385,7 +385,7 @@ static uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_
         bkg_map[idx_botl] = 0;
         coll_map[idx_botl] = 0;
 
-        if (collision_block == MAPBLOCK_IDX + 2){
+        if (collision_block == MAPBLOCK_IDX + 2) {
           increment_point_score(2);
         }
       }
@@ -393,20 +393,20 @@ static uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_
         coll_map[idx_botl] = block_health;
       }
     }
-    else if ((collision < 235) && (pickups_only)){
+    else if (collision < 235 && pickups_only) {
       // Clear collision for this object so we dont trigger
       // on the next check (we entered this object with immunity
       // so we can skip colliding with it later)
       coll_map[idx_botl] = 0;
     }
-    else if ((collision >= 235) && (player_sprite)) {
+    else if (collision >= 235 && player_sprite) {
       // Pick up power up
       bkg_map[idx_botl] = 0;
       coll_map[idx_botl] = 0;
     }
-  } 
-  
-  if ((collision > 0) && (block_health > 0) && (player_sprite)){
+  }
+
+  if (collision > 0 && block_health > 0 && player_sprite) {
     // Move the player sprite after collision
     move_sprite(sprite->sprite_id, sprite->x, sprite->y);
   }
@@ -414,52 +414,52 @@ static uint8_t check_collisions(struct Sprite *sprite, uint8_t *coll_map, uint8_
   return collision;
 }
 
-static void update_health_bar(struct Sprite *player, uint8_t *progressbar_tiles, uint8_t *player_sprite_base_id){
+static void update_health_bar(struct Sprite* player, uint8_t* progressbar_tiles, uint8_t* player_sprite_base_id) {
   uint8_t i, idx;
-  if (player->health == 100){
-    progressbar_tiles[0] = HEALTH_BAR_START; // left edge of bar
-    for (i = 1; i < 7; i++){
-      progressbar_tiles[i] = HEALTH_BAR_START + 1; // center of bar
+  if (player->health == 100) {
+    progressbar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
+    for (i = 1; i < 7; ++i) {
+      progressbar_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
     }
-    progressbar_tiles[7] = HEALTH_BAR_START + 2; // right edge of bar
+    progressbar_tiles[7] = HEALTH_BAR_START + 2;  // right edge of bar
   }
   else if (player->health >= 88) {
-    progressbar_tiles[0] = HEALTH_BAR_START; // left edge of bar
-    for (i = 1; i < 7; i++){
-      progressbar_tiles[i] = HEALTH_BAR_START + 1; // center of bar
+    progressbar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
+    for (i = 1; i < 7; ++i) {
+      progressbar_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
     }
-    progressbar_tiles[7] = HEALTH_BAR_START + 5; // right edge of bar
+    progressbar_tiles[7] = HEALTH_BAR_START + 5;  // right edge of bar
   }
   else if (player->health >= 16) {
     idx = player->health / 12;
-    progressbar_tiles[0] = HEALTH_BAR_START; // left edge of bar
-    for (i=1; i < 7; i++){
-      if (i < idx){
-        progressbar_tiles[i] = HEALTH_BAR_START + 1; // fill 
+    progressbar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
+    for (i = 1; i < 7; ++i) {
+      if (i < idx) {
+        progressbar_tiles[i] = HEALTH_BAR_START + 1;  // fill
       }
       else {
-        progressbar_tiles[i] = HEALTH_BAR_START + 4; // clear
+        progressbar_tiles[i] = HEALTH_BAR_START + 4;  // clear
       }
     }
-    progressbar_tiles[7] = HEALTH_BAR_START + 5; // clear right edge of bar
+    progressbar_tiles[7] = HEALTH_BAR_START + 5;  // clear right edge of bar
   }
-  else if (player->health > 0){
-    progressbar_tiles[1] = HEALTH_BAR_START + 4; 
+  else if (player->health > 0) {
+    progressbar_tiles[1] = HEALTH_BAR_START + 4;
     progressbar_tiles[0] = HEALTH_BAR_START;
   }
-  else{
-    progressbar_tiles[1] = HEALTH_BAR_START + 4; // Clear bottom 2 tiles 
+  else {
+    progressbar_tiles[1] = HEALTH_BAR_START + 4;  // Clear bottom 2 tiles
     progressbar_tiles[0] = HEALTH_BAR_START + 3;
   }
   set_win_tiles(0, 0, 8, 1, progressbar_tiles);
 
-  if (player->health > 50){
+  if (player->health > 50) {
     *player_sprite_base_id = 0;
   }
-  else if (player->health > 25){
+  else if (player->health > 25) {
     *player_sprite_base_id = 3;
   }
-  else if (player->health > 0){
+  else if (player->health > 0) {
     *player_sprite_base_id = 6;
   }
 }
@@ -490,19 +490,19 @@ void main(void) {
   set_bkg_data(tile_index, sizeof(tutorial_screen_tiles)/TILE_SIZE_BYTES, tutorial_screen_tiles);
 
   // Load sprite data
-  set_sprite_data(0,10,player_data);
-  set_sprite_data(10,9,player_shield_data);
-  set_sprite_data(19,3,projectiles_data);
+  set_sprite_data(0, 10, player_data);
+  set_sprite_data(10, 9, player_shield_data);
+  set_sprite_data(19, 3, projectiles_data);
 
   // Load title screen
-  set_bkg_tiles(0,0,20,COLUMN_HEIGHT,game_titlescreen);
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, game_titlescreen);
 
   // Load Window
-  move_win(7,136);
+  move_win(7, 136);
 
 #if ENABLE_MUSIC
-  /**
-   * Load music 
+  /*
+   * Load music
    */
   extern const hUGESong_t intro_song;
   extern const hUGESong_t main_song;
@@ -515,7 +515,7 @@ void main(void) {
 
   // Mute all channels.
   mute_all_channels();
-  
+
   // Add hUGE driver to VBL interrupt handler.
   add_VBL(hUGE_dosound);
 #endif
@@ -526,7 +526,7 @@ void main(void) {
 #endif
 
   /*
-   * Turn on display and show background 
+   * Turn on display and show background
    */
   DISPLAY_ON;
   SHOW_BKG;
@@ -564,15 +564,15 @@ void main(void) {
   uint8_t dy;
   uint8_t frame_count;
   uint8_t scroll_count;
-  int16_t damage_animation_counter; // When hit, skip checking collisions for this long
+  int16_t damage_animation_counter;  // When hit, skip checking collisions for this long
   uint8_t col_count;  // counter for number of columns scrolled. Used to calculate screen_count
-  uint16_t screen_count; // number of screens scrolled
+  uint16_t screen_count;  // number of screens scrolled
   uint8_t scroll_frames_per_pixel;  // Slower scrolling: How many frames to wait before scrolling one pixel
   uint8_t scroll_pixels_per_frame;  // Faster scrolling: How many pixels to scroll each frame
   uint8_t scroll_frames_count;  // Counts frames for scroll_frames_per_pixel scrolling
   uint8_t player_collision;
   uint8_t bullet_collision;
-  enum animation_state damage_animation_state; // Used during the damage recovery to toggle between showing and hidding the player sprite
+  enum animation_state damage_animation_state;  // Used during the damage recovery to toggle between showing and hidding the player sprite
 
   uint8_t player_sprite_base_id;
 
@@ -591,15 +591,15 @@ void main(void) {
     bomb_tiles[0] = BOMB_ICON_IDX;
     bomb_tiles[1] = n_bombs + 1;
 
-    progressbar_tiles[0] = HEALTH_BAR_START; // left edge of bar
-    for (i = 1; i < 7; i++){
-      progressbar_tiles[i] = HEALTH_BAR_MIDDLE; // center of bar
+    progressbar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
+    for (i = 1; i < 7; ++i) {
+      progressbar_tiles[i] = HEALTH_BAR_MIDDLE;  // center of bar
     }
-    progressbar_tiles[7] = HEALTH_BAR_END; // right edge of bar
+    progressbar_tiles[7] = HEALTH_BAR_END;  // right edge of bar
 
     /*
-    * Create a player and display the sprite 
-    */
+     * Create a player and display the sprite
+     */
     player.sprite_id = 0;
     player.sprite_tile_id = 0;
     player.x = 20;
@@ -642,25 +642,25 @@ void main(void) {
       set_sprite_tile(b->sprite_id, b->sprite_tile_id);
       move_sprite(b->sprite_id, b->x, b->y);
     }
-  
+
     // Clear collision map and background map
-    for (ii=0; ii<COLUMN_HEIGHT*ROW_WIDTH; ++ii) {
+    for (ii = 0; ii < COLUMN_HEIGHT*ROW_WIDTH; ++ii) {
       coll_map[ii] = 0;
       bkg_map[ii] = 0;
     }
 
     /*
-    * Game Loop
-    */
+     * Game Loop
+     */
     input = 0;
     prev_input = 0;
     dx = 0;
     dy = 0;
     frame_count = 0;
     scroll_count = 0;
-    damage_animation_counter = 0; // When hit, skip checking collisions for this long
-    col_count = 0;  // counter for number of columns scrolled. Used to calculate screen_count
-    screen_count = 0; // number of screens scrolled
+    damage_animation_counter = 0;
+    col_count = 0;
+    screen_count = 0;
     scroll_frames_per_pixel = 0;
     scroll_pixels_per_frame = 1;
     scroll_frames_count = 0;
@@ -679,8 +679,8 @@ void main(void) {
     waitpad(J_START);
     waitpadup();
 
-    // Speed Selection Screen    
-    set_bkg_tiles(0,0,20,COLUMN_HEIGHT,speed_titlescreen);
+    // Speed Selection Screen
+    set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, speed_titlescreen);
     set_sprite_tile(0, 0);
     move_sprite(0, 32, 72);
     SHOW_SPRITES;
@@ -720,14 +720,14 @@ void main(void) {
     move_sprite(player.sprite_id, player.x, player.y);
 
     // Copy tutorial screen to bkg_map
-    for (i=0; i<COLUMN_HEIGHT; i++){
-      for (j=0; j<SCREEN_TILE_WIDTH; j++){
+    for (i = 0; i < COLUMN_HEIGHT; ++i) {
+      for (j = 0; j < SCREEN_TILE_WIDTH; ++j) {
         bkg_map[i*ROW_WIDTH+j] = tutorial_screen_map[i*SCREEN_TILE_WIDTH+j];
       }
     }
-    set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+    set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, bkg_map);
 
-    set_win_tiles(0, 0, 20, 1, blank_win_tiles); 
+    set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
     set_win_tiles(9, 0, 2, 1, bomb_tiles);
     set_win_tiles(0, 0, 8, 1, progressbar_tiles);
 
@@ -736,9 +736,9 @@ void main(void) {
 #endif
 
     wait(10);
-    
+
 #if ENABLE_MUSIC
-    if (scroll_pixels_per_frame == 1){
+    if (scroll_pixels_per_frame == 1) {
       hUGE_init(&main_song);
     }
     else{
@@ -759,7 +759,7 @@ void main(void) {
         gen_column_index = 0;
       }
     }
-    set_bkg_tiles(0, 0, 32, COLUMN_HEIGHT, bkg_map);
+    set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, bkg_map);
     SWITCH_ROM(last_bank);
 
     wait(15);
@@ -820,7 +820,7 @@ void main(void) {
         dy = -player.speed;
         player.sprite_tile_id = player_sprite_base_id + 1;
         player.dir |= UP;
-        
+
         // Make collision box smaller when plane is "tilted".
         player.cb_x_offset = 2;
         player.cb_y_offset = 3;
@@ -862,7 +862,7 @@ void main(void) {
 
       if (KEY_FIRST_PRESS(input, prev_input, J_B) && n_bombs > 0) {
         bomb_dropped = true;
-        n_bombs--;
+        --n_bombs;
         play_bomb_sound();
       }
 #endif
@@ -870,15 +870,15 @@ void main(void) {
       prev_input = input;
 
       // Update player position
-      player.x += dx; 
+      player.x += dx;
       // Bounds check
       if (player.x < SCREEN_L) {
         player.x = SCREEN_L;
       } else if (player.x > SCREEN_R) {
         player.x = SCREEN_R;
       }
-      
-      player.y += dy; 
+
+      player.y += dy;
       if (player.y < SCREEN_T) {
         player.y = SCREEN_T;
       } else if (player.y > SCREEN_B) {
@@ -891,9 +891,9 @@ void main(void) {
 
       set_sprite_tile(player.sprite_id, player.sprite_tile_id);
       move_sprite(player.sprite_id, player.x, player.y);
-      
+
 #if ENABLE_WEAPONS
-      /**
+      /*
        * Update bullets, if any are active.
        */
       if (active_bullet_count != 0) {
@@ -931,7 +931,7 @@ void main(void) {
         }
       }
 
-      if (bomb_dropped){
+      if (bomb_dropped) {
         drop_bomb(&player, coll_map, bkg_map);
         copy_bkgmap_to_vram = true;
         bomb_dropped = false;
@@ -939,42 +939,41 @@ void main(void) {
 #endif
 
       /*
-       * Continue processing 
+       * Continue processing
        */
 
 #if ENABLE_COLLISIONS
-      if (damage_animation_counter == 0){
+      if (damage_animation_counter == 0) {
         // Damage animation or shield powerup expired.
         // Reset so that player is shown
-        if (shield_active){
+        if (shield_active) {
           shield_active = false;
           player_sprite_base_id -= 10;
         }
 
-        if (damage_animation_state == HIDDEN){
-          // SHOW_SPRITES;
+        if (damage_animation_state == HIDDEN) {
           move_sprite(player.sprite_id, player.x, player.y);
           damage_animation_state = SHOWN;
         }
 
         // Normal collision check for player
         player_collision = check_collisions(&player, coll_map, bkg_map, true, false);
-        if ((player_collision > 0) && (player_collision < 235)) {
+        if (player_collision > 0 && player_collision < 235) {
           player.health -= COLLISION_DAMAGE;
           damage_animation_counter = COLLISION_TIMEOUT;
           player_collision = 1;
         }
         else if (player_collision == HEALTH_KIT_ID) {
-          if (player.health < 100){
+          if (player.health < 100) {
             // Prevent health overflow (int8 maxes at 128)
-            if ((100 - player.health) >= HEALTH_KIT_VALUE){
-              if(player.health < 20){
+            if ((100 - player.health) >= HEALTH_KIT_VALUE) {
+              if(player.health < 20) {
                 player.health += 4*HEALTH_KIT_VALUE;
               }
-              else if (player.health < 50){
+              else if (player.health < 50) {
                 player.health += 2*HEALTH_KIT_VALUE;
               }
-              else{
+              else {
                 player.health += HEALTH_KIT_VALUE;
               }
             }
@@ -993,7 +992,7 @@ void main(void) {
           play_shield_sound();
         }
 
-        if (player.health <= 0){
+        if (player.health <= 0) {
           game_paused = true;
 
           mute_all_channels();
@@ -1002,7 +1001,7 @@ void main(void) {
           wait(10);
           HIDE_BKG;
           play_gameover_sound();
-          fadeout();
+          fade_out();
           HIDE_SPRITES;
 
           // Hide all bullets.
@@ -1019,38 +1018,36 @@ void main(void) {
           show_gameover_screen();
 
           // Load title screen
-          set_bkg_tiles(0,0,20,COLUMN_HEIGHT,game_titlescreen);
-          move_bkg(0,0);
-          player_sprite_base_id = 0; // Reset to initial sprite
+          set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, game_titlescreen);
+          move_bkg(0, 0);
+          player_sprite_base_id = 0;  // Reset to initial sprite
           player.sprite_tile_id = player_sprite_base_id;
           set_sprite_tile(player.sprite_id, player.sprite_tile_id);
           display_highscores();
           SHOW_WIN;
           SHOW_BKG;
           wait(60);
-          fadein();
+          fade_in();
           break;
         }
 
         // Update health bar after a collision
-        if (player_collision){
+        if (player_collision) {
           update_health_bar(&player, progressbar_tiles, &player_sprite_base_id);
         }
       }
       else {
-        damage_animation_counter--;
-        if (damage_animation_counter < 0){
+        --damage_animation_counter;
+        if (damage_animation_counter < 0) {
           damage_animation_counter = 0;
         }
 
-        if (!shield_active){
-          if (damage_animation_state == HIDDEN){
-            // SHOW_SPRITES;
+        if (!shield_active) {
+          if (damage_animation_state == HIDDEN) {
             move_sprite(player.sprite_id, player.x, player.y);
             damage_animation_state = SHOWN;
           }
-          else{
-            // HIDE_SPRITES;
+          else {
             move_sprite(player.sprite_id, 0, 0);
             damage_animation_state = HIDDEN;
           }
@@ -1060,16 +1057,16 @@ void main(void) {
           player_collision = check_collisions(&player, coll_map, bkg_map, true, true);
 
           if (player_collision == HEALTH_KIT_ID) {
-            if (player.health < 100){
+            if (player.health < 100) {
               // Prevent health overflow (int8 maxes at 128)
-              if ((100 - player.health) >= HEALTH_KIT_VALUE){
-                if(player.health < 20){
+              if ((100 - player.health) >= HEALTH_KIT_VALUE) {
+                if(player.health < 20) {
                   player.health += 4*HEALTH_KIT_VALUE;
                 }
-                else if (player.health < 50){
+                else if (player.health < 50) {
                   player.health += 2*HEALTH_KIT_VALUE;
                 }
-                else{
+                else {
                   player.health += HEALTH_KIT_VALUE;
                 }
               }
@@ -1104,7 +1101,7 @@ void main(void) {
         scroll_count += scroll_pixels_per_frame;
       }
 
-      if (scroll_count >= 8){
+      if (scroll_count >= 8) {
         scroll_count = 0;
         last_bank = CURRENT_BANK;
         SWITCH_ROM(1);
@@ -1149,15 +1146,15 @@ void main(void) {
         bomb_tiles[1] = n_bombs + 1;
         set_win_tiles(9, 0, 2, 1, bomb_tiles);
       }
-      
-      frame_count++;
-      if (frame_count >= 255){
+
+      ++frame_count;
+      if (frame_count >= 255) {
         frame_count = 0;
       }
 #endif
 
 #if ENABLE_COLLISIONS
-      if ((player_collision) || (bullet_collision)){
+      if ((player_collision) || (bullet_collision)) {
         // Update bkg_map if there are collisions
         copy_bkgmap_to_vram = true;
       }
@@ -1165,7 +1162,7 @@ void main(void) {
 
       // Wait for frame to finish drawing
       vsync();
-      
+
 #if ENABLE_SCORING
       if (show_time) {
         display_timer_score();
@@ -1174,7 +1171,7 @@ void main(void) {
       }
 #endif
 
-      if (copy_bkgmap_to_vram){
+      if (copy_bkgmap_to_vram) {
         // Write the entire map to VRAM
         set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, bkg_map);
       }
