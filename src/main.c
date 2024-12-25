@@ -37,6 +37,8 @@
 
 static const uint8_t blank_win_tiles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
+static uint8_t health_bar_tiles[8];
+
 static bool game_paused = true;
 
 #if ENABLE_SCORING
@@ -116,6 +118,45 @@ static void load_data(void) {
   set_sprite_data(0, 10, player_data);
   set_sprite_data(10, 9, player_shield_data);
   set_sprite_data(19, 3, projectiles_data);
+}
+
+static void update_health_bar(int8_t health) {
+  if (health == 100) {
+    health_bar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
+    for (uint8_t i = 1; i < 7; ++i) {
+      health_bar_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
+    }
+    health_bar_tiles[7] = HEALTH_BAR_START + 2;  // right edge of bar
+  }
+  else if (health >= 88) {
+    health_bar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
+    for (uint8_t i = 1; i < 7; ++i) {
+      health_bar_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
+    }
+    health_bar_tiles[7] = HEALTH_BAR_START + 5;  // right edge of bar
+  }
+  else if (health >= 16) {
+    uint8_t idx = health / 12;
+    health_bar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
+    for (uint8_t i = 1; i < 7; ++i) {
+      if (i < idx) {
+        health_bar_tiles[i] = HEALTH_BAR_START + 1;  // fill
+      }
+      else {
+        health_bar_tiles[i] = HEALTH_BAR_START + 4;  // clear
+      }
+    }
+    health_bar_tiles[7] = HEALTH_BAR_START + 5;  // clear right edge of bar
+  }
+  else if (health > 0) {
+    health_bar_tiles[1] = HEALTH_BAR_START + 4; 
+    health_bar_tiles[0] = HEALTH_BAR_START;
+  }
+  else {
+    health_bar_tiles[1] = HEALTH_BAR_START + 4;  // clear bottom 2 tiles
+    health_bar_tiles[0] = HEALTH_BAR_START + 3;
+  }
+  set_win_tiles(0, 0, 8, 1, health_bar_tiles);
 }
 
 #if ENABLE_COLLISIONS
@@ -440,56 +481,6 @@ static uint8_t check_collisions(struct Sprite* sprite, uint8_t* coll_map, uint8_
 
   return collision;
 }
-
-static void update_health_bar(struct Sprite* player, uint8_t* progressbar_tiles, uint8_t* player_sprite_base_id) {
-  uint8_t i, idx;
-  if (player->health == 100) {
-    progressbar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
-    for (i = 1; i < 7; ++i) {
-      progressbar_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
-    }
-    progressbar_tiles[7] = HEALTH_BAR_START + 2;  // right edge of bar
-  }
-  else if (player->health >= 88) {
-    progressbar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
-    for (i = 1; i < 7; ++i) {
-      progressbar_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
-    }
-    progressbar_tiles[7] = HEALTH_BAR_START + 5;  // right edge of bar
-  }
-  else if (player->health >= 16) {
-    idx = player->health / 12;
-    progressbar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
-    for (i = 1; i < 7; ++i) {
-      if (i < idx) {
-        progressbar_tiles[i] = HEALTH_BAR_START + 1;  // fill
-      }
-      else {
-        progressbar_tiles[i] = HEALTH_BAR_START + 4;  // clear
-      }
-    }
-    progressbar_tiles[7] = HEALTH_BAR_START + 5;  // clear right edge of bar
-  }
-  else if (player->health > 0) {
-    progressbar_tiles[1] = HEALTH_BAR_START + 4;
-    progressbar_tiles[0] = HEALTH_BAR_START;
-  }
-  else {
-    progressbar_tiles[1] = HEALTH_BAR_START + 4;  // Clear bottom 2 tiles
-    progressbar_tiles[0] = HEALTH_BAR_START + 3;
-  }
-  set_win_tiles(0, 0, 8, 1, progressbar_tiles);
-
-  if (player->health > 50) {
-    *player_sprite_base_id = 0;
-  }
-  else if (player->health > 25) {
-    *player_sprite_base_id = 3;
-  }
-  else if (player->health > 0) {
-    *player_sprite_base_id = 6;
-  }
-}
 #endif
 
 void main(void) {
@@ -539,7 +530,6 @@ void main(void) {
   SHOW_WIN;
 
   uint8_t bomb_tiles[2];
-  uint8_t progressbar_tiles[8];
   bool show_time = true;
 
   struct Sprite player;
@@ -592,11 +582,11 @@ void main(void) {
     bomb_tiles[0] = BOMB_ICON_IDX;
     bomb_tiles[1] = n_bombs + 1;
 
-    progressbar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
+    health_bar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
     for (i = 1; i < 7; ++i) {
-      progressbar_tiles[i] = HEALTH_BAR_MIDDLE;  // center of bar
+      health_bar_tiles[i] = HEALTH_BAR_MIDDLE;  // center of bar
     }
-    progressbar_tiles[7] = HEALTH_BAR_END;  // right edge of bar
+    health_bar_tiles[7] = HEALTH_BAR_END;  // right edge of bar
 
     /*
      * Create a player and display the sprite
@@ -730,7 +720,7 @@ void main(void) {
 
     set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
     set_win_tiles(9, 0, 2, 1, bomb_tiles);
-    set_win_tiles(0, 0, 8, 1, progressbar_tiles);
+    set_win_tiles(0, 0, 8, 1, health_bar_tiles);
 
 #if ENABLE_MUSIC
     mute_all_channels();
@@ -1015,7 +1005,7 @@ void main(void) {
           }
           active_bullet_count = 0;
 
-          update_health_bar(&player, progressbar_tiles, &player_sprite_base_id);
+          update_health_bar(player.health);
           show_gameover_screen();
 
           // Load title screen
@@ -1034,7 +1024,7 @@ void main(void) {
 
         // Update health bar after a collision
         if (player_collision) {
-          update_health_bar(&player, progressbar_tiles, &player_sprite_base_id);
+          update_health_bar(player.health);
         }
       }
       else {
@@ -1086,6 +1076,17 @@ void main(void) {
             play_shield_sound();
           }
         }
+      }
+
+      // Update the ship sprite based on the current health.
+      if (player.health > 50) {
+        player_sprite_base_id = 0;
+      }
+      else if (player.health > 25) {
+        player_sprite_base_id = 3;
+      }
+      else if (player.health > 0) {
+        player_sprite_base_id = 6;
       }
 #endif
 
