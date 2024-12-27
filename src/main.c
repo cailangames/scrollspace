@@ -363,6 +363,8 @@ void main(void) {
       b->sprite_id = i + 1;  // +1 so we don't override the player (always sprite_id 0)
       b->sprite_tile_id = 19;
       b->lifespan = 0;
+      b->health = 0;
+      b->dir = RIGHT;
       b->speed = 4;
       b->x = 0;
       b->y = 0;
@@ -371,8 +373,8 @@ void main(void) {
       b->cb_y_offset = 2;
       b->cb.x = b->x + b->cb_x_offset;
       b->cb.y = b->y + b->cb_y_offset;
-      b->cb.h = 4;
       b->cb.w = 4;
+      b->cb.h = 4;
       set_sprite_tile(b->sprite_id, b->sprite_tile_id);
       move_sprite(b->sprite_id, b->x, b->y);
     }
