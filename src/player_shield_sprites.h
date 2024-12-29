@@ -1,4 +1,6 @@
-unsigned char player_shield_data[] =
+#include <stdint.h>
+
+const uint8_t player_shield_data[] =
 {
   0X00,0X60,0X00,0X98,0X00,0XF6,0X00,0X8F,0X00,0X8F,0X00,0XF6,0X00,0X98,0X00,0X60,
   0X00,0X78,0X00,0XF6,0X00,0X8F,0X00,0X8F,0X00,0XF6,0X00,0X98,0X00,0X60,0X00,0X00,

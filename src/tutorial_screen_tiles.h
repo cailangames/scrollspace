@@ -2,7 +2,9 @@
 Number of tiles: 8
 */
 
-unsigned char tutorial_screen_tiles[] =
+#include <stdint.h>
+
+const uint8_t tutorial_screen_tiles[] =
 {
   0X00,0X00,0X00,0X00,0X00,0X08,0X00,0X00,0X10,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
   0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,

@@ -1,4 +1,6 @@
-unsigned char player_data[] =
+#include <stdint.h>
+
+const uint8_t player_data[] =
 {
   0X60,0X60,0XF8,0X98,0X8E,0XF6,0XF1,0X8F,0XF1,0X8F,0X8E,0XF6,0XF8,0X98,0X60,0X60,
   0X78,0X78,0X8E,0XF6,0XF1,0X8F,0XF1,0X8F,0X8E,0XF6,0XF8,0X98,0X60,0X60,0X00,0X00,

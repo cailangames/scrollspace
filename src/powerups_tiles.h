@@ -2,7 +2,9 @@
 Number of tiles: 8
 */
 
-unsigned char powerups_tiles[] =
+#include <stdint.h>
+
+const uint8_t powerups_tiles[] =
 {
   0X00,0X00,0X28,0X28,0X54,0X54,0X7C,0X54,0X7C,0X54,0X7C,0X54,0X7C,0X7C,0X00,0X00,
   0X00,0X00,0X10,0X00,0X38,0X38,0X5C,0X5C,0X7C,0X7C,0X7C,0X7C,0X38,0X38,0X00,0X00,

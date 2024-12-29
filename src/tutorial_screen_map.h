@@ -2,7 +2,9 @@
 Tile map size: 20x17
 */
 
-unsigned char tutorial_screen_map[] =
+#include <stdint.h>
+
+const uint8_t tutorial_screen_map[] =
 {
   0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,
   0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,0X3A,

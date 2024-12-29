@@ -1,4 +1,6 @@
-unsigned char projectiles_data[] =
+#include <stdint.h>
+
+const uint8_t projectiles_data[] =
 {
   0X00,0X00,0X00,0X00,0XAA,0XAA,0X00,0X00,0X00,0X00,0XAA,0XAA,0X00,0X00,0X00,0X00,
   0X00,0X00,0XAA,0XAA,0X00,0X00,0X00,0X00,0XAA,0XAA,0X00,0X00,0X00,0X00,0X00,0X00,

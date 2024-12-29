@@ -2,7 +2,9 @@
 Number of tiles: 4
 */
 
-unsigned char block_tiles[] =
+#include <stdint.h>
+
+const uint8_t block_tiles[] =
 {
   0X10,0XEF,0X42,0XB9,0X08,0XD7,0X44,0XBA,0X10,0XEB,0X49,0XB6,0X02,0XD9,0X10,0XEF,
   0X00,0X7E,0X3C,0XC3,0X5A,0XA5,0X66,0X99,0X66,0X99,0X5A,0XA5,0X3C,0XC3,0X00,0X7E,

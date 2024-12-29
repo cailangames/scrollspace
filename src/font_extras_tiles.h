@@ -2,7 +2,9 @@
 Number of tiles: 2
 */
 
-unsigned char font_extras_tiles[] =
+#include <stdint.h>
+
+const uint8_t font_extras_tiles[] =
 {
   0X00,0X00,0X00,0X00,0X10,0X10,0X00,0X00,0X00,0X00,0X10,0X10,0X00,0X00,0X00,0X00,
   0X00,0X00,0X00,0X00,0X10,0X00,0X00,0X08,0X10,0X10,0X00,0X00,0X00,0X00,0X00,0X00
