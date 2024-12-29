@@ -2,7 +2,7 @@
 Number of tiles: 2
 */
 
-unsigned char font_extras_tiles[] = 
+unsigned char font_extras_tiles[] =
 {
   0X00,0X00,0X00,0X00,0X10,0X10,0X00,0X00,0X00,0X00,0X10,0X10,0X00,0X00,0X00,0X00,
   0X00,0X00,0X00,0X00,0X10,0X00,0X00,0X08,0X10,0X10,0X00,0X00,0X00,0X00,0X00,0X00

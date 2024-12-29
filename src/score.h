@@ -38,7 +38,7 @@ static void timerscore2tiles(void) {
   score_tiles[7] = (timer_seconds - 10*tenths) + 0x01;
   score_tiles[6] = tenths + 0x01;
   score_tiles[5] = COLON_FONT_IDX;
-   
+
   // Minutes
   tenths = timer_minutes/10;
   score_tiles[4] = (timer_minutes - 10*tenths) + 0x01;
@@ -87,7 +87,7 @@ static void highscores2tiles(void) {
   high_score_tiles[12] = (seconds - 10*tenths) + 0x01;
   high_score_tiles[11] = tenths + 0x01;
   high_score_tiles[10] = COLON_FONT_IDX;
-  
+
   // Minutes
   tenths = minutes/10;
   high_score_tiles[9] = (minutes - 10*tenths) + 0x01;

@@ -32,7 +32,7 @@ struct Sprite {
   uint8_t speed;
   uint8_t cb_x_offset;
   uint8_t cb_y_offset;
-  enum direction dir; 
+  enum direction dir;
   struct CollisionBox cb;
   int8_t health;
   bool active;

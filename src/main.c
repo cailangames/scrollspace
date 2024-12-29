@@ -149,7 +149,7 @@ static void update_health_bar(int8_t health) {
     health_bar_tiles[7] = HEALTH_BAR_START + 5;  // clear right edge of bar
   }
   else if (health > 0) {
-    health_bar_tiles[1] = HEALTH_BAR_START + 4; 
+    health_bar_tiles[1] = HEALTH_BAR_START + 4;
     health_bar_tiles[0] = HEALTH_BAR_START;
   }
   else {
