@@ -6,8 +6,7 @@
 #include <gb/gb.h>
 #include <gbdk/bcd.h>
 #include <gbdk/font.h>
-
-#include "hUGEDriver.h"
+#include <hUGEDriver.h>
 
 #include "collision.h"
 #include "common.h"
