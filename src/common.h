@@ -43,6 +43,12 @@
 #define COLON_FONT_IDX 56
 
 /*
+ * Sprites
+ */
+#define PLAYER_SPRITE_ID 0
+#define DEATH_SPRITE 9
+
+/*
  * Tunable parameters
  */
 #define MAX_BULLETS 3
@@ -58,13 +64,9 @@
 // A BOMB_RADIUS of N will create square bomb explosions of (2*N+1, 2*N+1) size in tiles.
 #define BOMB_RADIUS 3
 #define BULLET_LIFESPAN 20
-
-enum powerup{
-  GUN=0,
-  BOMB=1,
-  SHIELD=2,
-  HEALTH=3
-};
+// All speeds are in pixels per frame.
+#define SCROLL_SPEED_NORMAL 1
+#define SCROLL_SPEED_HARD 2
 
 enum animation_state{
   HIDDEN=0,

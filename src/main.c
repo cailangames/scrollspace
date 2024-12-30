@@ -35,10 +35,15 @@
 #define ENABLE_WEAPONS 1
 #define ENABLE_COLLISIONS 1
 
+extern const hUGESong_t intro_song;
+extern const hUGESong_t main_song;
+extern const hUGESong_t main_song_fast;
+
 static const uint8_t blank_win_tiles[SCREEN_TILE_WIDTH] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 static uint8_t health_bar_tiles[8];
 
+static struct Sprite bullets[MAX_BULLETS];
 static bool game_paused = true;
 
 #if ENABLE_SCORING
@@ -159,6 +164,67 @@ static void update_health_bar(int8_t health) {
   set_win_tiles(0, 0, 8, 1, health_bar_tiles);
 }
 
+// Shows the title screen.
+static void show_title_screen(bool with_transition) {
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, game_titlescreen);
+  if (with_transition) {
+    wait(60);
+    fade_in();
+  } else {
+    DISPLAY_ON;
+  }
+  SHOW_BKG;
+  display_highscores();
+  SHOW_WIN;
+#if ENABLE_MUSIC
+  hUGE_init(&intro_song);
+  play_all_channels();
+#endif
+  // Wait for the player to press start before going to the next screen.
+  waitpad(J_START);
+  waitpadup();
+}
+
+// Shows the speed selection screen and returns the speed chosen by the player.
+static uint8_t show_speed_selection_screen(void) {
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, speed_titlescreen);
+  set_sprite_tile(PLAYER_SPRITE_ID, 0);
+  move_sprite(PLAYER_SPRITE_ID, 32, 72);
+  SHOW_SPRITES;
+  uint8_t scroll_speed = SCROLL_SPEED_NORMAL;
+  uint8_t prev_input = 0;
+  while (true) {
+    uint8_t input = joypad();
+    if (KEY_FIRST_PRESS(input, prev_input, J_UP)) {
+      if (scroll_speed == SCROLL_SPEED_NORMAL) {
+        move_sprite(PLAYER_SPRITE_ID, 32, 88);
+        scroll_speed = SCROLL_SPEED_HARD;
+      }
+      else {
+        move_sprite(PLAYER_SPRITE_ID, 32, 72);
+        scroll_speed = SCROLL_SPEED_NORMAL;
+      }
+    }
+    else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN)) {
+      if (scroll_speed == SCROLL_SPEED_HARD) {
+        move_sprite(PLAYER_SPRITE_ID, 32, 72);
+        scroll_speed = SCROLL_SPEED_NORMAL;
+      }
+      else {
+        move_sprite(PLAYER_SPRITE_ID, 32, 88);
+        scroll_speed = SCROLL_SPEED_HARD;
+      }
+    }
+    else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A) || KEY_FIRST_PRESS(input, prev_input, J_B)) {
+      break;
+    }
+    prev_input = input;
+    vsync();
+  }
+  HIDE_SPRITES;
+  return scroll_speed;
+}
+
 #if ENABLE_COLLISIONS
 static void show_gameover_screen(void) {
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, 18, gameover_titlescreen);
@@ -172,6 +238,27 @@ static void show_gameover_screen(void) {
   waitpadup();
   fade_out();
   HIDE_BKG;
+}
+
+static void handle_gameover(void) {
+  game_paused = true;
+  mute_all_channels();
+  set_sprite_tile(PLAYER_SPRITE_ID, DEATH_SPRITE);
+  wait(10);
+  HIDE_BKG;
+  play_gameover_sound();
+  fade_out();
+  HIDE_SPRITES;
+
+  // Hide all bullets.
+  for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
+    move_sprite(bullets[i].sprite_id, 0, 0);
+  }
+  update_health_bar(0);
+
+  // Show gameover screen, then transition to the title screen.
+  show_gameover_screen();
+  show_title_screen(true);
 }
 #endif
 
@@ -230,21 +317,13 @@ void main(void) {
    * SETUP
    */
   load_data();
-  // Load title screen.
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, game_titlescreen);
   // Load Window.
   move_win(7, 136);
   // Initialize high scores.
   init_highscores();
 
 #if ENABLE_MUSIC
-  /*
-   * Load music
-   */
-  extern const hUGESong_t intro_song;
-  extern const hUGESong_t main_song;
-  extern const hUGESong_t main_song_fast;
-
+  // Load music.
   // Enable sound playback.
   NR52_REG = 0x80;
   NR51_REG = 0xFF;
@@ -263,23 +342,17 @@ void main(void) {
 #endif
 
   /*
-   * Turn on display and show background
+   * TITLE SCREEN
    */
-  DISPLAY_ON;
-  SHOW_BKG;
-
-  display_highscores();
-  SHOW_WIN;
+  show_title_screen(false);
 
   uint8_t bomb_tiles[2];
   bool show_time = true;
 
   struct Sprite player;
-  struct Sprite bullets[MAX_BULLETS];
-  uint8_t active_bullet_count = 0;
+  uint8_t active_bullet_count;
   bool bomb_dropped;
   bool shield_active;
-  enum powerup active_powerup;
   uint8_t n_bombs;
 
   // Collision and background maps
@@ -300,9 +373,7 @@ void main(void) {
   int16_t damage_animation_counter;  // When hit, skip checking collisions for this long
   uint8_t col_count;  // counter for number of columns scrolled. Used to calculate screen_count
   uint16_t screen_count;  // number of screens scrolled
-  uint8_t scroll_frames_per_pixel;  // Slower scrolling: How many frames to wait before scrolling one pixel
-  uint8_t scroll_pixels_per_frame;  // Faster scrolling: How many pixels to scroll each frame
-  uint8_t scroll_frames_count;  // Counts frames for scroll_frames_per_pixel scrolling
+  uint8_t scroll_pixels_per_frame;  // How many pixels to scroll each frame
   uint8_t player_collision;
   uint8_t bullet_collision;
   enum animation_state damage_animation_state;  // Used during the damage recovery to toggle between showing and hidding the player sprite
@@ -317,13 +388,14 @@ void main(void) {
   uint8_t last_bank;
 
   while (true) {
-    // Load the window contents
-    show_time = true;
+    /*
+     * Set up for main game loop.
+     */
+    initrand(DIV_REG);
+    // Load the window contents.
     n_bombs = MAX_BOMBS;
-
     bomb_tiles[0] = BOMB_ICON_IDX;
     bomb_tiles[1] = n_bombs + 1;
-
     health_bar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
     for (i = 1; i < 7; ++i) {
       health_bar_tiles[i] = HEALTH_BAR_MIDDLE;  // center of bar
@@ -346,13 +418,10 @@ void main(void) {
     player.cb.w = 5;
     player.cb.h = 4;
     player.health = 100;
+    player.lifespan = 0;  // lifespan isn't used by the player sprite.
     player.active = true;
     player.type = PLAYER;
     move_sprite(player.sprite_id, player.x, player.y);
-
-    bomb_dropped = false;
-    shield_active = false;
-    active_powerup = GUN;
 
     // Create bullets.
     for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
@@ -377,6 +446,7 @@ void main(void) {
       set_sprite_tile(b->sprite_id, b->sprite_tile_id);
       move_sprite(b->sprite_id, b->x, b->y);
     }
+    active_bullet_count = 0;
 
     // Clear collision map and background map
     for (ii = 0; ii < COLUMN_HEIGHT*ROW_WIDTH; ++ii) {
@@ -384,9 +454,7 @@ void main(void) {
       bkg_map[ii] = 0;
     }
 
-    /*
-     * Game Loop
-     */
+    // Initialize other variables.
     input = 0;
     prev_input = 0;
     dx = 0;
@@ -396,59 +464,21 @@ void main(void) {
     damage_animation_counter = 0;
     col_count = 0;
     screen_count = 0;
-    scroll_frames_per_pixel = 0;
-    scroll_pixels_per_frame = 1;
-    scroll_frames_count = 0;
     player_collision = 0;
     bullet_collision = 0;
     damage_animation_state = HIDDEN;
     gen_state.biome_id = 0;
     gen_state.biome_column_index = 0;
-    gen_column_index = 20;
+    gen_column_index = SCREEN_TILE_WIDTH;
+    bomb_dropped = false;
+    shield_active = false;
+    copy_bkgmap_to_vram = false;
+    player_sprite_base_id = 0;
 
-#if ENABLE_MUSIC
-    // Title Screen
-    hUGE_init(&intro_song);
-    play_all_channels();
-#endif
-    waitpad(J_START);
-    waitpadup();
-
-    // Speed Selection Screen
-    set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, speed_titlescreen);
-    set_sprite_tile(0, 0);
-    move_sprite(0, 32, 72);
-    SHOW_SPRITES;
-
-    while (true) {
-      input = joypad();
-      if (KEY_FIRST_PRESS(input, prev_input, J_UP) || KEY_FIRST_PRESS(input, prev_input, J_RIGHT)) {
-        if (scroll_pixels_per_frame == 1) {
-          move_sprite(0, 32, 88);
-          scroll_pixels_per_frame = 2;
-        }
-        else {
-          move_sprite(0, 32, 72);
-          scroll_pixels_per_frame = 1;
-        }
-      }
-      else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN) || KEY_FIRST_PRESS(input, prev_input, J_LEFT)) {
-        if (scroll_pixels_per_frame == 2) {
-          move_sprite(0, 32, 72);
-          scroll_pixels_per_frame = 1;
-        }
-        else {
-          move_sprite(0, 32, 88);
-          scroll_pixels_per_frame = 2;
-        }
-      }
-      else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A) || KEY_FIRST_PRESS(input, prev_input, J_B)) {
-        break;
-      }
-      vsync();
-      prev_input = input;
-    }
-    HIDE_SPRITES;
+    /*
+     * SPEED SELECTION SCREEN
+     */
+    scroll_pixels_per_frame = show_speed_selection_screen();
 
     // Game Start
     // Set player start location
@@ -473,10 +503,10 @@ void main(void) {
     wait(10);
 
 #if ENABLE_MUSIC
-    if (scroll_pixels_per_frame == 1) {
+    if (scroll_pixels_per_frame == SCROLL_SPEED_NORMAL) {
       hUGE_init(&main_song);
     }
-    else{
+    else {
       hUGE_init(&main_song_fast);
     }
     play_all_channels();
@@ -484,7 +514,6 @@ void main(void) {
 
     SHOW_SPRITES;
     SHOW_WIN;
-    initrand(DIV_REG);
 
     last_bank = CURRENT_BANK;
     SWITCH_ROM(1);
@@ -499,16 +528,17 @@ void main(void) {
 
     wait(15);
 
-    player_sprite_base_id = 0;
-
-    copy_bkgmap_to_vram = false;
-
     // Reset scores and window tiles.
     reset_scores();
     display_timer_score();
 
+    // Unpausing the game turns on the timer, so this should be done as close as possible to the
+    // main game loop.
     game_paused = false;
 
+    /*
+     * MAIN GAME LOOP
+     */
     while (true) {
       input = joypad();
       player_collision = 0;
@@ -676,7 +706,6 @@ void main(void) {
       /*
        * Continue processing
        */
-
 #if ENABLE_COLLISIONS
       if (damage_animation_counter == 0) {
         // Damage animation or shield powerup expired.
@@ -728,41 +757,7 @@ void main(void) {
         }
 
         if (player.health <= 0) {
-          game_paused = true;
-
-          mute_all_channels();
-          player.sprite_tile_id = 9;
-          set_sprite_tile(player.sprite_id, player.sprite_tile_id);
-          wait(10);
-          HIDE_BKG;
-          play_gameover_sound();
-          fade_out();
-          HIDE_SPRITES;
-
-          // Hide all bullets.
-          for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
-            struct Sprite* b = &(bullets[i]);
-            b->active = false;
-            b->x = 0;
-            b->y = 0;
-            move_sprite(b->sprite_id, b->x, b->y);
-          }
-          active_bullet_count = 0;
-
-          update_health_bar(player.health);
-          show_gameover_screen();
-
-          // Load title screen
-          set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, game_titlescreen);
-          move_bkg(0, 0);
-          player_sprite_base_id = 0;  // Reset to initial sprite
-          player.sprite_tile_id = player_sprite_base_id;
-          set_sprite_tile(player.sprite_id, player.sprite_tile_id);
-          display_highscores();
-          SHOW_WIN;
-          SHOW_BKG;
-          wait(60);
-          fade_in();
+          handle_gameover();
           break;
         }
 
@@ -835,17 +830,8 @@ void main(void) {
 #endif
 
       // Scroll the screen.
-      if (scroll_frames_per_pixel != 0) {
-        ++scroll_frames_count;
-        if (scroll_frames_count == scroll_frames_per_pixel) {
-          scroll_frames_count = 0;
-          scroll_bkg(1, 0);
-          ++scroll_count;
-        }
-      } else {
-        scroll_bkg(scroll_pixels_per_frame, 0);
-        scroll_count += scroll_pixels_per_frame;
-      }
+      scroll_bkg(scroll_pixels_per_frame, 0);
+      scroll_count += scroll_pixels_per_frame;
 
       if (scroll_count >= 8) {
         scroll_count = 0;
@@ -870,19 +856,6 @@ void main(void) {
             ++n_bombs;
           }
 #endif
-
-          // // Increase scroll speed after some time.
-          // if (screen_count == 3) {
-            // scroll_frames_per_pixel = 0;
-            // scroll_frames_count = 0;
-            // scroll_pixels_per_frame = 1;
-          // } else if (screen_count == 400) {
-            // mute_all_channels();
-            // hUGE_init(&main_song_fast);
-            // scroll_pixels_per_frame = 2;
-            // player.speed = 2;
-            // play_all_channels();
-          // }
         }
       }
 
@@ -900,7 +873,7 @@ void main(void) {
 #endif
 
 #if ENABLE_COLLISIONS
-      if ((player_collision) || (bullet_collision)) {
+      if (player_collision || bullet_collision) {
         // Update bkg_map if there are collisions
         copy_bkgmap_to_vram = true;
       }
