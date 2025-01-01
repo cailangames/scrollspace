@@ -24,10 +24,13 @@
 #include "block_tiles.h"
 #include "font_extras_tiles.h"
 #include "powerups_tiles.h"
+#include "lock_tiles.h"
 #include "progressbar_tiles.h"
 #include "title_screens.h"
 #include "tutorial_screen_map.h"
 #include "tutorial_screen_tiles.h"
+#include "cailan_games_logo_tiles.h"
+#include "cailan_games_logo_map.h"
 
 // The following are used for performance testing of individual components.
 #define ENABLE_SCORING 1
@@ -113,11 +116,13 @@ static void load_data(void) {
   tile_index += sizeof(powerups_tiles)/TILE_SIZE_BYTES;
   set_bkg_data(tile_index, sizeof(progressbar_tiles)/TILE_SIZE_BYTES, progressbar_tiles);
   tile_index += sizeof(progressbar_tiles)/TILE_SIZE_BYTES;
-  // Note: This is hardcoded to load only 1 tile for some reason, instead of loading all the tiles in
-  // font_extras_tiles.
-  set_bkg_data(tile_index, 1, font_extras_tiles);
-  tile_index += 1;
+  set_bkg_data(tile_index, sizeof(font_extras_tiles)/TILE_SIZE_BYTES, font_extras_tiles);
+  tile_index += sizeof(font_extras_tiles)/TILE_SIZE_BYTES;
   set_bkg_data(tile_index, sizeof(tutorial_screen_tiles)/TILE_SIZE_BYTES, tutorial_screen_tiles);
+  tile_index += sizeof(tutorial_screen_tiles)/TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(lock_tiles)/TILE_SIZE_BYTES, lock_tiles);
+  tile_index += sizeof(lock_tiles)/TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(cailan_games_logo_tiles)/TILE_SIZE_BYTES, cailan_games_logo_tiles);
 
   // Load sprite data.
   set_sprite_data(0, 10, player_data);
@@ -164,11 +169,29 @@ static void update_health_bar(int8_t health) {
   set_win_tiles(0, 0, 8, 1, health_bar_tiles);
 }
 
+// Shows the logo screen.
+static void show_logo_screen(bool with_transition) {
+  HIDE_BKG;
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT+1, cailan_games_logo_map);
+  if (with_transition) {
+    wait(60);
+    fade_in();
+  } else {
+    DISPLAY_ON;
+  }
+  SHOW_BKG;
+  wait(60*2);
+  // // Wait for the player to press start before going to the next screen.
+  // waitpad(J_START);
+  // waitpadup();
+  fade_out();
+  SHOW_WIN;
+}
 // Shows the title screen.
 static void show_title_screen(bool with_transition) {
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, game_titlescreen);
   if (with_transition) {
-    wait(60);
+    wait(30);
     fade_in();
   } else {
     DISPLAY_ON;
@@ -344,7 +367,8 @@ void main(void) {
   /*
    * TITLE SCREEN
    */
-  show_title_screen(false);
+  show_logo_screen(true);
+  show_title_screen(true);
 
   uint8_t bomb_tiles[2];
   bool show_time = true;
