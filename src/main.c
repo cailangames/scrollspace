@@ -623,6 +623,7 @@ void main(void) {
 
       if (KEY_FIRST_PRESS(input, prev_input, J_SELECT)) {
         show_time = !show_time;
+        update_score_tiles = true;
       }
 
       dx = 0;
@@ -957,11 +958,10 @@ void main(void) {
       if (update_score_tiles){
         if (show_time) {
           display_timer_score();
-          update_score_tiles = false;
         } else {
           display_point_score();
-          update_score_tiles = false;
         }
+        update_score_tiles = false;
       }
 #endif
 
