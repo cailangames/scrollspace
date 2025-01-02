@@ -926,10 +926,14 @@ void main(void) {
       vsync();
 
 #if ENABLE_SCORING
-      if (show_time) {
-        display_timer_score();
-      } else {
-        display_point_score();
+      if (update_score_tiles){
+        if (show_time) {
+          display_timer_score();
+          update_score_tiles = false;
+        } else {
+          display_point_score();
+          update_score_tiles = false;
+        }
       }
 #endif
 

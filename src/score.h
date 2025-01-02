@@ -28,6 +28,7 @@ static uint8_t timer_frames = 0;
 static uint8_t timer_seconds = 0;
 static uint8_t timer_minutes = 0;
 static uint8_t timer_hours = 0;
+static bool update_score_tiles = false;
 
 static uint8_t score_tiles[8] = {0,0,0,0,0,0,0,0};
 static uint8_t high_score_tiles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -138,6 +139,7 @@ void increment_timer_score(void) {
   if (timer_frames == 60) {
     ++timer_seconds;
     timer_frames = 0;
+    update_score_tiles = true;
 
     if (timer_seconds == 60) {
       ++timer_minutes;
