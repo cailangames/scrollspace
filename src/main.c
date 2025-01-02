@@ -10,6 +10,7 @@
 
 #include "collision.h"
 #include "common.h"
+#include "player.h"
 #include "procedural_generation.h"
 #include "score.h"
 #include "sound_effects.h"
@@ -42,6 +43,8 @@
 extern const hUGESong_t intro_song;
 extern const hUGESong_t main_song;
 extern const hUGESong_t main_song_fast;
+
+struct Sprite player_sprite;
 
 static const uint8_t blank_win_tiles[SCREEN_TILE_WIDTH] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
@@ -324,12 +327,12 @@ static void handle_gameover(void) {
 #if ENABLE_WEAPONS
 // Updates the collision map and background map in response to a dropped bomb. The bomb explosion
 // is a square in front of the player with sides of length `2*BOMB_RADIUS+1` tiles.
-static void drop_bomb(const struct Sprite* player, uint8_t* coll_map, uint8_t* bkg_map) {
+static void drop_bomb(uint8_t* coll_map, uint8_t* bkg_map) {
   uint8_t row_count = (BOMB_RADIUS * 2) + 1;  // +1 for the center row, which is centered on the ship.
-  uint8_t row_top = (player->y - SCREEN_T) >> 3;
+  uint8_t row_top = (player_sprite.y - SCREEN_T) >> 3;
   // Because of integer division, the bomb explosion can look like it's not centered with the ship.
   // The following code fixes that.
-  uint8_t row_pixel_delta = (player->y - SCREEN_T) - (row_top << 3);
+  uint8_t row_pixel_delta = (player_sprite.y - SCREEN_T) - (row_top << 3);
   if (row_pixel_delta >= 4) {
     ++row_top;
   }
@@ -342,23 +345,19 @@ static void drop_bomb(const struct Sprite* player, uint8_t* coll_map, uint8_t* b
     row_count = row_count - (BOMB_RADIUS - row_top);
     row_top = 0;
   }
-  uint8_t col_left = (SCX_REG >> 3) + ((player->x - SCREEN_L) >> 3) + 1;  // Add 1 to be in front of the player.
+  uint8_t col_left = (SCX_REG >> 3) + ((player_sprite.x - SCREEN_L) >> 3) + 1;  // Add 1 to be in front of the player.
   uint8_t incremental_score = 0;
   for (uint8_t i = 0; i < row_count; ++i) {
-    uint8_t row = row_top + i;
+    uint16_t row = row_top + i;
     if (row >= COLUMN_HEIGHT) {
       // No need to calculate or draw the part of the bomb explosion that's off screen.
       break;
     }
     uint16_t row_offset = MAP_ARRAY_INDEX_ROW_OFFSET(row);
     for (uint8_t j = 0; j < (BOMB_RADIUS * 2) + 1; ++j) {
-      uint8_t col = col_left + j;
-      if (col >= ROW_WIDTH) {
-        // We're past the edge of the collision and background maps and need to wrap around.
-        col -= ROW_WIDTH;
-      }
+      uint8_t col = MOD32(col_left + j);  // MOD32 is for screen wrap-around.
 
-      uint16_t idx = col + row_offset;
+      uint16_t idx = row_offset + col;
       // If we are destroying a wall or a mine, add to the score.
       if (bkg_map[idx] == MAPBLOCK_IDX || bkg_map[idx] == MINE_IDX) {
         incremental_score += 1;
@@ -409,10 +408,8 @@ void main(void) {
   uint8_t bomb_tiles[2];
   bool show_time = true;
 
-  struct Sprite player;
   uint8_t active_bullet_count;
   bool bomb_dropped;
-  bool shield_active;
   uint8_t n_bombs;
 
   // Collision and background maps
@@ -426,19 +423,11 @@ void main(void) {
 
   uint8_t input;
   uint8_t prev_input;
-  uint8_t dx;
-  uint8_t dy;
   uint8_t frame_count;
   uint8_t scroll_count;
-  int16_t damage_animation_counter;  // When hit, skip checking collisions for this long
   uint8_t col_count;  // counter for number of columns scrolled. Used to calculate screen_count
   uint16_t screen_count;  // number of screens scrolled
   uint8_t scroll_pixels_per_frame;  // How many pixels to scroll each frame
-  uint8_t player_collision;
-  uint8_t bullet_collision;
-  enum animation_state damage_animation_state;  // Used during the damage recovery to toggle between showing and hidding the player sprite
-
-  uint8_t player_sprite_base_id;
 
   // Temporary variables (loop counters, array indices, etc)
   uint8_t i, j;
@@ -461,27 +450,6 @@ void main(void) {
       health_bar_tiles[i] = HEALTH_BAR_MIDDLE;  // center of bar
     }
     health_bar_tiles[7] = HEALTH_BAR_END;  // right edge of bar
-
-    /*
-     * Create a player and display the sprite
-     */
-    player.sprite_id = 0;
-    player.sprite_tile_id = 0;
-    player.x = 20;
-    player.y = 72 + 8;
-    player.speed = 1;
-    player.dir = RIGHT;
-    player.cb_x_offset = 1;
-    player.cb_y_offset = 2;
-    player.cb.x = player.x + player.cb_x_offset;
-    player.cb.y = player.y + player.cb_y_offset;
-    player.cb.w = 5;
-    player.cb.h = 4;
-    player.health = 100;
-    player.lifespan = 0;  // lifespan isn't used by the player sprite.
-    player.active = true;
-    player.type = PLAYER;
-    move_sprite(player.sprite_id, player.x, player.y);
 
     // Create bullets.
     for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
@@ -517,32 +485,22 @@ void main(void) {
     // Initialize other variables.
     input = 0;
     prev_input = 0;
-    dx = 0;
-    dy = 0;
     frame_count = 0;
     scroll_count = 0;
-    damage_animation_counter = 0;
     col_count = 0;
     screen_count = 0;
-    player_collision = 0;
-    bullet_collision = 0;
-    damage_animation_state = HIDDEN;
     gen_state.biome_id = 0;
     gen_state.biome_column_index = 0;
     gen_column_index = SCREEN_TILE_WIDTH;
     bomb_dropped = false;
-    shield_active = false;
     copy_bkgmap_to_vram = false;
-    player_sprite_base_id = 0;
 
     /*
      * SPEED SELECTION SCREEN
      */
     scroll_pixels_per_frame = show_speed_selection_screen();
 
-    // Game Start
-    // Set player start location
-    move_sprite(player.sprite_id, player.x, player.y);
+    init_player();
 
     // Copy tutorial screen to bkg_map
     for (i = 0; i < COLUMN_HEIGHT; ++i) {
@@ -601,8 +559,6 @@ void main(void) {
      */
     while (true) {
       input = joypad();
-      player_collision = 0;
-      bullet_collision = 0;
       copy_bkgmap_to_vram = false;
 
       if (KEY_PRESSED(input, J_START)) {
@@ -616,7 +572,6 @@ void main(void) {
 #if ENABLE_MUSIC
         play_all_channels();
 #endif
-        damage_animation_state = SHOWN;
         game_paused = false;
         continue;
       }
@@ -625,44 +580,7 @@ void main(void) {
         show_time = !show_time;
       }
 
-      dx = 0;
-      dy = 0;
-      player.sprite_tile_id = player_sprite_base_id;
-      player.dir = RIGHT;
-      // Reset player collision box to default.
-      player.cb_x_offset = 1;
-      player.cb_y_offset = 2;
-      player.cb.h = 4;
-      player.cb.w = 5;
-      if (KEY_PRESSED(input, J_RIGHT)) {
-        dx = player.speed;
-      }
-      if (KEY_PRESSED(input, J_LEFT)) {
-        dx = -player.speed;
-        player.dir |= LEFT;
-      }
-      if (KEY_PRESSED(input, J_UP)) {
-        dy = -player.speed;
-        player.sprite_tile_id = player_sprite_base_id + 1;
-        player.dir |= UP;
-
-        // Make collision box smaller when plane is "tilted".
-        player.cb_x_offset = 2;
-        player.cb_y_offset = 3;
-        player.cb.h = 1;
-        player.cb.w = 3;
-      }
-      if (KEY_PRESSED(input, J_DOWN)) {
-        dy = player.speed;
-        player.sprite_tile_id = player_sprite_base_id + 2;
-        player.dir |= DOWN;
-
-        // Make collision box smaller when plane is "tilted".
-        player.cb_x_offset = 2;
-        player.cb_y_offset = 4;
-        player.cb.h = 1;
-        player.cb.w = 3;
-      }
+      move_player(input);
 
 #if ENABLE_WEAPONS
       if (KEY_FIRST_PRESS(input, prev_input, J_A) && active_bullet_count < MAX_BULLETS) {
@@ -674,9 +592,9 @@ void main(void) {
           struct Sprite* b = &(bullets[i]);
           b->active = true;
           b->lifespan = BULLET_LIFESPAN;
-          b->x = player.x;
+          b->x = player_sprite.x;
           b->cb.x = b->x + b->cb_x_offset;
-          b->y = player.y;
+          b->y = player_sprite.y;
           b->cb.y = b->y + b->cb_y_offset;
           move_sprite(b->sprite_id, b->x, b->y);
           ++active_bullet_count;
@@ -699,29 +617,6 @@ void main(void) {
 #endif
 
       prev_input = input;
-
-      // Update player position
-      player.x += dx;
-      // Bounds check
-      if (player.x < SCREEN_L) {
-        player.x = SCREEN_L;
-      } else if (player.x > SCREEN_R) {
-        player.x = SCREEN_R;
-      }
-
-      player.y += dy;
-      if (player.y < SCREEN_T) {
-        player.y = SCREEN_T;
-      } else if (player.y > SCREEN_B) {
-        player.y = SCREEN_B;
-      }
-
-      // Update collision box
-      player.cb.x = player.x + player.cb_x_offset;
-      player.cb.y = player.y + player.cb_y_offset;
-
-      set_sprite_tile(player.sprite_id, player.sprite_tile_id);
-      move_sprite(player.sprite_id, player.x, player.y);
 
 #if ENABLE_WEAPONS
       /*
@@ -746,10 +641,23 @@ void main(void) {
           }
 #if ENABLE_COLLISIONS
           else {
-            bullet_collision = check_collisions(b, coll_map, bkg_map, false, false);
-            // Check that the bullet collided with something it can destroy
-            if (bullet_collision > 0 && bullet_collision < 235) {
-              // Hide sprite.
+            uint16_t collision_idx = check_bullet_collisions(b, coll_map);
+            if (collision_idx != UINT16_MAX) {
+              // The bullet collided with a wall or mine.
+              if (coll_map[collision_idx] <= BULLET_DAMAGE) {
+                // The wall or mine is destroyed.
+                if (bkg_map[collision_idx] == MINE_IDX) {
+                  increment_point_score(POINTS_PER_MINE);
+                }
+                coll_map[collision_idx] = 0;
+                bkg_map[collision_idx] = 0;
+                copy_bkgmap_to_vram = true;
+              }
+              else {
+                // Apply damage to the wall or mine.
+                coll_map[collision_idx] -= BULLET_DAMAGE;
+              }
+              // Hide bullet sprite.
               b->active = false;
               b->x = 0;
               b->y = 0;
@@ -763,7 +671,7 @@ void main(void) {
       }
 
       if (bomb_dropped) {
-        drop_bomb(&player, coll_map, bkg_map);
+        drop_bomb(coll_map, bkg_map);
         copy_bkgmap_to_vram = true;
         bomb_dropped = false;
       }
@@ -773,129 +681,15 @@ void main(void) {
        * Continue processing
        */
 #if ENABLE_COLLISIONS
-      if (damage_animation_counter == 0) {
-        // Damage animation or shield powerup expired.
-        // Reset so that player is shown
-        if (shield_active) {
-          shield_active = false;
-          player_sprite_base_id -= 10;
-        }
-
-        if (damage_animation_state == HIDDEN) {
-          move_sprite(player.sprite_id, player.x, player.y);
-          damage_animation_state = SHOWN;
-        }
-
-        // Normal collision check for player
-        player_collision = check_collisions(&player, coll_map, bkg_map, true, false);
-        if (player_collision > 0 && player_collision < 235) {
-          player.health -= COLLISION_DAMAGE;
-          damage_animation_counter = COLLISION_TIMEOUT;
-          player_collision = 1;
-        }
-        else if (player_collision == HEALTH_KIT_ID) {
-          if (player.health < 100) {
-            // Prevent health overflow (int8 maxes at 128)
-            if ((100 - player.health) >= HEALTH_KIT_VALUE) {
-              if(player.health < 20) {
-                player.health += 4*HEALTH_KIT_VALUE;
-              }
-              else if (player.health < 50) {
-                player.health += 2*HEALTH_KIT_VALUE;
-              }
-              else {
-                player.health += HEALTH_KIT_VALUE;
-              }
-            }
-            else {
-              player.health += 100 - player.health;
-            }
-          }
-          player_collision = 1;
-          play_health_sound();
-        }
-        else if (player_collision == SHIELD_ID) {
-          shield_active = true;
-          damage_animation_counter = SHIELD_DURATION;
-          // player_sprite_base_id += 10;
-          player_collision = 0;
-          play_shield_sound();
-        }
-
-        if (player.health <= 0) {
+      bool player_collided = handle_player_collisions(coll_map, bkg_map);
+      if (player_collided) {
+        if (player_sprite.health <= 0) {
           handle_gameover();
           break;
         }
-
-        // Update health bar after a collision
-        if (player_collision) {
-          update_health_bar(player.health);
-        }
-      }
-      else {
-        --damage_animation_counter;
-        if (damage_animation_counter < 0) {
-          damage_animation_counter = 0;
-        }
-
-        if (!shield_active) {
-          if (damage_animation_state == HIDDEN) {
-            move_sprite(player.sprite_id, player.x, player.y);
-            damage_animation_state = SHOWN;
-          }
-          else {
-            move_sprite(player.sprite_id, 0, 0);
-            damage_animation_state = HIDDEN;
-          }
-
-          // Check for collision and only process pickups if the shield is not active
-          // This will allow the player to pick up items while the flashing animation is playing
-          player_collision = check_collisions(&player, coll_map, bkg_map, true, true);
-
-          if (player_collision == HEALTH_KIT_ID) {
-            if (player.health < 100) {
-              // Prevent health overflow (int8 maxes at 128)
-              if ((100 - player.health) >= HEALTH_KIT_VALUE) {
-                if(player.health < 20) {
-                  player.health += 4*HEALTH_KIT_VALUE;
-                }
-                else if (player.health < 50) {
-                  player.health += 2*HEALTH_KIT_VALUE;
-                }
-                else {
-                  player.health += HEALTH_KIT_VALUE;
-                }
-              }
-              else {
-                player.health += 100 - player.health;
-              }
-            }
-            player_collision = 1;
-            play_health_sound();
-          }
-          else if (player_collision == SHIELD_ID) {
-            shield_active = true;
-            damage_animation_counter = SHIELD_DURATION;
-            // player_sprite_base_id += 10;
-            player_collision = 0;
-            play_shield_sound();
-          }
-        }
-      }
-
-      // Update the ship sprite based on the current health.
-      if (player.health > 50) {
-        player_sprite_base_id = 0;
-      }
-      else if (player.health > 25) {
-        player_sprite_base_id = 3;
-      }
-      else if (player.health > 0) {
-        player_sprite_base_id = 6;
-      }
-
-      if (shield_active){
-        player_sprite_base_id += 10;
+        copy_bkgmap_to_vram = true;
+        // Update health bar after a collision.
+        update_health_bar(player_sprite.health);
       }
 #endif
 
@@ -931,7 +725,7 @@ void main(void) {
       }
 
 #if ENABLE_WEAPONS
-      if ((frame_count & 0x3) == 0) { // %4
+      if (MOD4(frame_count) == 0) {
         // Update HUD
         bomb_tiles[1] = 0;// n_bombs + 1;
         set_win_tiles(9, 0, 2, 1, bomb_tiles);
@@ -940,13 +734,6 @@ void main(void) {
       ++frame_count;
       if (frame_count >= 255) {
         frame_count = 0;
-      }
-#endif
-
-#if ENABLE_COLLISIONS
-      if (player_collision || bullet_collision) {
-        // Update bkg_map if there are collisions
-        copy_bkgmap_to_vram = true;
       }
 #endif
 

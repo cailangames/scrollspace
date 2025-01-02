@@ -3,6 +3,8 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include "sprites.h"
+
 /*
  * Keys
  */
@@ -57,8 +59,9 @@
 #define MAX_BOMBS 1
 #define BLOCK_HEALTH 4
 #define MINE_HEALTH 2
+#define POWERUP_RESERVED_IDS 235
 #define SHIELD_ID 254
-#define SHIELD_DURATION 8*20
+#define SHIELD_DURATION (8*20)
 #define HEALTH_KIT_ID 255
 #define HEALTH_KIT_VALUE 5
 #define COLLISION_DAMAGE 3
@@ -66,14 +69,31 @@
 // A BOMB_RADIUS of N will create square bomb explosions of (2*N+1, 2*N+1) size in tiles.
 #define BOMB_RADIUS 3
 #define BULLET_LIFESPAN 20
+#define BULLET_DAMAGE 1
+#define PLAYER_START_X 20
+#define PLAYER_START_Y 80
+#define PLAYER_MAX_HEALTH 100
+#define PLAYER_COLLISION_DAMAGE 2
+// In pixels
+#define PLAYER_COLLISION_KNOCKBACK 8
 // All speeds are in pixels per frame.
+#define PLAYER_SPEED 1
 #define SCROLL_SPEED_NORMAL 1
 #define SCROLL_SPEED_HARD 2
 #define SCROLL_SPEED_TURBO 3
+#define POINTS_PER_MINE 2
+
+/*
+ * Math
+ */
+#define MOD4(n) ((n) & 0x3)
+#define MOD32(n) ((n) & 0x1F)
 
 enum animation_state{
   HIDDEN=0,
   SHOWN=1
 };
+
+extern struct Sprite player_sprite;
 
 #endif

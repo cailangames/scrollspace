@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 enum direction{
+  NONE=0,
   UP=1,
   RIGHT=2,
   DOWN=4,
@@ -14,8 +15,6 @@ enum direction{
 enum sprite_type{
   PLAYER=0,
   BULLET=1,
-  BOMBS=2,
-  LASER=3
 };
 
 struct CollisionBox {
@@ -31,9 +30,9 @@ struct Sprite {
   uint8_t x;
   uint8_t y;
   uint8_t speed;
+  enum direction dir;
   uint8_t cb_x_offset;
   uint8_t cb_y_offset;
-  enum direction dir;
   struct CollisionBox cb;
   int8_t health;
   bool active;
