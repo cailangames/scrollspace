@@ -15,6 +15,7 @@
 #include "score.h"
 #include "sound_effects.h"
 #include "sprites.h"
+#include "weapons.h"
 
 // Sprite data
 #include "player_shield_sprites.h"
@@ -45,13 +46,17 @@ extern const hUGESong_t main_song;
 extern const hUGESong_t main_song_fast;
 
 struct Sprite player_sprite;
+uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
+uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
 
 static const uint8_t blank_win_tiles[SCREEN_TILE_WIDTH] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 static uint8_t health_bar_tiles[8];
 
-static struct Sprite bullets[MAX_BULLETS];
 static bool game_paused = true;
+// Whether or not to show the timer-based score. If false, the points-based score is shown instead.
+// Note: The value of this variable is kept between runs of the game.
+static bool show_time = true;
 
 #if ENABLE_SCORING
 static void increment_timer_score_isr(void) {
@@ -175,27 +180,25 @@ static void update_health_bar(int8_t health) {
 }
 
 // Shows the logo screen.
-static void show_logo_screen(bool with_transition) {
+static void show_logo_screen(void) {
   HIDE_BKG;
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT+1, cailan_games_logo_map);
   play_all_channels();
-  if (with_transition) {
-    wait(60);
-    fade_in();
-    SHOW_BKG;
-  } else {
-    DISPLAY_ON;
-  }
+  wait(60);
+  fade_in();
+  SHOW_BKG;
+
   // Initialize the CBT SFX and add it to the VBL
   CBTFX_PLAY_SFX_02;
   add_VBL(CBTFX_update);
-  set_sprite_tile(0, CURSOR_SPRITE_ID);
-  set_sprite_tile(1, CURSOR_SPRITE_ID);
+
+  // The cursor has two sprites: A top half and a bottom half. The below code controls both halves
+  // and blinks them while the logo screen is playing.
+  set_sprite_tile(0, CURSOR_SPRITE);
+  set_sprite_tile(1, CURSOR_SPRITE);
   move_sprite(0, 119+8, 75+17);
   move_sprite(1, 119+8, 83+17);
   SHOW_SPRITES;
-  //wait(60*2);
-
   for (uint8_t i=0; i<150; i++){
     if ((i == 30) || (i == 90) || (i == 149)){
       move_sprite(0, 0, 0);
@@ -208,25 +211,19 @@ static void show_logo_screen(bool with_transition) {
     vsync();
   }
 
-  // Remove the CBT SFX from tge VBL
+  // Remove the CBT SFX from the VBL
   remove_VBL(CBTFX_update);
   mute_all_channels();
 
-  // // Wait for the player to press start before going to the next screen.
-  // waitpad(J_START);
-  // waitpadup();
   fade_out();
-  SHOW_WIN;
+  HIDE_SPRITES;
 }
+
 // Shows the title screen.
-static void show_title_screen(bool with_transition) {
+static void show_title_screen(void) {
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, game_titlescreen);
-  if (with_transition) {
-    wait(30);
-    fade_in();
-  } else {
-    DISPLAY_ON;
-  }
+  wait(30);
+  fade_in();
   SHOW_BKG;
   display_highscores();
   SHOW_WIN;
@@ -289,7 +286,7 @@ static uint8_t show_speed_selection_screen(void) {
 
 #if ENABLE_COLLISIONS
 static void show_gameover_screen(void) {
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, 18, gameover_titlescreen);
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT+1, gameover_titlescreen);
   move_bkg(0, 0);
 
   display_gameover_scores();
@@ -312,61 +309,13 @@ static void handle_gameover(void) {
   fade_out();
   HIDE_SPRITES;
 
-  // Hide all bullets.
-  for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
-    move_sprite(bullets[i].sprite_id, 0, 0);
-  }
+  // Hide the bullet sprites so that they don't appear later in the title screens.
+  hide_bullet_sprites();
   update_health_bar(0);
 
   // Show gameover screen, then transition to the title screen.
   show_gameover_screen();
-  show_title_screen(true);
-}
-#endif
-
-#if ENABLE_WEAPONS
-// Updates the collision map and background map in response to a dropped bomb. The bomb explosion
-// is a square in front of the player with sides of length `2*BOMB_RADIUS+1` tiles.
-static void drop_bomb(uint8_t* coll_map, uint8_t* bkg_map) {
-  uint8_t row_count = (BOMB_RADIUS * 2) + 1;  // +1 for the center row, which is centered on the ship.
-  uint8_t row_top = (player_sprite.y - SCREEN_T) >> 3;
-  // Because of integer division, the bomb explosion can look like it's not centered with the ship.
-  // The following code fixes that.
-  uint8_t row_pixel_delta = (player_sprite.y - SCREEN_T) - (row_top << 3);
-  if (row_pixel_delta >= 4) {
-    ++row_top;
-  }
-
-  if (row_top >= BOMB_RADIUS) {
-    row_top -= BOMB_RADIUS;
-  } else {
-    // The player is at the top of the screen, so we need to shorten the bomb explosion so that it
-    // doesn't go off screen.
-    row_count = row_count - (BOMB_RADIUS - row_top);
-    row_top = 0;
-  }
-  uint8_t col_left = (SCX_REG >> 3) + ((player_sprite.x - SCREEN_L) >> 3) + 1;  // Add 1 to be in front of the player.
-  uint8_t incremental_score = 0;
-  for (uint8_t i = 0; i < row_count; ++i) {
-    uint16_t row = row_top + i;
-    if (row >= COLUMN_HEIGHT) {
-      // No need to calculate or draw the part of the bomb explosion that's off screen.
-      break;
-    }
-    uint16_t row_offset = MAP_ARRAY_INDEX_ROW_OFFSET(row);
-    for (uint8_t j = 0; j < (BOMB_RADIUS * 2) + 1; ++j) {
-      uint8_t col = MOD32(col_left + j);  // MOD32 is for screen wrap-around.
-
-      uint16_t idx = row_offset + col;
-      // If we are destroying a wall or a mine, add to the score.
-      if (bkg_map[idx] == MAPBLOCK_IDX || bkg_map[idx] == MINE_IDX) {
-        incremental_score += 1;
-      }
-      coll_map[idx] = 0;
-      bkg_map[idx] = CRATERBLOCK_IDX;
-    }
-  }
-  increment_point_score(incremental_score);
+  show_title_screen();
 }
 #endif
 
@@ -400,38 +349,22 @@ void main(void) {
 #endif
 
   /*
-   * TITLE SCREEN
+   * LOGO AND TITLE SCREENS
    */
-  show_logo_screen(true);
-  show_title_screen(true);
+  show_logo_screen();
+  show_title_screen();
 
-  uint8_t bomb_tiles[2];
-  bool show_time = true;
-
-  uint8_t active_bullet_count;
-  bool bomb_dropped;
-  uint8_t n_bombs;
-
-  // Collision and background maps
-  uint8_t coll_map[COLUMN_HEIGHT*ROW_WIDTH];
-  uint8_t bkg_map[COLUMN_HEIGHT*ROW_WIDTH];
   bool copy_bkgmap_to_vram = false;
 
   // Map generation variables.
   struct GenerationState gen_state;
   uint8_t gen_column_index;  // The index of the next column to generate.
 
-  uint8_t input;
-  uint8_t prev_input;
-  uint8_t frame_count;
-  uint8_t scroll_count;
-  uint8_t col_count;  // counter for number of columns scrolled. Used to calculate screen_count
-  uint16_t screen_count;  // number of screens scrolled
+  uint8_t input;  // The joypad input of this frame
+  uint8_t prev_input;  // The joypad input of the previous frame
+  uint8_t scroll_count;  // How many pixels have been scrolled in the current column
+  uint8_t col_count;  // How many columns have been scrolled in the current screen
   uint8_t scroll_pixels_per_frame;  // How many pixels to scroll each frame
-
-  // Temporary variables (loop counters, array indices, etc)
-  uint8_t i, j;
-  uint16_t ii;
 
   // Banking variables
   uint8_t last_bank;
@@ -442,77 +375,46 @@ void main(void) {
      */
     initrand(DIV_REG);
     // Load the window contents.
-    n_bombs = MAX_BOMBS;
-    bomb_tiles[0] = BOMB_ICON_IDX;
-    bomb_tiles[1] = 0; //n_bombs + 1;
     health_bar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
-    for (i = 1; i < 7; ++i) {
+    for (uint8_t i = 1; i < 7; ++i) {
       health_bar_tiles[i] = HEALTH_BAR_MIDDLE;  // center of bar
     }
     health_bar_tiles[7] = HEALTH_BAR_END;  // right edge of bar
 
-    // Create bullets.
-    for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
-      struct Sprite* b = &(bullets[i]);
-      b->active = false;
-      b->type = BULLET;
-      b->sprite_id = i + 1;  // +1 so we don't override the player (always sprite_id 0)
-      b->sprite_tile_id = 19;
-      b->lifespan = 0;
-      b->health = 0;
-      b->dir = RIGHT;
-      b->speed = 4;
-      b->x = 0;
-      b->y = 0;
-      // Collision box
-      b->cb_x_offset = 0;
-      b->cb_y_offset = 2;
-      b->cb.x = b->x + b->cb_x_offset;
-      b->cb.y = b->y + b->cb_y_offset;
-      b->cb.w = 4;
-      b->cb.h = 4;
-      set_sprite_tile(b->sprite_id, b->sprite_tile_id);
-      move_sprite(b->sprite_id, b->x, b->y);
-    }
-    active_bullet_count = 0;
-
-    // Clear collision map and background map
-    for (ii = 0; ii < COLUMN_HEIGHT*ROW_WIDTH; ++ii) {
-      coll_map[ii] = 0;
-      bkg_map[ii] = 0;
+    // Clear collision and background maps.
+    for (uint16_t ii = 0; ii < COLUMN_HEIGHT*ROW_WIDTH; ++ii) {
+      collision_map[ii] = 0;
+      background_map[ii] = 0;
     }
 
     // Initialize other variables.
     input = 0;
     prev_input = 0;
-    frame_count = 0;
     scroll_count = 0;
     col_count = 0;
-    screen_count = 0;
     gen_state.biome_id = 0;
     gen_state.biome_column_index = 0;
     gen_column_index = SCREEN_TILE_WIDTH;
-    bomb_dropped = false;
-    copy_bkgmap_to_vram = false;
 
     /*
      * SPEED SELECTION SCREEN
      */
     scroll_pixels_per_frame = show_speed_selection_screen();
 
-    init_player();
-
-    // Copy tutorial screen to bkg_map
-    for (i = 0; i < COLUMN_HEIGHT; ++i) {
-      for (j = 0; j < SCREEN_TILE_WIDTH; ++j) {
-        bkg_map[i*ROW_WIDTH+j] = tutorial_screen_map[i*SCREEN_TILE_WIDTH+j];
+    // Copy tutorial screen tiles to the background.
+    for (uint8_t i = 0; i < COLUMN_HEIGHT; ++i) {
+      for (uint8_t j = 0; j < SCREEN_TILE_WIDTH; ++j) {
+        background_map[i*ROW_WIDTH+j] = tutorial_screen_map[i*SCREEN_TILE_WIDTH+j];
       }
     }
-    set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, bkg_map);
+    set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
 
+    // Reset the window.
     set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
-    set_win_tiles(9, 0, 2, 1, bomb_tiles);
     set_win_tiles(0, 0, 8, 1, health_bar_tiles);
+
+    init_player();
+    init_weapons();
 
 #if ENABLE_MUSIC
     mute_all_channels();
@@ -536,12 +438,12 @@ void main(void) {
     last_bank = CURRENT_BANK;
     SWITCH_ROM(1);
     for (uint8_t i = 0; i < ROW_WIDTH - SCREEN_TILE_WIDTH; ++i) {
-      generate_next_column(&gen_state, coll_map+gen_column_index, bkg_map+gen_column_index);
+      generate_next_column(&gen_state, collision_map+gen_column_index, background_map+gen_column_index);
       if (++gen_column_index >= ROW_WIDTH) {
         gen_column_index = 0;
       }
     }
-    set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, bkg_map);
+    set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
     SWITCH_ROM(last_bank);
 
     wait(15);
@@ -582,107 +484,13 @@ void main(void) {
       }
 
       move_player(input);
-
 #if ENABLE_WEAPONS
-      if (KEY_FIRST_PRESS(input, prev_input, J_A) && active_bullet_count < MAX_BULLETS) {
-        // Find first non-active bullet in `bullets` array and activate it.
-        for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
-          if (bullets[i].active) {
-            continue;
-          }
-          struct Sprite* b = &(bullets[i]);
-          b->active = true;
-          b->lifespan = BULLET_LIFESPAN;
-          b->x = player_sprite.x;
-          b->cb.x = b->x + b->cb_x_offset;
-          b->y = player_sprite.y;
-          b->cb.y = b->y + b->cb_y_offset;
-          move_sprite(b->sprite_id, b->x, b->y);
-          ++active_bullet_count;
-          play_gun_sound();
-          break;
-        }
-      }
-
-      if (KEY_FIRST_PRESS(input, prev_input, J_B) && n_bombs > 0) {
-        bomb_dropped = true;
-        --n_bombs;
-        play_bomb_sound();
-        if (n_bombs == 0){
-          bomb_tiles[0] = BOMB_SIL_ICON_IDX;
-        }
-        else {
-          bomb_tiles[0] = BOMB_ICON_IDX;
-        }
-      }
+      copy_bkgmap_to_vram |= update_weapons(input, prev_input);
 #endif
-
       prev_input = input;
 
-#if ENABLE_WEAPONS
-      /*
-       * Update bullets, if any are active.
-       */
-      if (active_bullet_count != 0) {
-        // Move bullets.
-        for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
-          if (!bullets[i].active) {
-            continue;
-          }
-          struct Sprite* b = &(bullets[i]);
-          b->x += b->speed;
-          b->cb.x = b->x + b->cb_x_offset;
-          b->lifespan--;
-          if (b->x > SCREEN_R || b->lifespan == 0) {
-            // Hide sprite.
-            b->active = false;
-            b->x = 0;
-            b->y = 0;
-            --active_bullet_count;
-          }
 #if ENABLE_COLLISIONS
-          else {
-            uint16_t collision_idx = check_bullet_collisions(b, coll_map);
-            if (collision_idx != UINT16_MAX) {
-              // The bullet collided with a wall or mine.
-              if (coll_map[collision_idx] <= BULLET_DAMAGE) {
-                // The wall or mine is destroyed.
-                if (bkg_map[collision_idx] == MINE_IDX) {
-                  increment_point_score(POINTS_PER_MINE);
-                }
-                coll_map[collision_idx] = 0;
-                bkg_map[collision_idx] = 0;
-                copy_bkgmap_to_vram = true;
-              }
-              else {
-                // Apply damage to the wall or mine.
-                coll_map[collision_idx] -= BULLET_DAMAGE;
-              }
-              // Hide bullet sprite.
-              b->active = false;
-              b->x = 0;
-              b->y = 0;
-              --active_bullet_count;
-            }
-          }
-#endif
-          // Update bullet's sprite position.
-          move_sprite(b->sprite_id, b->x, b->y);
-        }
-      }
-
-      if (bomb_dropped) {
-        drop_bomb(coll_map, bkg_map);
-        copy_bkgmap_to_vram = true;
-        bomb_dropped = false;
-      }
-#endif
-
-      /*
-       * Continue processing
-       */
-#if ENABLE_COLLISIONS
-      bool player_collided = handle_player_collisions(coll_map, bkg_map);
+      bool player_collided = handle_player_collisions();
       if (player_collided) {
         if (player_sprite.health <= 0) {
           handle_gameover();
@@ -702,7 +510,7 @@ void main(void) {
         scroll_count = 0;
         last_bank = CURRENT_BANK;
         SWITCH_ROM(1);
-        generate_next_column(&gen_state, coll_map+gen_column_index, bkg_map+gen_column_index);
+        generate_next_column(&gen_state, collision_map+gen_column_index, background_map+gen_column_index);
         if (++gen_column_index >= ROW_WIDTH) {
           gen_column_index = 0;
         }
@@ -710,39 +518,17 @@ void main(void) {
         copy_bkgmap_to_vram = true;
 
         ++col_count;
-        if (col_count == 20) {
+        if (col_count == COLUMNS_PER_SCREEN) {
           col_count = 0;
-          ++screen_count;
           increment_point_score(5);
-
-#if ENABLE_WEAPONS
-          // Add a bomb every few screens we scroll.
-          if (screen_count % 3 == 0 && n_bombs < MAX_BOMBS) {
-            ++n_bombs;
-            bomb_tiles[0] = BOMB_ICON_IDX;
-          }
-#endif
         }
       }
-
-#if ENABLE_WEAPONS
-      if (MOD4(frame_count) == 0) {
-        // Update HUD
-        bomb_tiles[1] = 0;// n_bombs + 1;
-        set_win_tiles(9, 0, 2, 1, bomb_tiles);
-      }
-
-      ++frame_count;
-      if (frame_count >= 255) {
-        frame_count = 0;
-      }
-#endif
 
       // Wait for frame to finish drawing
       vsync();
 
 #if ENABLE_SCORING
-      if (update_score_tiles){
+      if (update_score_tiles) {
         if (show_time) {
           display_timer_score();
         } else {
@@ -754,7 +540,7 @@ void main(void) {
 
       if (copy_bkgmap_to_vram) {
         // Write the entire map to VRAM
-        set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, bkg_map);
+        set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
       }
     }
   }

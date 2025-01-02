@@ -14,6 +14,11 @@
 #include "sound_effects.h"
 #include "sprites.h"
 
+enum animation_state{
+  HIDDEN=0,
+  SHOWN=1
+};
+
 static uint8_t player_sprite_base_id = 0;
 static bool shield_active = false;
 // Used during the damage recovery to toggle between showing and hidding the player sprite.
@@ -115,7 +120,7 @@ void move_player(uint8_t input) {
 
 // Checks if the player collided with anything and updates the player's position (e.g. due to
 // knockback) accordingly. Returns true if the player collided with anything, false otherwise.
-bool handle_player_collisions(uint8_t* coll_map, uint8_t* bkg_map) {
+bool handle_player_collisions(void) {
   bool player_collided = false;
   bool health_changed = false;
   if (iframes_counter == 0) {
@@ -130,13 +135,13 @@ bool handle_player_collisions(uint8_t* coll_map, uint8_t* bkg_map) {
       damage_animation_state = SHOWN;
     }
     // Normal collision check for player
-    uint16_t collision_idx = check_player_collisions(coll_map, false);
+    uint16_t collision_idx = check_player_collisions(false);
     if (collision_idx != UINT16_MAX) {
       player_collided = true;
-      if (coll_map[collision_idx] == HEALTH_KIT_ID) {
+      if (collision_map[collision_idx] == HEALTH_KIT_ID) {
         // Pick up health kit.
-        coll_map[collision_idx] = 0;
-        bkg_map[collision_idx] = 0;
+        collision_map[collision_idx] = 0;
+        background_map[collision_idx] = 0;
         // Update player health.
         // When updating this code, be wary that the max value of an int8_t is 127.
         if (player_sprite.health < 20) {
@@ -152,10 +157,10 @@ bool handle_player_collisions(uint8_t* coll_map, uint8_t* bkg_map) {
         health_changed = true;
         play_health_sound();
       }
-      else if (coll_map[collision_idx] == SHIELD_ID) {
+      else if (collision_map[collision_idx] == SHIELD_ID) {
         // Pick up shield.
-        coll_map[collision_idx] = 0;
-        bkg_map[collision_idx] = 0;
+        collision_map[collision_idx] = 0;
+        background_map[collision_idx] = 0;
         shield_active = true;
         iframes_counter = SHIELD_DURATION;
         player_sprite_base_id += 10;
@@ -166,17 +171,17 @@ bool handle_player_collisions(uint8_t* coll_map, uint8_t* bkg_map) {
         player_sprite.health -= COLLISION_DAMAGE;
         health_changed = true;
         iframes_counter = COLLISION_TIMEOUT;
-        if (coll_map[collision_idx] <= PLAYER_COLLISION_DAMAGE) {
+        if (collision_map[collision_idx] <= PLAYER_COLLISION_DAMAGE) {
           // The wall or mine is destroyed.
-          if (bkg_map[collision_idx] == MINE_IDX) {
+          if (background_map[collision_idx] == MINE_IDX) {
             increment_point_score(POINTS_PER_MINE);
           }
-          coll_map[collision_idx] = 0;
-          bkg_map[collision_idx] = 0;
+          collision_map[collision_idx] = 0;
+          background_map[collision_idx] = 0;
         }
         else {
           // Apply damage to the wall or mine.
-          coll_map[collision_idx] -= PLAYER_COLLISION_DAMAGE;
+          collision_map[collision_idx] -= PLAYER_COLLISION_DAMAGE;
         }
         // Handle knockback: Push sprite in the opposite direction that it's moving.
         if (player_sprite.dir & RIGHT) {
@@ -210,13 +215,13 @@ bool handle_player_collisions(uint8_t* coll_map, uint8_t* bkg_map) {
       }
       // Check for collision and only process pickups if the shield is not active.
       // This will allow the player to pick up items while in the iframes state.
-      uint16_t collision_idx = check_player_collisions(coll_map, true);
+      uint16_t collision_idx = check_player_collisions(true);
       if (collision_idx != UINT16_MAX) {
         player_collided = true;
-        if (coll_map[collision_idx] == HEALTH_KIT_ID) {
+        if (collision_map[collision_idx] == HEALTH_KIT_ID) {
           // Pick up health kit.
-          coll_map[collision_idx] = 0;
-          bkg_map[collision_idx] = 0;
+          collision_map[collision_idx] = 0;
+          background_map[collision_idx] = 0;
           // Update player health.
           // When updating this code, be wary that the max value of an int8_t is 127.
           if (player_sprite.health < 20) {
@@ -234,8 +239,8 @@ bool handle_player_collisions(uint8_t* coll_map, uint8_t* bkg_map) {
         }
         else {
           // Pick up shield.
-          coll_map[collision_idx] = 0;
-          bkg_map[collision_idx] = 0;
+          collision_map[collision_idx] = 0;
+          background_map[collision_idx] = 0;
           shield_active = true;
           iframes_counter = SHIELD_DURATION;
           player_sprite_base_id += 10;

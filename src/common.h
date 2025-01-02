@@ -3,6 +3,8 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include <stdint.h>
+
 #include "sprites.h"
 
 /*
@@ -24,6 +26,7 @@
 #define SCREEN_TILE_WIDTH 20
 #define ROW_WIDTH 32
 #define COLUMN_HEIGHT 17
+#define COLUMNS_PER_SCREEN 20
 
 /*
  * Tiles
@@ -39,7 +42,7 @@
 #define BOMB_ICON_IDX (MAPBLOCK_IDX+5)
 #define SHIELD_TILE (MAPBLOCK_IDX+6)
 #define HEALTH_KIT_TILE (MAPBLOCK_IDX+7)
-#define BOMB_SIL_ICON_IDX (MAPBLOCK_IDX+12)
+#define BOMB_SILHOUETTE_ICON_IDX (MAPBLOCK_IDX+12)
 #define HEALTH_BAR_START (MAPBLOCK_IDX+14)
 #define HEALTH_BAR_MIDDLE (MAPBLOCK_IDX+15)
 #define HEALTH_BAR_END (MAPBLOCK_IDX+16)
@@ -50,13 +53,13 @@
  */
 #define PLAYER_SPRITE_ID 0
 #define DEATH_SPRITE 9
-#define CURSOR_SPRITE_ID 22
+#define BULLET_SPRITE 19
+#define CURSOR_SPRITE 22
 
 /*
  * Tunable parameters
  */
 #define MAX_BULLETS 3
-#define MAX_BOMBS 1
 #define BLOCK_HEALTH 4
 #define MINE_HEALTH 2
 #define POWERUP_RESERVED_IDS 235
@@ -68,6 +71,7 @@
 #define COLLISION_TIMEOUT 24
 // A BOMB_RADIUS of N will create square bomb explosions of (2*N+1, 2*N+1) size in tiles.
 #define BOMB_RADIUS 3
+#define BOMB_COOLDOWN_FRAMES 420
 #define BULLET_LIFESPAN 20
 #define BULLET_DAMAGE 1
 #define PLAYER_START_X 20
@@ -89,11 +93,8 @@
 #define MOD4(n) ((n) & 0x3)
 #define MOD32(n) ((n) & 0x1F)
 
-enum animation_state{
-  HIDDEN=0,
-  SHOWN=1
-};
-
 extern struct Sprite player_sprite;
+extern uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
+extern uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
 
 #endif
