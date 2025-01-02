@@ -19,6 +19,7 @@
 #include "player_shield_sprites.h"
 #include "player_sprites.h"
 #include "projectiles_sprites.h"
+#include "logo_cursor_sprites.h"
 
 // Tile data
 #include "block_tiles.h"
@@ -128,6 +129,7 @@ static void load_data(void) {
   set_sprite_data(0, 10, player_data);
   set_sprite_data(10, 9, player_shield_data);
   set_sprite_data(19, 3, projectiles_data);
+  set_sprite_data(22, 1, logo_cursor_data);
 }
 
 static void update_health_bar(int8_t health) {
@@ -184,7 +186,24 @@ static void show_logo_screen(bool with_transition) {
   // Initialize the CBT SFX and add it to the VBL
   CBTFX_PLAY_SFX_02;
   add_VBL(CBTFX_update);
-  wait(60*2);
+  set_sprite_tile(0, CURSOR_SPRITE_ID);
+  set_sprite_tile(1, CURSOR_SPRITE_ID);
+  move_sprite(0, 119+8, 75+17);
+  move_sprite(1, 119+8, 83+17);
+  SHOW_SPRITES;
+  //wait(60*2);
+
+  for (uint8_t i=0; i<150; i++){
+    if ((i == 30) || (i == 90) || (i == 149)){
+      move_sprite(0, 0, 0);
+      move_sprite(1, 0, 0);
+    }
+    else if ((i == 60) || (i == 120)) {
+      move_sprite(0, 119+8, 75+17);
+      move_sprite(1, 119+8, 83+17);
+    }
+    vsync();
+  }
 
   // Remove the CBT SFX from tge VBL
   remove_VBL(CBTFX_update);

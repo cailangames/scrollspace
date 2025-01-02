@@ -48,6 +48,7 @@
  */
 #define PLAYER_SPRITE_ID 0
 #define DEATH_SPRITE 9
+#define CURSOR_SPRITE_ID 22
 
 /*
  * Tunable parameters
