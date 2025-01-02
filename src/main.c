@@ -173,14 +173,23 @@ static void update_health_bar(int8_t health) {
 static void show_logo_screen(bool with_transition) {
   HIDE_BKG;
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT+1, cailan_games_logo_map);
+  play_all_channels();
   if (with_transition) {
     wait(60);
     fade_in();
+    SHOW_BKG;
   } else {
     DISPLAY_ON;
   }
-  SHOW_BKG;
+  // Initialize the CBT SFX and add it to the VBL
+  CBTFX_PLAY_SFX_02;
+  add_VBL(CBTFX_update);
   wait(60*2);
+
+  // Remove the CBT SFX from tge VBL
+  remove_VBL(CBTFX_update);
+  mute_all_channels();
+
   // // Wait for the player to press start before going to the next screen.
   // waitpad(J_START);
   // waitpadup();
