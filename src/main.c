@@ -220,22 +220,30 @@ static uint8_t show_speed_selection_screen(void) {
     uint8_t input = joypad();
     if (KEY_FIRST_PRESS(input, prev_input, J_UP)) {
       if (scroll_speed == SCROLL_SPEED_NORMAL) {
-        move_sprite(PLAYER_SPRITE_ID, 32, 88);
-        scroll_speed = SCROLL_SPEED_HARD;
+        move_sprite(PLAYER_SPRITE_ID, 32, 104);
+        scroll_speed = SCROLL_SPEED_TURBO;
       }
-      else {
+      else if (scroll_speed == SCROLL_SPEED_HARD) {
         move_sprite(PLAYER_SPRITE_ID, 32, 72);
         scroll_speed = SCROLL_SPEED_NORMAL;
+      }
+      else {
+        move_sprite(PLAYER_SPRITE_ID, 32, 88);
+        scroll_speed = SCROLL_SPEED_HARD;
       }
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN)) {
-      if (scroll_speed == SCROLL_SPEED_HARD) {
-        move_sprite(PLAYER_SPRITE_ID, 32, 72);
-        scroll_speed = SCROLL_SPEED_NORMAL;
-      }
-      else {
+      if (scroll_speed == SCROLL_SPEED_NORMAL) {
         move_sprite(PLAYER_SPRITE_ID, 32, 88);
         scroll_speed = SCROLL_SPEED_HARD;
+      }
+      else if (scroll_speed == SCROLL_SPEED_HARD) {
+        move_sprite(PLAYER_SPRITE_ID, 32, 104);
+        scroll_speed = SCROLL_SPEED_TURBO;
+      }
+      else {
+        move_sprite(PLAYER_SPRITE_ID, 32, 72);
+        scroll_speed = SCROLL_SPEED_NORMAL;
       }
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A) || KEY_FIRST_PRESS(input, prev_input, J_B)) {
@@ -419,7 +427,7 @@ void main(void) {
     // Load the window contents.
     n_bombs = MAX_BOMBS;
     bomb_tiles[0] = BOMB_ICON_IDX;
-    bomb_tiles[1] = n_bombs + 1;
+    bomb_tiles[1] = 0; //n_bombs + 1;
     health_bar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
     for (i = 1; i < 7; ++i) {
       health_bar_tiles[i] = HEALTH_BAR_MIDDLE;  // center of bar
@@ -653,6 +661,12 @@ void main(void) {
         bomb_dropped = true;
         --n_bombs;
         play_bomb_sound();
+        if (n_bombs == 0){
+          bomb_tiles[0] = BOMB_SIL_ICON_IDX;
+        }
+        else {
+          bomb_tiles[0] = BOMB_ICON_IDX;
+        }
       }
 #endif
 
@@ -775,7 +789,7 @@ void main(void) {
         else if (player_collision == SHIELD_ID) {
           shield_active = true;
           damage_animation_counter = SHIELD_DURATION;
-          player_sprite_base_id += 10;
+          // player_sprite_base_id += 10;
           player_collision = 0;
           play_shield_sound();
         }
@@ -834,7 +848,7 @@ void main(void) {
           else if (player_collision == SHIELD_ID) {
             shield_active = true;
             damage_animation_counter = SHIELD_DURATION;
-            player_sprite_base_id += 10;
+            // player_sprite_base_id += 10;
             player_collision = 0;
             play_shield_sound();
           }
@@ -850,6 +864,10 @@ void main(void) {
       }
       else if (player.health > 0) {
         player_sprite_base_id = 6;
+      }
+
+      if (shield_active){
+        player_sprite_base_id += 10;
       }
 #endif
 
@@ -878,6 +896,7 @@ void main(void) {
           // Add a bomb every few screens we scroll.
           if (screen_count % 3 == 0 && n_bombs < MAX_BOMBS) {
             ++n_bombs;
+            bomb_tiles[0] = BOMB_ICON_IDX;
           }
 #endif
         }
@@ -886,7 +905,7 @@ void main(void) {
 #if ENABLE_WEAPONS
       if ((frame_count & 0x3) == 0) { // %4
         // Update HUD
-        bomb_tiles[1] = n_bombs + 1;
+        bomb_tiles[1] = 0;// n_bombs + 1;
         set_win_tiles(9, 0, 2, 1, bomb_tiles);
       }
 

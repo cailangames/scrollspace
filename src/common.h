@@ -68,6 +68,7 @@
 // All speeds are in pixels per frame.
 #define SCROLL_SPEED_NORMAL 1
 #define SCROLL_SPEED_HARD 2
+#define SCROLL_SPEED_TURBO 3
 
 enum animation_state{
   HIDDEN=0,

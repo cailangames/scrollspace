@@ -222,18 +222,19 @@ def get_background_data_and_map(im, name, gb_code, offset=37, debug=False):
 
 #fn_path = "../assets/block.png"
 #fn_path = "../assets/projectiles.png"
-#fn_path = "../assets/powerups.png"
+fn_path = "../assets/powerups.png"
 #fn_path = "../assets/player.png"
 #fn_path = "../assets/player_shield.png"
 #fn_path = "../assets/progressbar.png"
 #fn_path = "../assets/font-extras.png" 
 #fn_path = "../assets/lock.png"
+tilemap_offset = 37
 
-fn_path = "../assets/tutorial-screen.png" 
-tilemap_offset = 59 #37
+# fn_path = "../assets/tutorial-screen.png" 
+# tilemap_offset = 59 #37
 
-fn_path = "../assets/cailan-games-logo.png" 
-tilemap_offset = 68
+# fn_path = "../assets/cailan-games-logo.png" 
+# tilemap_offset = 68
 
 filename = os.path.splitext(os.path.split(fn_path)[-1])[0].lower()
 filename = filename.replace("-","_")
