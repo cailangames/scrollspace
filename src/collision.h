@@ -20,8 +20,8 @@ uint16_t check_bullet_collisions(struct Sprite* sprite) {
   // Top right corner
   uint16_t row_top = (sprite->cb.y - SCREEN_T) >> 3;
   uint16_t row_top_offset = MAP_ARRAY_INDEX_ROW_OFFSET(row_top);
-  uint8_t screen_left_col = SCX_REG >> 3;
-  uint8_t col_right = MOD32(screen_left_col + ((sprite->cb.x + sprite->cb.w - SCREEN_L) >> 3));  // MOD32 is for screen wrap-around.
+  uint16_t x_right = sprite->cb.x + sprite->cb.w - SCREEN_L;
+  uint16_t col_right = MOD32((x_right + SCX_REG) >> 3);  // MOD32 is for screen wrap-around.
   uint16_t idx_top_right = row_top_offset + col_right;
   if (collision_map[idx_top_right] > 0 && collision_map[idx_top_right] < POWERUP_RESERVED_IDS) {
     return idx_top_right;
@@ -48,8 +48,8 @@ uint16_t check_player_collisions(bool pickups_only) {
   // Top right corner
   uint16_t row_top = (player_sprite.cb.y - SCREEN_T) >> 3;
   uint16_t row_top_offset = MAP_ARRAY_INDEX_ROW_OFFSET(row_top);
-  uint8_t screen_left_col = SCX_REG >> 3;
-  uint8_t col_right = MOD32(screen_left_col + ((player_sprite.cb.x + player_sprite.cb.w - SCREEN_L) >> 3));  // MOD32 is for screen wrap-around.
+  uint16_t x_right = player_sprite.cb.x + player_sprite.cb.w - SCREEN_L;
+  uint16_t col_right = MOD32((x_right + SCX_REG) >> 3);  // MOD32 is for screen wrap-around.
   uint16_t idx_top_right = row_top_offset + col_right;
   if (pickups_only) {
     if (collision_map[idx_top_right] >= POWERUP_RESERVED_IDS) {
@@ -72,7 +72,8 @@ uint16_t check_player_collisions(bool pickups_only) {
   }
 
   // Top left corner
-  uint8_t col_left = MOD32(screen_left_col + ((player_sprite.cb.x - SCREEN_L) >> 3));  // MOD32 is for screen wrap-around.
+  uint16_t x_left = player_sprite.cb.x - SCREEN_L;
+  uint16_t col_left = MOD32((x_left + SCX_REG) >> 3);  // MOD32 is for screen wrap-around.
   uint16_t idx_top_left = row_top_offset + col_left;
   if (pickups_only) {
     if (collision_map[idx_top_left] >= POWERUP_RESERVED_IDS) {
