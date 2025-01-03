@@ -2,8 +2,8 @@
 Tile map size: 20x18
 */
 
-unsigned char cailan_games_logo_ntiles = 49;
-unsigned char cailan_games_logo_map[] = 
+const unsigned char cailan_games_logo_ntiles = 49;
+const unsigned char cailan_games_logo_map[] = 
 {
   0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,
   0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,0X45,

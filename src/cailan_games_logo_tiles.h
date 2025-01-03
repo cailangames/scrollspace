@@ -2,7 +2,7 @@
 Number of tiles: 49
 */
 
-unsigned char cailan_games_logo_tiles[] = 
+const unsigned char cailan_games_logo_tiles[] = 
 {
   0X7F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
   0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
