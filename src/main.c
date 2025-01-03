@@ -1,4 +1,3 @@
-#include <rand.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +6,7 @@
 #include <gbdk/bcd.h>
 #include <gbdk/font.h>
 #include <hUGEDriver.h>
+#include <rand.h>
 
 #include "collision.h"
 #include "common.h"
@@ -18,22 +18,22 @@
 #include "weapons.h"
 
 // Sprite data
+#include "logo_cursor_sprites.h"
 #include "player_shield_sprites.h"
 #include "player_sprites.h"
 #include "projectiles_sprites.h"
-#include "logo_cursor_sprites.h"
 
 // Tile data
 #include "block_tiles.h"
+#include "cailan_games_logo_map.h"
+#include "cailan_games_logo_tiles.h"
 #include "font_extras_tiles.h"
-#include "powerups_tiles.h"
 #include "lock_tiles.h"
+#include "powerups_tiles.h"
 #include "progressbar_tiles.h"
 #include "title_screens.h"
 #include "tutorial_screen_map.h"
 #include "tutorial_screen_tiles.h"
-#include "cailan_games_logo_tiles.h"
-#include "cailan_games_logo_map.h"
 
 // The following are used for performance testing of individual components.
 #define ENABLE_SCORING 1
@@ -323,6 +323,7 @@ void main(void) {
   uint8_t prev_input;  // The joypad input of the previous frame
   uint8_t scroll_count;  // How many pixels have been scrolled in the current column
   uint8_t col_count;  // How many columns have been scrolled in the current screen
+  uint8_t left_col_index;  // The index of the leftmost column
   uint8_t scroll_pixels_per_frame;  // How many pixels to scroll each frame
 
   // Banking variables
@@ -345,6 +346,7 @@ void main(void) {
     prev_input = 0;
     scroll_count = 0;
     col_count = 0;
+    left_col_index = 0;
     gen_state.biome_id = 0;
     gen_state.biome_column_index = 0;
     gen_column_index = SCREEN_TILE_WIDTH;
@@ -391,9 +393,7 @@ void main(void) {
     SWITCH_ROM(1);
     for (uint8_t i = 0; i < ROW_WIDTH - SCREEN_TILE_WIDTH; ++i) {
       generate_next_column(&gen_state, collision_map+gen_column_index, background_map+gen_column_index);
-      if (++gen_column_index >= ROW_WIDTH) {
-        gen_column_index = 0;
-      }
+      gen_column_index = MOD32(gen_column_index + 1);  // MOD32 is for screen wrap-around.
     }
     set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
     SWITCH_ROM(last_bank);
@@ -456,15 +456,15 @@ void main(void) {
       scroll_bkg(scroll_pixels_per_frame, 0);
       scroll_count += scroll_pixels_per_frame;
 
-      if (scroll_count >= 8) {
+      if (scroll_count >= PIXELS_PER_COLUMN) {
         scroll_count = 0;
         last_bank = CURRENT_BANK;
         SWITCH_ROM(1);
         generate_next_column(&gen_state, collision_map+gen_column_index, background_map+gen_column_index);
-        if (++gen_column_index >= ROW_WIDTH) {
-          gen_column_index = 0;
-        }
+        gen_column_index = MOD32(gen_column_index + 1);  // MOD32 is for screen wrap-around.
         SWITCH_ROM(last_bank);
+
+        left_col_index = MOD32(left_col_index + 1);  // MOD32 is for screen wrap-around.
         copy_bkgmap_to_vram = true;
 
         ++col_count;
@@ -489,8 +489,16 @@ void main(void) {
 #endif
 
       if (copy_bkgmap_to_vram) {
-        // Write the entire map to VRAM
-        set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
+        // Write the background map to VRAM.
+        if (left_col_index + SCREEN_SCROLL_WIDTH <= ROW_WIDTH) {
+          set_bkg_submap(left_col_index, 0, SCREEN_SCROLL_WIDTH, COLUMN_HEIGHT, background_map, ROW_WIDTH);
+        } else {
+          // The screen wraps around to the start of the background map, so we need to take that
+          // into account here by writing to VRAM in two batches.
+          uint8_t first_batch_width = ROW_WIDTH - left_col_index;
+          set_bkg_submap(left_col_index, 0, first_batch_width, COLUMN_HEIGHT, background_map, ROW_WIDTH);
+          set_bkg_submap(0, 0, SCREEN_SCROLL_WIDTH-first_batch_width, COLUMN_HEIGHT, background_map, ROW_WIDTH);
+        }
       }
     }
   }
