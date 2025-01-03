@@ -48,6 +48,7 @@ extern const hUGESong_t main_song_fast;
 struct Sprite player_sprite;
 uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
 uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
+uint16_t point_score = 0;
 
 static const uint8_t blank_win_tiles[SCREEN_TILE_WIDTH] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
@@ -287,6 +288,8 @@ void main(void) {
   move_win(7, 136);
   // Initialize high scores.
   init_highscores();
+  // Make sure ROM bank 1 is loaded (in addition to the always-loaded ROM bank 0).
+  SWITCH_ROM(1);
 
 #if ENABLE_MUSIC
   // Load music.
@@ -313,21 +316,13 @@ void main(void) {
   show_logo_screen();
   show_title_screen();
 
-  bool copy_bkgmap_to_vram = false;
-
-  // Map generation variables.
-  struct GenerationState gen_state;
-  uint8_t gen_column_index;  // The index of the next column to generate.
-
+  bool copy_bkgmap_to_vram;  // Whether or not to copy the background map to VRAM for a given frame
   uint8_t input;  // The joypad input of this frame
   uint8_t prev_input;  // The joypad input of the previous frame
   uint8_t scroll_count;  // How many pixels have been scrolled in the current column
   uint8_t col_count;  // How many columns have been scrolled in the current screen
   uint8_t left_col_index;  // The index of the leftmost column
   uint8_t scroll_pixels_per_frame;  // How many pixels to scroll each frame
-
-  // Banking variables
-  uint8_t last_bank;
 
   while (true) {
     /*
@@ -341,15 +336,15 @@ void main(void) {
       background_map[ii] = 0;
     }
 
+    // Reset the procedural generation state.
+    reset_generation_state();
+
     // Initialize other variables.
     input = 0;
     prev_input = 0;
     scroll_count = 0;
     col_count = 0;
     left_col_index = 0;
-    gen_state.biome_id = 0;
-    gen_state.biome_column_index = 0;
-    gen_column_index = SCREEN_TILE_WIDTH;
 
     /*
      * SPEED SELECTION SCREEN
@@ -389,14 +384,10 @@ void main(void) {
     SHOW_SPRITES;
     SHOW_WIN;
 
-    last_bank = CURRENT_BANK;
-    SWITCH_ROM(1);
     for (uint8_t i = 0; i < ROW_WIDTH - SCREEN_TILE_WIDTH; ++i) {
-      generate_next_column(&gen_state, collision_map+gen_column_index, background_map+gen_column_index);
-      gen_column_index = MOD32(gen_column_index + 1);  // MOD32 is for screen wrap-around.
+      generate_next_column();
     }
     set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
-    SWITCH_ROM(last_bank);
 
     wait(15);
 
@@ -458,11 +449,7 @@ void main(void) {
 
       if (scroll_count >= PIXELS_PER_COLUMN) {
         scroll_count = 0;
-        last_bank = CURRENT_BANK;
-        SWITCH_ROM(1);
-        generate_next_column(&gen_state, collision_map+gen_column_index, background_map+gen_column_index);
-        gen_column_index = MOD32(gen_column_index + 1);  // MOD32 is for screen wrap-around.
-        SWITCH_ROM(last_bank);
+        generate_next_column();
 
         left_col_index = MOD32(left_col_index + 1);  // MOD32 is for screen wrap-around.
         copy_bkgmap_to_vram = true;
@@ -470,7 +457,7 @@ void main(void) {
         ++col_count;
         if (col_count == COLUMNS_PER_SCREEN) {
           col_count = 0;
-          increment_point_score(5);
+          point_score += POINTS_PER_SCREEN_SCROLLED;
         }
       }
 

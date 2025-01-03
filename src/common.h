@@ -74,6 +74,8 @@
 #define BOMB_COOLDOWN_FRAMES 420
 #define BULLET_LIFESPAN 20
 #define BULLET_DAMAGE 1
+#define BULLET_COLLISION_X_OFFSET 0
+#define BULLET_COLLISION_Y_OFFSET 2
 #define PLAYER_START_X 20
 #define PLAYER_START_Y 80
 #define PLAYER_MAX_HEALTH 100
@@ -86,6 +88,7 @@
 #define SCROLL_SPEED_HARD 2
 #define SCROLL_SPEED_TURBO 3
 #define POINTS_PER_MINE 2
+#define POINTS_PER_SCREEN_SCROLLED 5
 
 /*
  * Math
@@ -96,5 +99,6 @@
 extern struct Sprite player_sprite;
 extern uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
 extern uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
+extern uint16_t point_score;
 
 #endif

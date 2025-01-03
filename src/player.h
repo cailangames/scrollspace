@@ -10,7 +10,6 @@
 
 #include "collision.h"
 #include "common.h"
-#include "score.h"
 #include "sound_effects.h"
 #include "sprites.h"
 
@@ -181,67 +180,69 @@ bool handle_player_collisions(void) {
     uint16_t collision_idx = check_player_collisions(false);
     if (collision_idx != UINT16_MAX) {
       player_collided = true;
-      if (collision_map[collision_idx] == HEALTH_KIT_ID) {
-        // Pick up health kit.
-        collision_map[collision_idx] = 0;
-        background_map[collision_idx] = 0;
-        // Update player health.
-        // When updating this code, be wary that the max value of an int8_t is 127.
-        if (player_sprite.health < 20) {
-          player_sprite.health += 4*HEALTH_KIT_VALUE;
-        } else if (player_sprite.health < 50) {
-          player_sprite.health += 2*HEALTH_KIT_VALUE;
-        } else {
-          player_sprite.health += HEALTH_KIT_VALUE;
-          if (player_sprite.health > PLAYER_MAX_HEALTH) {
-            player_sprite.health = PLAYER_MAX_HEALTH;
-          }
-        }
-        health_changed = true;
-        play_health_sound();
-      }
-      else if (collision_map[collision_idx] == SHIELD_ID) {
-        // Pick up shield.
-        collision_map[collision_idx] = 0;
-        background_map[collision_idx] = 0;
-        shield_active = true;
-        iframes_counter = SHIELD_DURATION;
-        player_sprite_base_id += 10;
-        play_shield_sound();
-      }
-      else {
-        // The player hit a wall or a mine.
-        player_sprite.health -= COLLISION_DAMAGE;
-        health_changed = true;
-        iframes_counter = COLLISION_TIMEOUT;
-        if (collision_map[collision_idx] <= PLAYER_COLLISION_DAMAGE) {
-          // The wall or mine is destroyed.
-          if (background_map[collision_idx] == MINE_IDX) {
-            increment_point_score(POINTS_PER_MINE);
-          }
+      uint8_t collision_id = collision_map[collision_idx];
+      switch (collision_id) {
+        case HEALTH_KIT_ID:
+          // Pick up health kit.
           collision_map[collision_idx] = 0;
           background_map[collision_idx] = 0;
-        }
-        else {
-          // Apply damage to the wall or mine.
-          collision_map[collision_idx] -= PLAYER_COLLISION_DAMAGE;
-        }
-        // Handle knockback: Push sprite in the opposite direction that it's moving.
-        if (player_sprite.dir & RIGHT) {
-          // Move the sprite to the left.
-          player_sprite.x -= PLAYER_COLLISION_KNOCKBACK;
-        } else if (player_sprite.dir & LEFT) {
-          // Move the sprite to the right.
-          player_sprite.x += PLAYER_COLLISION_KNOCKBACK;
-        }
-        if (player_sprite.dir & UP) {
-          // Move the sprite down.
-          player_sprite.y += PLAYER_COLLISION_KNOCKBACK;
-        } else if (player_sprite.dir & DOWN) {
-          // Move the sprite up.
-          player_sprite.y -= PLAYER_COLLISION_KNOCKBACK;
-        }
-        move_sprite(PLAYER_SPRITE_ID, player_sprite.x, player_sprite.y);
+          // Update player health.
+          // When updating this code, be wary that the max value of an int8_t is 127.
+          if (player_sprite.health < 20) {
+            player_sprite.health += 4*HEALTH_KIT_VALUE;
+          } else if (player_sprite.health < 50) {
+            player_sprite.health += 2*HEALTH_KIT_VALUE;
+          } else {
+            player_sprite.health += HEALTH_KIT_VALUE;
+            if (player_sprite.health > PLAYER_MAX_HEALTH) {
+              player_sprite.health = PLAYER_MAX_HEALTH;
+            }
+          }
+          health_changed = true;
+          play_health_sound();
+          break;
+        case SHIELD_ID:
+          // Pick up shield.
+          collision_map[collision_idx] = 0;
+          background_map[collision_idx] = 0;
+          shield_active = true;
+          iframes_counter = SHIELD_DURATION;
+          player_sprite_base_id += 10;
+          play_shield_sound();
+          break;
+        default:
+          // The player hit a wall or a mine.
+          player_sprite.health -= COLLISION_DAMAGE;
+          health_changed = true;
+          iframes_counter = COLLISION_TIMEOUT;
+          if (collision_id <= PLAYER_COLLISION_DAMAGE) {
+            // The wall or mine is destroyed.
+            if (background_map[collision_idx] == MINE_IDX) {
+              point_score += POINTS_PER_MINE;
+            }
+            collision_map[collision_idx] = 0;
+            background_map[collision_idx] = 0;
+          } else {
+            // Apply damage to the wall or mine.
+            collision_map[collision_idx] -= PLAYER_COLLISION_DAMAGE;
+          }
+          // Handle knockback: Push sprite in the opposite direction that it's moving.
+          if (player_sprite.dir & RIGHT) {
+            // Move the sprite to the left.
+            player_sprite.x -= PLAYER_COLLISION_KNOCKBACK;
+          } else if (player_sprite.dir & LEFT) {
+            // Move the sprite to the right.
+            player_sprite.x += PLAYER_COLLISION_KNOCKBACK;
+          }
+          if (player_sprite.dir & UP) {
+            // Move the sprite down.
+            player_sprite.y += PLAYER_COLLISION_KNOCKBACK;
+          } else if (player_sprite.dir & DOWN) {
+            // Move the sprite up.
+            player_sprite.y -= PLAYER_COLLISION_KNOCKBACK;
+          }
+          move_sprite(PLAYER_SPRITE_ID, player_sprite.x, player_sprite.y);
+          break;
       }
     }
   }

@@ -120,15 +120,27 @@ static const uint8_t next_possible_biomes[BIOME_COUNT][1] = {
   {0}
 };
 
-void generate_next_column(struct GenerationState* gen_state, uint8_t* coll_map, uint8_t* bkg_map) BANKED {
+// Current generation state variables
+static uint8_t gen_column_index = 0;  // The index of the next column to generate
+static uint8_t biome_id = 0;  // The ID of the biome that's currently being generated
+static uint8_t biome_column_index = 0;  // The column index within the current biome being generated
+
+void reset_generation_state(void) BANKED {
+  gen_column_index = SCREEN_TILE_WIDTH;
+  biome_id = 0;
+  biome_column_index = 0;
+}
+
+void generate_next_column(void) BANKED {
   // Add tiles to collision and background maps.
-  uint8_t cave_top = biome_columns[gen_state->biome_id][gen_state->biome_column_index * 2];
-  uint8_t cave_bottom = biome_columns[gen_state->biome_id][gen_state->biome_column_index * 2 + 1];
-  uint16_t n;
+  uint8_t* coll_map = collision_map + gen_column_index;
+  uint8_t* bkg_map = background_map + gen_column_index;
+  uint8_t cave_top = biome_columns[biome_id][biome_column_index * 2];
+  uint8_t cave_bottom = biome_columns[biome_id][biome_column_index * 2 + 1];
 
   for (uint16_t row = 0; row < COLUMN_HEIGHT; ++row) {
     // TODO: Add random variance.
-    uint16_t map_index = row*ROW_WIDTH;
+    uint16_t map_index = MAP_ARRAY_INDEX_ROW_OFFSET(row);
     if (row < cave_top || row > cave_bottom) {
       // Create a block.
       coll_map[map_index] = BLOCK_HEALTH;
@@ -136,7 +148,7 @@ void generate_next_column(struct GenerationState* gen_state, uint8_t* coll_map, 
       continue;
     }
 
-    n = randw();
+    uint16_t n = randw();
     if (n > 65300) {
       // Create a health tile.
       coll_map[map_index] = HEALTH_KIT_ID;
@@ -156,9 +168,10 @@ void generate_next_column(struct GenerationState* gen_state, uint8_t* coll_map, 
     }
   }
 
-  // Update GenerationState.
-  if (++gen_state->biome_column_index >= COLUMNS_PER_BIOME) {
-    gen_state->biome_id = next_possible_biomes[gen_state->biome_id][0];  // TODO: Add randomness.
-    gen_state->biome_column_index = 0;
+  // Update current generation state.
+  gen_column_index = MOD32(gen_column_index + 1);  // MOD32 is for screen wrap-around.
+  if (++biome_column_index >= COLUMNS_PER_BIOME) {
+    biome_id = next_possible_biomes[biome_id][0];  // TODO: Add randomness.
+    biome_column_index = 0;
   }
 }

@@ -11,7 +11,6 @@
 
 #include "collision.h"
 #include "common.h"
-#include "score.h"
 #include "sound_effects.h"
 
 // Sprite data for all the bullets the player can use.
@@ -62,14 +61,14 @@ static void drop_bomb(void) {
       background_map[idx] = CRATERBLOCK_IDX;
     }
   }
-  increment_point_score(incremental_score);
+  point_score += incremental_score;
 }
 
 void init_weapons(void) {
   // Initialize bullets.
   active_bullet_count = 0;
+  struct Sprite* b = bullet_sprites;
   for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
-    struct Sprite* b = &(bullet_sprites[i]);
     b->active = false;
     b->type = BULLET;
     b->sprite_id = i + 1;  // +1 so we don't override the player (always sprite_id 0)
@@ -81,14 +80,16 @@ void init_weapons(void) {
     b->x = 0;
     b->y = 0;
     // Collision box
-    b->cb_x_offset = 0;
-    b->cb_y_offset = 2;
-    b->cb.x = b->x + b->cb_x_offset;
-    b->cb.y = b->y + b->cb_y_offset;
+    b->cb_x_offset = BULLET_COLLISION_X_OFFSET;
+    b->cb_y_offset = BULLET_COLLISION_Y_OFFSET;
+    b->cb.x = b->x + BULLET_COLLISION_X_OFFSET;
+    b->cb.y = b->y + BULLET_COLLISION_Y_OFFSET;
     b->cb.w = 4;
     b->cb.h = 4;
     set_sprite_tile(b->sprite_id, b->sprite_tile_id);
     move_sprite(b->sprite_id, b->x, b->y);
+
+    ++b;
   }
   // Initialize the bomb.
   bomb_cooldown_frames = 0;
@@ -103,17 +104,18 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
   // Activate a new bullet if the A button is pressed.
   if (KEY_FIRST_PRESS(input, prev_input, J_A) && active_bullet_count < MAX_BULLETS) {
     // Find first non-active bullet in `bullets` array and activate it.
+    struct Sprite* b = bullet_sprites;
     for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
-      if (bullet_sprites[i].active) {
+      if (b->active) {
+        ++b;
         continue;
       }
-      struct Sprite* b = &(bullet_sprites[i]);
       b->active = true;
       b->lifespan = BULLET_LIFESPAN;
       b->x = player_sprite.x;
-      b->cb.x = b->x + b->cb_x_offset;
+      b->cb.x = b->x + BULLET_COLLISION_X_OFFSET;
       b->y = player_sprite.y;
-      b->cb.y = b->y + b->cb_y_offset;
+      b->cb.y = b->y + BULLET_COLLISION_Y_OFFSET;
       move_sprite(b->sprite_id, b->x, b->y);
       ++active_bullet_count;
       play_gun_sound();
@@ -139,15 +141,15 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
   // Update active bullets.
   if (active_bullet_count != 0) {
     // Move bullets.
+    struct Sprite* b = bullet_sprites;
     for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
-      if (!bullet_sprites[i].active) {
+      if (!b->active) {
+        ++b;
         continue;
       }
-      struct Sprite* b = &(bullet_sprites[i]);
       b->x += b->speed;
-      b->cb.x = b->x + b->cb_x_offset;
-      b->lifespan--;
-      if (b->x > SCREEN_R || b->lifespan == 0) {
+      b->cb.x = b->x + BULLET_COLLISION_X_OFFSET;
+      if (b->x > SCREEN_R || --b->lifespan == 0) {
         // Hide sprite.
         b->active = false;
         b->x = 0;
@@ -161,13 +163,12 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
           if (collision_map[collision_idx] <= BULLET_DAMAGE) {
             // The wall or mine is destroyed.
             if (background_map[collision_idx] == MINE_IDX) {
-              increment_point_score(POINTS_PER_MINE);
+              point_score += POINTS_PER_MINE;
             }
             collision_map[collision_idx] = 0;
             background_map[collision_idx] = 0;
             update_bkg_map = true;
-          }
-          else {
+          } else {
             // Apply damage to the wall or mine.
             collision_map[collision_idx] -= BULLET_DAMAGE;
           }
@@ -180,6 +181,8 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
       }
       // Update bullet's sprite position.
       move_sprite(b->sprite_id, b->x, b->y);
+
+      ++b;
     }
   }
 
@@ -187,8 +190,10 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
 }
 
 void hide_bullet_sprites(void) {
+  struct Sprite* b = bullet_sprites;
   for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
-    move_sprite(bullet_sprites[i].sprite_id, 0, 0);
+    move_sprite(b->sprite_id, 0, 0);
+    ++b;
   }
 }
 

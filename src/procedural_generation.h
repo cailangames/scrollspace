@@ -5,19 +5,12 @@
 
 #pragma bank 1
 
-#include <stdint.h>
-
 #include <gb/gb.h>
 
-// Struct to hold state data in between calls to `generate_next_column()`.
-struct GenerationState {
-  uint8_t biome_id;
-  uint8_t biome_column_index;
-};
+// Resets the state of the procedural generation variables.
+extern void reset_generation_state(void) BANKED;
 
-// Generates the next column and writes the output to collision and background maps.
-// Important: `coll_map` and `bkg_map` should be pointers to the first index of the column that
-// should be generated.
-extern void generate_next_column(struct GenerationState* gen_state, uint8_t* coll_map, uint8_t* bkg_map) BANKED;
+// Generates the next column and writes the output to the collision and background maps.
+extern void generate_next_column(void) BANKED;
 
 #endif

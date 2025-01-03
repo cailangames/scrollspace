@@ -23,7 +23,6 @@
 
 #define RAM_BANK0_ADDRESS ((uint16_t*)0xA000)
 
-static uint16_t point_score = 0;
 static uint8_t timer_frames = 0;
 static uint8_t timer_seconds = 0;
 static uint8_t timer_minutes = 0;
@@ -151,11 +150,6 @@ void increment_timer_score(void) {
       }
     }
   }
-}
-
-// Increments the point-based score by the given value.
-void increment_point_score(uint16_t increment_value) {
-  point_score += increment_value;
 }
 
 // Converts the current timer-based score to tiles and displays the tiles in the window.
