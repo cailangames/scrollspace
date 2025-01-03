@@ -94,6 +94,7 @@
  * Math
  */
 #define MOD4(n) ((n) & 0x3)
+#define MOD8(n) ((n) & 0x7)
 #define MOD32(n) ((n) & 0x1F)
 
 extern struct Sprite player_sprite;

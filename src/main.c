@@ -448,7 +448,7 @@ void main(void) {
       scroll_count += scroll_pixels_per_frame;
 
       if (scroll_count >= PIXELS_PER_COLUMN) {
-        scroll_count = 0;
+        scroll_count = MOD8(scroll_count);
         generate_next_column();
 
         left_col_index = MOD32(left_col_index + 1);  // MOD32 is for screen wrap-around.
