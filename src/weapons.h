@@ -20,6 +20,10 @@ static struct Sprite bullet_sprites[MAX_BULLETS];
 static uint8_t active_bullet_count = 0;
 // How many frames left until the bomb is ready again. 0 means the bomb is ready.
 static uint16_t bomb_cooldown_frames = 0;
+// The bomb icon ("ready" or "not ready") in the window.
+static uint8_t bomb_icon = 0;
+// Whether or not the bomb icon needs to be updated.
+static bool bomb_icon_update_needed = false;
 // The top row at which the last bomb was dropped.
 static uint8_t bombed_row_top = 0;
 // The left column at which the last bomb was dropped.
@@ -77,6 +81,11 @@ static void drop_bomb(void) {
   bombed_height = height;
 }
 
+// Writes the bomb icon tile to the window.
+inline void write_bomb_icon_to_window(void) {
+  set_win_tile_xy(9, 0, bomb_icon);
+}
+
 void init_weapons(void) {
   // Initialize bullets.
   active_bullet_count = 0;
@@ -109,10 +118,11 @@ void init_weapons(void) {
   }
   // Initialize the bomb.
   bomb_cooldown_frames = 0;
+  bomb_icon = BOMB_READY_ICON;
+  bomb_icon_update_needed = false;
   bombed_row_top = 0;
   bombed_col_left = 0;
   bombed_height = 0;
-  set_win_tile_xy(9, 0, BOMB_ICON_IDX);
 }
 
 // Updates the bullets and bombs based on the given input. Sets `Sprite.collided` to true if the
@@ -145,14 +155,16 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
   if (bomb_cooldown_frames != 0) {
     --bomb_cooldown_frames;
     if (bomb_cooldown_frames == 0) {
-      set_win_tile_xy(9, 0, BOMB_ICON_IDX);
+      bomb_icon = BOMB_READY_ICON;
+      bomb_icon_update_needed = true;
     }
   }
   if (KEY_FIRST_PRESS(input, prev_input, J_B) && bomb_cooldown_frames == 0) {
     play_bomb_sound();
     drop_bomb();
     bomb_cooldown_frames = BOMB_COOLDOWN_FRAMES;
-    set_win_tile_xy(9, 0, BOMB_SILHOUETTE_ICON_IDX);
+    bomb_icon = EMPTY_TILE_IDX;
+    bomb_icon_update_needed = true;
     bomb_dropped = true;
   }
 

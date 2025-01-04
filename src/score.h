@@ -27,45 +27,10 @@ static uint8_t timer_frames = 0;
 static uint8_t timer_seconds = 0;
 static uint8_t timer_minutes = 0;
 static uint8_t timer_hours = 0;
-static bool update_score_tiles = false;
+static bool score_update_needed = false;
 
 static uint8_t score_tiles[8] = {0,0,0,0,0,0,0,0};
 static uint8_t high_score_tiles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-
-static void timerscore2tiles(void) {
-  // Seconds
-  uint8_t tenths = timer_seconds/10;
-  score_tiles[7] = (timer_seconds - 10*tenths) + 0x01;
-  score_tiles[6] = tenths + 0x01;
-  score_tiles[5] = COLON_FONT_IDX;
-
-  // Minutes
-  tenths = timer_minutes/10;
-  score_tiles[4] = (timer_minutes - 10*tenths) + 0x01;
-  score_tiles[3] = tenths + 0x01;
-  score_tiles[2] = COLON_FONT_IDX;
-
-  // Hours
-  tenths = timer_hours/10;
-  score_tiles[1] = (timer_hours - 10*tenths) + 0x01;
-  score_tiles[0] = tenths + 0x01;
-}
-
-static void pointscore2tiles(void) {
-  uint8_t tenk = point_score/10000;
-  uint8_t onek = (point_score - tenk*10000) / 1000;
-  uint8_t oneh = (point_score - tenk*10000 - onek*1000) / 100;
-  uint8_t tens = (point_score - tenk*10000 - onek*1000 - oneh*100) / 10;
-  uint8_t single = (point_score - tenk*10000 - onek*1000 - oneh*100 - tens*10);
-  score_tiles[0] = 0;
-  score_tiles[1] = 0;
-  score_tiles[2] = 0;
-  score_tiles[3] = tenk + 0x01;
-  score_tiles[4] = onek + 0x1;
-  score_tiles[5] = oneh + 0x1;
-  score_tiles[6] = tens + 0x1;
-  score_tiles[7] = single + 0x1;
-}
 
 static void highscores2tiles(void) {
   // Get high scores from external RAM.
@@ -138,7 +103,7 @@ void increment_timer_score(void) {
   if (timer_frames == 60) {
     ++timer_seconds;
     timer_frames = 0;
-    update_score_tiles = true;
+    score_update_needed = true;
 
     if (timer_seconds == 60) {
       ++timer_minutes;
@@ -152,15 +117,47 @@ void increment_timer_score(void) {
   }
 }
 
-// Converts the current timer-based score to tiles and displays the tiles in the window.
-void display_timer_score(void) {
-  timerscore2tiles();
-  set_win_tiles(12, 0, 8, 1, score_tiles);
+// Updates the score tiles with the timer-based score. Note: This does *not* update the window;
+// call `write_score_to_window()` for that.
+void update_timer_score_tiles(void) {
+  // Seconds
+  uint8_t sec_tenths = timer_seconds/10;
+  score_tiles[7] = (timer_seconds - 10*sec_tenths) + 0x01;
+  score_tiles[6] = sec_tenths + 0x01;
+  score_tiles[5] = COLON_FONT_IDX;
+
+  // Minutes
+  uint8_t min_tenths = timer_minutes/10;
+  score_tiles[4] = (timer_minutes - 10*min_tenths) + 0x01;
+  score_tiles[3] = min_tenths + 0x01;
+  score_tiles[2] = COLON_FONT_IDX;
+
+  // Hours
+  uint8_t hour_tenths = timer_hours/10;
+  score_tiles[1] = (timer_hours - 10*hour_tenths) + 0x01;
+  score_tiles[0] = hour_tenths + 0x01;
 }
 
-// Converts the current point-based score to tiles and displays the tiles in the window.
-void display_point_score(void) {
-  pointscore2tiles();
+// Updates the score tiles with the point-based score. Note: This does *not* update the window;
+// call `write_score_to_window()` for that.
+void update_point_score_tiles(void) {
+  uint8_t tenk = point_score/10000;
+  uint8_t onek = (point_score - tenk*10000) / 1000;
+  uint8_t oneh = (point_score - tenk*10000 - onek*1000) / 100;
+  uint8_t tens = (point_score - tenk*10000 - onek*1000 - oneh*100) / 10;
+  uint8_t single = (point_score - tenk*10000 - onek*1000 - oneh*100 - tens*10);
+  score_tiles[0] = 0;
+  score_tiles[1] = 0;
+  score_tiles[2] = 0;
+  score_tiles[3] = tenk + 0x01;
+  score_tiles[4] = onek + 0x1;
+  score_tiles[5] = oneh + 0x1;
+  score_tiles[6] = tens + 0x1;
+  score_tiles[7] = single + 0x1;
+}
+
+// Writes the score tiles to the window.
+inline void write_score_to_window(void) {
   set_win_tiles(12, 0, 8, 1, score_tiles);
 }
 
@@ -181,7 +178,7 @@ void display_gameover_scores(void) {
   uint8_t last_seconds = (uint8_t)(high_score_ptr[2] >> 8);
 
   // Display current timer-based score.
-  timerscore2tiles();
+  update_timer_score_tiles();
   set_bkg_tiles(6, 5, 8, 1, score_tiles);
 
   // Get last high score and see if the current high score is better than it.
@@ -200,12 +197,12 @@ void display_gameover_scores(void) {
     timer_hours = last_hours;
     timer_minutes = last_minutes;
     timer_seconds = last_seconds;
-    timerscore2tiles();
+    update_timer_score_tiles();
     set_bkg_tiles(6, 10, 8, 1, score_tiles);
   }
 
   // Display current point-based score.
-  pointscore2tiles();
+  update_point_score_tiles();
   set_bkg_tiles(6, 6, 8, 1, score_tiles);
 
   if (point_score > last_points) {
@@ -217,7 +214,7 @@ void display_gameover_scores(void) {
   } else {
     // Display the last high score.
     point_score = last_points;
-    pointscore2tiles();
+    update_point_score_tiles();
     set_bkg_tiles(6, 11, 8, 1, score_tiles);
   }
 }
@@ -229,6 +226,8 @@ void reset_scores(void) {
   timer_seconds = 0;
   timer_minutes = 0;
   timer_hours = 0;
+  update_timer_score_tiles();
+  score_update_needed = false;
 }
 
 #endif

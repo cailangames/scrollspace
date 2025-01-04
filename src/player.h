@@ -27,8 +27,9 @@ static uint8_t iframes_counter = 0;
 // Tile data for the health bar.
 static uint8_t health_bar_tiles[8];
 
-// Updates the health bar tiles in the window layer based on the given health.
-void update_health_bar(int8_t health) {
+// Updates the health bar tiles based on the given health. Call `write_health_bar_to_window()` to
+// write these tiles to the window.
+void update_health_bar_tiles(int8_t health) {
   if (health == 100) {
     health_bar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
     for (uint8_t i = 1; i < 7; ++i) {
@@ -63,6 +64,10 @@ void update_health_bar(int8_t health) {
     health_bar_tiles[1] = HEALTH_BAR_START + 4;  // clear bottom 2 tiles
     health_bar_tiles[0] = HEALTH_BAR_START + 3;
   }
+}
+
+// Writes the health bar tiles to the window.
+inline void write_health_bar_to_window(void) {
   set_win_tiles(0, 0, 8, 1, health_bar_tiles);
 }
 
@@ -94,7 +99,7 @@ void init_player(void) {
   damage_animation_state = HIDDEN;
   iframes_counter = 0;
 
-  update_health_bar(PLAYER_MAX_HEALTH);
+  update_health_bar_tiles(PLAYER_MAX_HEALTH);
 }
 
 // Moves the player's ship based on the given input.
@@ -297,7 +302,7 @@ bool handle_player_collisions(void) {
 
   if (health_changed) {
     // Update health bar after a collision.
-    update_health_bar(player_sprite.health);
+    update_health_bar_tiles(player_sprite.health);
     // Update the ship sprite based on the current health.
     if (player_sprite.health > 50) {
       player_sprite_base_id = 0;
