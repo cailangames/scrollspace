@@ -84,6 +84,9 @@ void init_player(void) {
   player_sprite.health = PLAYER_MAX_HEALTH;
   player_sprite.lifespan = 0;  // Note: lifespan isn't used by the player sprite.
   player_sprite.active = true;
+  player_sprite.collided = false;
+  player_sprite.collided_row = 0;
+  player_sprite.collided_col = 0;
   move_sprite(PLAYER_SPRITE_ID, PLAYER_START_X, PLAYER_START_Y);
 
   player_sprite_base_id = 0;
@@ -161,9 +164,9 @@ void move_player(uint8_t input) {
 }
 
 // Checks if the player collided with anything and updates the player's position (e.g. due to
-// knockback) accordingly. Returns true if the player collided with anything, false otherwise.
+// knockback) accordingly. Sets `player_sprite.collided` to true if the player collided with
+// anything. Returns a bool specifying whether or not the player health changed.
 bool handle_player_collisions(void) {
-  bool player_collided = false;
   bool health_changed = false;
   if (iframes_counter == 0) {
     // The player is *not* in the invincibility frames state.
@@ -179,7 +182,6 @@ bool handle_player_collisions(void) {
     // Normal collision check for player
     uint16_t collision_idx = check_player_collisions(false);
     if (collision_idx != UINT16_MAX) {
-      player_collided = true;
       uint8_t collision_id = collision_map[collision_idx];
       switch (collision_id) {
         case HEALTH_KIT_ID:
@@ -261,7 +263,6 @@ bool handle_player_collisions(void) {
       // This will allow the player to pick up items while in the iframes state.
       uint16_t collision_idx = check_player_collisions(true);
       if (collision_idx != UINT16_MAX) {
-        player_collided = true;
         if (collision_map[collision_idx] == HEALTH_KIT_ID) {
           // Pick up health kit.
           collision_map[collision_idx] = 0;
@@ -307,7 +308,7 @@ bool handle_player_collisions(void) {
     }
   }
 
-  return player_collided;
+  return health_changed;
 }
 
 #endif

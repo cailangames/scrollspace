@@ -12,6 +12,7 @@
 #include "collision.h"
 #include "common.h"
 #include "sound_effects.h"
+#include "sprites.h"
 
 // Sprite data for all the bullets the player can use.
 static struct Sprite bullet_sprites[MAX_BULLETS];
@@ -19,11 +20,17 @@ static struct Sprite bullet_sprites[MAX_BULLETS];
 static uint8_t active_bullet_count = 0;
 // How many frames left until the bomb is ready again. 0 means the bomb is ready.
 static uint16_t bomb_cooldown_frames = 0;
+// The top row at which the last bomb was dropped.
+static uint8_t bombed_row_top = 0;
+// The left column at which the last bomb was dropped.
+static uint8_t bombed_col_left = 0;
+// The height of the explosion from the last bomb dropped.
+static uint8_t bombed_height = 0;
 
 // Updates the collision and background maps in response to a dropped bomb. The bomb explosion is a
 // square in front of the player with sides of length `2*BOMB_RADIUS+1` tiles.
 static void drop_bomb(void) {
-  uint8_t row_count = (BOMB_RADIUS * 2) + 1;  // +1 for the center row, which is centered on the ship.
+  uint8_t row_count = BOMB_LENGTH;
   uint8_t row_top = (player_sprite.y - SCREEN_T) >> 3;
   // Because of integer division, the bomb explosion can look like it's not centered with the ship.
   // The following code fixes that.
@@ -40,8 +47,10 @@ static void drop_bomb(void) {
     row_count = row_count - (BOMB_RADIUS - row_top);
     row_top = 0;
   }
-  uint8_t col_left = (SCX_REG >> 3) + ((player_sprite.x - SCREEN_L) >> 3) + 1;  // Add 1 to be in front of the player.
+  uint16_t x_left = player_sprite.x - SCREEN_L;
+  uint16_t col_left = MOD32(((x_left + SCX_REG) >> 3) + 1);  // Add 1 to be in front of the player. MOD32 is for screen wrap-around.
   uint8_t incremental_score = 0;
+  uint8_t height = 0;
   for (uint8_t i = 0; i < row_count; ++i) {
     uint16_t row = row_top + i;
     if (row >= COLUMN_HEIGHT) {
@@ -49,7 +58,7 @@ static void drop_bomb(void) {
       break;
     }
     uint16_t row_offset = MAP_ARRAY_INDEX_ROW_OFFSET(row);
-    for (uint8_t j = 0; j < (BOMB_RADIUS * 2) + 1; ++j) {
+    for (uint8_t j = 0; j < BOMB_LENGTH; ++j) {
       uint8_t col = MOD32(col_left + j);  // MOD32 is for screen wrap-around.
 
       uint16_t idx = row_offset + col;
@@ -60,8 +69,12 @@ static void drop_bomb(void) {
       collision_map[idx] = 0;
       background_map[idx] = CRATERBLOCK_IDX;
     }
+    ++height;
   }
   point_score += incremental_score;
+  bombed_row_top = row_top;
+  bombed_col_left = col_left;
+  bombed_height = height;
 }
 
 void init_weapons(void) {
@@ -86,6 +99,9 @@ void init_weapons(void) {
     b->cb.y = b->y + BULLET_COLLISION_Y_OFFSET;
     b->cb.w = 4;
     b->cb.h = 4;
+    b->collided = false;
+    b->collided_row = 0;
+    b->collided_col = 0;
     set_sprite_tile(b->sprite_id, b->sprite_tile_id);
     move_sprite(b->sprite_id, b->x, b->y);
 
@@ -93,14 +109,15 @@ void init_weapons(void) {
   }
   // Initialize the bomb.
   bomb_cooldown_frames = 0;
+  bombed_row_top = 0;
+  bombed_col_left = 0;
+  bombed_height = 0;
   set_win_tile_xy(9, 0, BOMB_ICON_IDX);
 }
 
-// Updates the bullets and bombs based on the given input. Returns true if the background map/tiles
-// need to be updated, false otherwise.
+// Updates the bullets and bombs based on the given input. Sets `Sprite.collided` to true if the
+// bullet sprite collided with anything. Returns true if the bomb was dropped, false otherwise.
 bool update_weapons(uint8_t input, uint8_t prev_input) {
-  bool update_bkg_map = false;
-
   // Activate a new bullet if the A button is pressed.
   if (KEY_FIRST_PRESS(input, prev_input, J_A) && active_bullet_count < MAX_BULLETS) {
     // Find first non-active bullet in `bullets` array and activate it.
@@ -124,6 +141,7 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
   }
 
   // Update the bomb.
+  bool bomb_dropped = false;
   if (bomb_cooldown_frames != 0) {
     --bomb_cooldown_frames;
     if (bomb_cooldown_frames == 0) {
@@ -135,7 +153,7 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
     drop_bomb();
     bomb_cooldown_frames = BOMB_COOLDOWN_FRAMES;
     set_win_tile_xy(9, 0, BOMB_SILHOUETTE_ICON_IDX);
-    update_bkg_map = true;
+    bomb_dropped = true;
   }
 
   // Update active bullets.
@@ -167,7 +185,6 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
             }
             collision_map[collision_idx] = 0;
             background_map[collision_idx] = 0;
-            update_bkg_map = true;
           } else {
             // Apply damage to the wall or mine.
             collision_map[collision_idx] -= BULLET_DAMAGE;
@@ -186,7 +203,7 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
     }
   }
 
-  return update_bkg_map;
+  return bomb_dropped;
 }
 
 void hide_bullet_sprites(void) {

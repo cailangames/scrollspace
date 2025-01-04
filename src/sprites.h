@@ -38,6 +38,10 @@ struct Sprite {
   bool active;
   uint8_t lifespan;
   enum sprite_type type;
+  // Whether or not this sprite collided with an object this frame
+  bool collided;
+  uint8_t collided_row;
+  uint8_t collided_col;
 };
 
 #endif

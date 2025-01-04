@@ -316,13 +316,15 @@ void main(void) {
   show_logo_screen();
   show_title_screen();
 
-  bool copy_bkgmap_to_vram;  // Whether or not to copy the background map to VRAM for a given frame
+  uint8_t scroll_pixels_per_frame;  // How many pixels to scroll each frame
   uint8_t input;  // The joypad input of this frame
   uint8_t prev_input;  // The joypad input of the previous frame
   uint8_t scroll_count;  // How many pixels have been scrolled in the current column
   uint8_t col_count;  // How many columns have been scrolled in the current screen
   uint8_t left_col_index;  // The index of the leftmost column
-  uint8_t scroll_pixels_per_frame;  // How many pixels to scroll each frame
+  bool bomb_dropped;  // Whether or not the bomb was dropped this frame
+  bool generated_column;  // Whether or not a column was generated this frame
+  uint8_t generated_column_idx;  // The index of the generated column
 
   while (true) {
     /*
@@ -345,6 +347,9 @@ void main(void) {
     scroll_count = 0;
     col_count = 0;
     left_col_index = 0;
+    bomb_dropped = false;
+    generated_column = false;
+    generated_column_idx = 0;
 
     /*
      * SPEED SELECTION SCREEN
@@ -384,8 +389,10 @@ void main(void) {
     SHOW_SPRITES;
     SHOW_WIN;
 
+    generated_column_idx = SCREEN_TILE_WIDTH - 1;
     for (uint8_t i = 0; i < ROW_WIDTH - SCREEN_TILE_WIDTH; ++i) {
-      generate_next_column();
+      generated_column_idx = MOD32(generated_column_idx + 1);  // MOD32 is for screen wrap-around.
+      generate_column(generated_column_idx);
     }
     set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
 
@@ -404,7 +411,6 @@ void main(void) {
      */
     while (true) {
       input = joypad();
-      copy_bkgmap_to_vram = false;
 
       if (KEY_PRESSED(input, J_START)) {
         game_paused = true;
@@ -428,31 +434,25 @@ void main(void) {
 
       move_player(input);
 #if ENABLE_WEAPONS
-      copy_bkgmap_to_vram |= update_weapons(input, prev_input);
+      bomb_dropped = update_weapons(input, prev_input);
 #endif
       prev_input = input;
 
 #if ENABLE_COLLISIONS
-      bool player_collided = handle_player_collisions();
-      if (player_collided) {
+      if (handle_player_collisions()) {
         if (player_sprite.health <= 0) {
           handle_gameover();
           break;
         }
-        copy_bkgmap_to_vram = true;
       }
 #endif
 
-      // Scroll the screen.
-      scroll_bkg(scroll_pixels_per_frame, 0);
       scroll_count += scroll_pixels_per_frame;
-
       if (scroll_count >= PIXELS_PER_COLUMN) {
         scroll_count = MOD8(scroll_count);
-        generate_next_column();
-
-        left_col_index = MOD32(left_col_index + 1);  // MOD32 is for screen wrap-around.
-        copy_bkgmap_to_vram = true;
+        generated_column_idx = MOD32(generated_column_idx + 1);  // MOD32 is for screen wrap-around.
+        generate_column(generated_column_idx);
+        generated_column = true;
 
         ++col_count;
         if (col_count == COLUMNS_PER_SCREEN) {
@@ -464,7 +464,48 @@ void main(void) {
       // Wait for frame to finish drawing
       vsync();
 
+      /*
+       * COPY TO VRAM
+       */
+      // Scroll the background.
+      scroll_bkg(scroll_pixels_per_frame, 0);
+
+      // Update tiles for collided background objects.
+      if (player_sprite.collided) {
+        set_bkg_tile_xy(player_sprite.collided_col, player_sprite.collided_row, background_map[MAP_ARRAY_INDEX_ROW_OFFSET(player_sprite.collided_row) + player_sprite.collided_col]);
+        player_sprite.collided = false;
+      }
+      struct Sprite* b = bullet_sprites;
+      for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
+        if (b->collided) {
+          set_bkg_tile_xy(b->collided_col, b->collided_row, background_map[MAP_ARRAY_INDEX_ROW_OFFSET(b->collided_row) + b->collided_col]);
+          b->collided = false;
+        }
+        ++b;
+      }
+
+      // Update background tiles when a bomb is dropped.
+      if (bomb_dropped) {
+        // Write the background map to VRAM.
+        if (bombed_col_left + BOMB_LENGTH <= ROW_WIDTH) {
+          set_bkg_submap(bombed_col_left, bombed_row_top, BOMB_LENGTH, bombed_height, background_map, ROW_WIDTH);
+        } else {
+          // The screen wraps around to the start of the background map, so we need to take that
+          // into account here by writing to VRAM in two batches.
+          uint8_t first_batch_width = ROW_WIDTH - bombed_col_left;
+          set_bkg_submap(bombed_col_left, bombed_row_top, first_batch_width, bombed_height, background_map, ROW_WIDTH);
+          set_bkg_submap(0, bombed_row_top, BOMB_LENGTH-first_batch_width, bombed_height, background_map, ROW_WIDTH);
+        }
+      }
+
+      // Update background tiles when a new column is generated.
+      if (generated_column) {
+        set_bkg_submap(generated_column_idx, 0, 1, COLUMN_HEIGHT, background_map, ROW_WIDTH);
+        generated_column = false;
+      }
+
 #if ENABLE_SCORING
+      // Update the score in the window layer, if necessary.
       if (update_score_tiles) {
         if (show_time) {
           display_timer_score();
@@ -474,19 +515,6 @@ void main(void) {
         update_score_tiles = false;
       }
 #endif
-
-      if (copy_bkgmap_to_vram) {
-        // Write the background map to VRAM.
-        if (left_col_index + SCREEN_SCROLL_WIDTH <= ROW_WIDTH) {
-          set_bkg_submap(left_col_index, 0, SCREEN_SCROLL_WIDTH, COLUMN_HEIGHT, background_map, ROW_WIDTH);
-        } else {
-          // The screen wraps around to the start of the background map, so we need to take that
-          // into account here by writing to VRAM in two batches.
-          uint8_t first_batch_width = ROW_WIDTH - left_col_index;
-          set_bkg_submap(left_col_index, 0, first_batch_width, COLUMN_HEIGHT, background_map, ROW_WIDTH);
-          set_bkg_submap(0, 0, SCREEN_SCROLL_WIDTH-first_batch_width, COLUMN_HEIGHT, background_map, ROW_WIDTH);
-        }
-      }
     }
   }
 }

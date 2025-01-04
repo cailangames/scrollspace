@@ -121,20 +121,18 @@ static const uint8_t next_possible_biomes[BIOME_COUNT][1] = {
 };
 
 // Current generation state variables
-static uint8_t gen_column_index = 0;  // The index of the next column to generate
 static uint8_t biome_id = 0;  // The ID of the biome that's currently being generated
 static uint8_t biome_column_index = 0;  // The column index within the current biome being generated
 
 void reset_generation_state(void) BANKED {
-  gen_column_index = SCREEN_TILE_WIDTH;
   biome_id = 0;
   biome_column_index = 0;
 }
 
-void generate_next_column(void) BANKED {
+void generate_column(uint8_t column_idx) BANKED {
   // Add tiles to collision and background maps.
-  uint8_t* coll_map = collision_map + gen_column_index;
-  uint8_t* bkg_map = background_map + gen_column_index;
+  uint8_t* coll_map = collision_map + column_idx;
+  uint8_t* bkg_map = background_map + column_idx;
   uint8_t cave_top = biome_columns[biome_id][biome_column_index * 2];
   uint8_t cave_bottom = biome_columns[biome_id][biome_column_index * 2 + 1];
 
@@ -169,7 +167,6 @@ void generate_next_column(void) BANKED {
   }
 
   // Update current generation state.
-  gen_column_index = MOD32(gen_column_index + 1);  // MOD32 is for screen wrap-around.
   if (++biome_column_index >= COLUMNS_PER_BIOME) {
     biome_id = next_possible_biomes[biome_id][0];  // TODO: Add randomness.
     biome_column_index = 0;
