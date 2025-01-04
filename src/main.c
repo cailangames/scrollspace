@@ -325,6 +325,7 @@ void main(void) {
   bool bomb_dropped;  // Whether or not the bomb was dropped this frame
   bool generated_column;  // Whether or not a column was generated this frame
   uint8_t generated_column_idx;  // The index of the generated column
+  bool update_window_score;  // Whether or not the score in the window needs to be updated
 
   while (true) {
     /*
@@ -350,6 +351,7 @@ void main(void) {
     bomb_dropped = false;
     generated_column = false;
     generated_column_idx = 0;
+    update_window_score = false;
 
     /*
      * SPEED SELECTION SCREEN
@@ -400,7 +402,7 @@ void main(void) {
 
     // Reset scores and window tiles.
     reset_scores();
-    display_timer_score();
+    write_score_to_window();
 
     // Unpausing the game turns on the timer, so this should be done as close as possible to the
     // main game loop.
@@ -410,6 +412,9 @@ void main(void) {
      * MAIN GAME LOOP
      */
     while (true) {
+      /*
+       * HANDLE INPUT
+       */
       input = joypad();
 
       if (KEY_PRESSED(input, J_START)) {
@@ -429,15 +434,14 @@ void main(void) {
 
       if (KEY_FIRST_PRESS(input, prev_input, J_SELECT)) {
         show_time = !show_time;
-        update_score_tiles = true;
+        score_update_needed = true;
       }
 
+      // Update the player sprite and weapons based on the input.
       move_player(input);
 #if ENABLE_WEAPONS
       bomb_dropped = update_weapons(input, prev_input);
 #endif
-      prev_input = input;
-
 #if ENABLE_COLLISIONS
       if (handle_player_collisions()) {
         if (player_sprite.health <= 0) {
@@ -447,6 +451,9 @@ void main(void) {
       }
 #endif
 
+      prev_input = input;
+
+      // Update scroll counts and generate a new column, if necessary.
       scroll_count += scroll_pixels_per_frame;
       if (scroll_count >= PIXELS_PER_COLUMN) {
         scroll_count = MOD8(scroll_count);
@@ -461,7 +468,20 @@ void main(void) {
         }
       }
 
-      // Wait for frame to finish drawing
+#if ENABLE_SCORING
+      // Update the score tiles, if necessary.
+      if (score_update_needed) {
+        if (show_time) {
+          update_timer_score_tiles();
+        } else {
+          update_point_score_tiles();
+        }
+        score_update_needed = false;
+        update_window_score = true;
+      }
+#endif
+
+      // Wait for the frame to finish drawing.
       vsync();
 
       /*
@@ -470,7 +490,7 @@ void main(void) {
       // Scroll the background.
       scroll_bkg(scroll_pixels_per_frame, 0);
 
-      // Update tiles for collided background objects.
+      // Update tiles for background objects that sprites collided with.
       if (player_sprite.collided) {
         set_bkg_tile_xy(player_sprite.collided_col, player_sprite.collided_row, background_map[MAP_ARRAY_INDEX_ROW_OFFSET(player_sprite.collided_row) + player_sprite.collided_col]);
         player_sprite.collided = false;
@@ -486,7 +506,6 @@ void main(void) {
 
       // Update background tiles when a bomb is dropped.
       if (bomb_dropped) {
-        // Write the background map to VRAM.
         if (bombed_col_left + BOMB_LENGTH <= ROW_WIDTH) {
           set_bkg_submap(bombed_col_left, bombed_row_top, BOMB_LENGTH, bombed_height, background_map, ROW_WIDTH);
         } else {
@@ -505,14 +524,10 @@ void main(void) {
       }
 
 #if ENABLE_SCORING
-      // Update the score in the window layer, if necessary.
-      if (update_score_tiles) {
-        if (show_time) {
-          display_timer_score();
-        } else {
-          display_point_score();
-        }
-        update_score_tiles = false;
+      // Write the score tiles to the window layer, if necessary.
+      if (update_window_score) {
+        write_score_to_window();
+        update_window_score = false;
       }
 #endif
     }
