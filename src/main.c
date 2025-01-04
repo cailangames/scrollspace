@@ -271,7 +271,8 @@ static void handle_gameover(void) {
 
   // Hide the bullet sprites so that they don't appear later in the title screens.
   hide_bullet_sprites();
-  update_health_bar(0);
+  update_health_bar_tiles(0);
+  write_health_bar_to_window();
 
   // Show gameover screen, then transition to the title screen.
   show_gameover_screen();
@@ -321,8 +322,6 @@ void main(void) {
   uint8_t prev_input;  // The joypad input of the previous frame
   uint8_t scroll_count;  // How many pixels have been scrolled in the current column
   uint8_t col_count;  // How many columns have been scrolled in the current screen
-  uint8_t left_col_index;  // The index of the leftmost column
-  bool bomb_dropped;  // Whether or not the bomb was dropped this frame
   bool generated_column;  // Whether or not a column was generated this frame
   uint8_t generated_column_idx;  // The index of the generated column
   bool update_window_score;  // Whether or not the score in the window needs to be updated
@@ -347,8 +346,6 @@ void main(void) {
     prev_input = 0;
     scroll_count = 0;
     col_count = 0;
-    left_col_index = 0;
-    bomb_dropped = false;
     generated_column = false;
     generated_column_idx = 0;
     update_window_score = false;
@@ -370,6 +367,7 @@ void main(void) {
     set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
 
     init_player();
+    write_health_bar_to_window();
     init_weapons();
 
 #if ENABLE_MUSIC
@@ -440,10 +438,11 @@ void main(void) {
       // Update the player sprite and weapons based on the input.
       move_player(input);
 #if ENABLE_WEAPONS
-      bomb_dropped = update_weapons(input, prev_input);
+      bool bomb_dropped = update_weapons(input, prev_input);
 #endif
 #if ENABLE_COLLISIONS
-      if (handle_player_collisions()) {
+      bool health_changed = handle_player_collisions();
+      if (health_changed) {
         if (player_sprite.health <= 0) {
           handle_gameover();
           break;
@@ -521,6 +520,11 @@ void main(void) {
       if (generated_column) {
         set_bkg_submap(generated_column_idx, 0, 1, COLUMN_HEIGHT, background_map, ROW_WIDTH);
         generated_column = false;
+      }
+
+      // Write health bar tiles to the window layer, if necessary.
+      if (health_changed) {
+        write_health_bar_to_window();
       }
 
 #if ENABLE_SCORING
