@@ -4,8 +4,15 @@
 #define _COMMON_H_
 
 #include <stdint.h>
+#include <gb/gb.h>
 
 #include "sprites.h"
+
+// The following are used for performance testing of individual components.
+#define ENABLE_SCORING 1
+#define ENABLE_MUSIC 1
+#define ENABLE_WEAPONS 1
+#define ENABLE_COLLISIONS 1
 
 /*
  * Keys
@@ -54,7 +61,6 @@
 #define PLAYER_SPRITE_ID 0
 #define DEATH_SPRITE 9
 #define BULLET_SPRITE 19
-#define CURSOR_SPRITE 22
 
 /*
  * Tunable parameters
@@ -103,5 +109,11 @@ extern struct Sprite player_sprite;
 extern uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
 extern uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
 extern uint16_t point_score;
+
+static void wait(uint8_t num_frames) {
+  for (uint8_t i = 0; i < num_frames; ++i) {
+    vsync();
+  }
+}
 
 #endif

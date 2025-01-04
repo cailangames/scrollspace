@@ -14,19 +14,19 @@
 #include "procedural_generation.h"
 #include "score.h"
 #include "sound_effects.h"
+#include "display_effects.h"
 #include "sprites.h"
 #include "weapons.h"
+#include "cailan_games_logo.h"
+  #include "intro_scene.h"
 
 // Sprite data
-#include "logo_cursor_sprites.h"
 #include "player_shield_sprites.h"
 #include "player_sprites.h"
 #include "projectiles_sprites.h"
 
 // Tile data
 #include "block_tiles.h"
-#include "cailan_games_logo_map.h"
-#include "cailan_games_logo_tiles.h"
 #include "font_extras_tiles.h"
 #include "lock_tiles.h"
 #include "powerups_tiles.h"
@@ -34,12 +34,6 @@
 #include "title_screens.h"
 #include "tutorial_screen_map.h"
 #include "tutorial_screen_tiles.h"
-
-// The following are used for performance testing of individual components.
-#define ENABLE_SCORING 1
-#define ENABLE_MUSIC 1
-#define ENABLE_WEAPONS 1
-#define ENABLE_COLLISIONS 1
 
 extern const hUGESong_t intro_song;
 extern const hUGESong_t main_song;
@@ -66,56 +60,22 @@ static void increment_timer_score_isr(void) {
 }
 #endif
 
-static void wait(uint8_t num_frames) {
-  for (uint8_t i = 0; i < num_frames; ++i) {
-    vsync();
-  }
-}
-
-static void fade_out(void) {
-  for (uint8_t i = 0; i < 4; ++i) {
-    switch (i) {
-    case 0:
-      BGP_REG = 0xE4;
-      break;
-    case 1:
-      BGP_REG = 0xF9;
-      break;
-    case 2:
-      BGP_REG = 0xFE;
-      break;
-    case 3:
-      BGP_REG = 0xFF;
-      break;
-    }
-    wait(10);
-  }
-}
-
-static void fade_in(void) {
-  for (uint8_t i = 0; i < 3; ++i) {
-    switch (i) {
-    case 0:
-      BGP_REG = 0xFE;
-      break;
-    case 1:
-      BGP_REG = 0xF9;
-      break;
-    case 2:
-      BGP_REG = 0xE4;
-      break;
-    }
-    wait(10);
-  }
-}
-
 // Loads sprite, tile, and font data.
-static void load_data(void) {
+static void load_font(void){
   // Load font tiles to background map.
   font_init();
   font_t min_font = font_load(font_min);
   font_set(min_font);
+}
 
+static void load_sprite_data(void){
+  // Load sprite data.
+  set_sprite_data(0, 10, player_data);
+  set_sprite_data(10, 9, player_shield_data);
+  set_sprite_data(19, 3, projectiles_data);
+}
+
+static void load_data(void) {
   // Load background tiles.
   uint8_t tile_index = MAPBLOCK_IDX;
   set_bkg_data(tile_index, sizeof(block_tiles)/TILE_SIZE_BYTES, block_tiles);
@@ -130,66 +90,24 @@ static void load_data(void) {
   tile_index += sizeof(tutorial_screen_tiles)/TILE_SIZE_BYTES;
   set_bkg_data(tile_index, sizeof(lock_tiles)/TILE_SIZE_BYTES, lock_tiles);
   tile_index += sizeof(lock_tiles)/TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(cailan_games_logo_tiles)/TILE_SIZE_BYTES, cailan_games_logo_tiles);
-
-  // Load sprite data.
-  set_sprite_data(0, 10, player_data);
-  set_sprite_data(10, 9, player_shield_data);
-  set_sprite_data(19, 3, projectiles_data);
-  set_sprite_data(22, 1, logo_cursor_data);
-}
-
-// Shows the logo screen.
-static void show_logo_screen(void) {
-  HIDE_BKG;
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT+1, cailan_games_logo_map);
-  play_all_channels();
-  wait(60);
-  fade_in();
-  SHOW_BKG;
-
-  // Initialize the CBT SFX and add it to the VBL
-  CBTFX_PLAY_SFX_02;
-  add_VBL(CBTFX_update);
-
-  // The cursor has two sprites: A top half and a bottom half. The below code controls both halves
-  // and blinks them while the logo screen is playing.
-  set_sprite_tile(0, CURSOR_SPRITE);
-  set_sprite_tile(1, CURSOR_SPRITE);
-  move_sprite(0, 119+8, 75+17);
-  move_sprite(1, 119+8, 83+17);
-  SHOW_SPRITES;
-  for (uint8_t i=0; i<150; i++){
-    if ((i == 30) || (i == 90) || (i == 149)){
-      move_sprite(0, 0, 0);
-      move_sprite(1, 0, 0);
-    }
-    else if ((i == 60) || (i == 120)) {
-      move_sprite(0, 119+8, 75+17);
-      move_sprite(1, 119+8, 83+17);
-    }
-    vsync();
-  }
-
-  // Remove the CBT SFX from the VBL
-  remove_VBL(CBTFX_update);
-  mute_all_channels();
-
-  fade_out();
-  HIDE_SPRITES;
 }
 
 // Shows the title screen.
-static void show_title_screen(void) {
+static void show_title_screen(uint8_t restart_song) {
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, game_titlescreen);
   wait(30);
-  fade_in();
-  SHOW_BKG;
+  if (restart_song){
+    fade_in();
+    SHOW_BKG;
+  }
   display_highscores();
   SHOW_WIN;
 #if ENABLE_MUSIC
-  hUGE_init(&intro_song);
-  play_all_channels();
+  if (restart_song){
+    hUGE_init(&intro_song);
+    play_all_channels();
+    add_VBL(hUGE_dosound);
+  }
 #endif
   // Wait for the player to press start before going to the next screen.
   waitpad(J_START);
@@ -262,6 +180,8 @@ static void show_gameover_screen(void) {
 static void handle_gameover(void) {
   game_paused = true;
   mute_all_channels();
+  remove_VBL(hUGE_dosound);
+  
   set_sprite_tile(PLAYER_SPRITE_ID, DEATH_SPRITE);
   wait(10);
   HIDE_BKG;
@@ -275,22 +195,11 @@ static void handle_gameover(void) {
 
   // Show gameover screen, then transition to the title screen.
   show_gameover_screen();
-  show_title_screen();
+  show_title_screen(1);
 }
 #endif
 
 void main(void) {
-  /*
-   * SETUP
-   */
-  load_data();
-  // Load Window.
-  move_win(7, 136);
-  // Initialize high scores.
-  init_highscores();
-  // Make sure ROM bank 1 is loaded (in addition to the always-loaded ROM bank 0).
-  SWITCH_ROM(1);
-
 #if ENABLE_MUSIC
   // Load music.
   // Enable sound playback.
@@ -301,9 +210,29 @@ void main(void) {
   // Mute all channels.
   mute_all_channels();
 
-  // Add hUGE driver to VBL interrupt handler.
-  add_VBL(hUGE_dosound);
 #endif
+  /* 
+   * Display Logo 
+   */
+  show_logo_screen();
+
+  /** 
+   * Display intro scene
+   */
+  show_intro();
+
+  /*
+   * SETUP GAME ASSETS
+   */
+  load_font();
+  load_sprite_data();
+  load_data();
+  // Load Window.
+  move_win(7, 136);
+  // Initialize high scores.
+  init_highscores();
+  // Make sure ROM bank 1 is loaded (in addition to the always-loaded ROM bank 0).
+  SWITCH_ROM(1);
 
 #if ENABLE_SCORING
   // Add timer score incrementer to VBL interrupt handler.
@@ -313,8 +242,7 @@ void main(void) {
   /*
    * LOGO AND TITLE SCREENS
    */
-  show_logo_screen();
-  show_title_screen();
+  show_title_screen(0);
 
   uint8_t scroll_pixels_per_frame;  // How many pixels to scroll each frame
   uint8_t input;  // The joypad input of this frame

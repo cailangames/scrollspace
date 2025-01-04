@@ -1,3 +1,6 @@
+#ifndef _PLAYER_SPRITES_H_
+#define _PLAYER_SPRITES_H_
+
 #include <stdint.h>
 
 const uint8_t player_data[] =
@@ -13,3 +16,5 @@ const uint8_t player_data[] =
   0X00,0X00,0X60,0X60,0X78,0X58,0X8C,0XF4,0XF2,0X8E,0XF2,0X8E,0X8C,0XF4,0X78,0X78,
   0X52,0X52,0X8D,0X8D,0X2A,0X2A,0X61,0X61,0X94,0X94,0X4D,0X4D,0X6A,0X6A,0X92,0X92
 };
+
+#endif

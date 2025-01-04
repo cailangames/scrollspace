@@ -6,8 +6,8 @@
 #include <gb/hardware.h>
 #include <hUGEDriver.h>
 
-#include "cbtfx.h"
-#include "SFX_02.h"
+// #include "cbtfx.h"
+// #include "SFX_02.h"
 
 // Mutes all the sound channels.
 void mute_all_channels(void) {
