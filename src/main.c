@@ -55,7 +55,7 @@ static const uint8_t blank_win_tiles[SCREEN_TILE_WIDTH] = {0,0,0,0,0,0,0,0,0,0,0
 static bool game_paused = true;
 // Whether or not to show the timer-based score. If false, the points-based score is shown instead.
 // Note: The value of this variable is kept between runs of the game.
-static bool show_time = true;
+static bool show_timer_score = true;
 
 #if ENABLE_SCORING
 static void increment_timer_score_isr(void) {
@@ -369,6 +369,7 @@ void main(void) {
     init_player();
     write_health_bar_to_window();
     init_weapons();
+    write_bomb_icon_to_window();
 
 #if ENABLE_MUSIC
     mute_all_channels();
@@ -431,7 +432,7 @@ void main(void) {
       }
 
       if (KEY_FIRST_PRESS(input, prev_input, J_SELECT)) {
-        show_time = !show_time;
+        show_timer_score = !show_timer_score;
         score_update_needed = true;
       }
 
@@ -470,7 +471,7 @@ void main(void) {
 #if ENABLE_SCORING
       // Update the score tiles, if necessary.
       if (score_update_needed) {
-        if (show_time) {
+        if (show_timer_score) {
           update_timer_score_tiles();
         } else {
           update_point_score_tiles();
@@ -534,6 +535,12 @@ void main(void) {
         update_window_score = false;
       }
 #endif
+
+      // Write bomb icon tiles to the window layer, if necessary.
+      if (bomb_icon_update_needed) {
+        write_bomb_icon_to_window();
+        bomb_icon_update_needed = false;
+      }
     }
   }
 }
