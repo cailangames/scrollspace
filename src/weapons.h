@@ -112,7 +112,7 @@ void init_weapons(void) {
   bombed_row_top = 0;
   bombed_col_left = 0;
   bombed_height = 0;
-  set_win_tile_xy(9, 0, BOMB_ICON_IDX);
+  set_win_tile_xy(9, 0, BOMB_READY_ICON);
 }
 
 // Updates the bullets and bombs based on the given input. Sets `Sprite.collided` to true if the
@@ -145,14 +145,14 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
   if (bomb_cooldown_frames != 0) {
     --bomb_cooldown_frames;
     if (bomb_cooldown_frames == 0) {
-      set_win_tile_xy(9, 0, BOMB_ICON_IDX);
+      set_win_tile_xy(9, 0, BOMB_READY_ICON);
     }
   }
   if (KEY_FIRST_PRESS(input, prev_input, J_B) && bomb_cooldown_frames == 0) {
     play_bomb_sound();
     drop_bomb();
     bomb_cooldown_frames = BOMB_COOLDOWN_FRAMES;
-    set_win_tile_xy(9, 0, BOMB_SILHOUETTE_ICON_IDX);
+    set_win_tile_xy(9, 0, EMPTY_TILE_IDX);
     bomb_dropped = true;
   }
 
