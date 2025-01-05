@@ -60,6 +60,17 @@ static void increment_timer_score_isr(void) {
 }
 #endif
 
+void wait_for_start_keypress(void){
+  waitpadup();
+  while (1){
+    if (joypad() & J_START){
+      waitpadup();
+      return;
+    }
+    vsync();
+  }
+}
+
 // Loads sprite, tile, and font data.
 static void load_font(void){
   // Load font tiles to background map.
@@ -94,13 +105,14 @@ static void load_data(void) {
 
 // Shows the title screen.
 static void show_title_screen(uint8_t restart_song) {
+  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, game_titlescreen);
   wait(30);
   if (restart_song){
     fade_in();
     SHOW_BKG;
   }
-  display_highscores();
+  // display_highscores();
   SHOW_WIN;
 #if ENABLE_MUSIC
   if (restart_song){
@@ -121,34 +133,48 @@ static uint8_t show_speed_selection_screen(void) {
   SHOW_SPRITES;
   uint8_t scroll_speed = SCROLL_SPEED_NORMAL;
   uint8_t prev_input = 0;
+  game_mode = NORMAL;
+  display_highscores();
   while (true) {
     uint8_t input = joypad();
     if (KEY_FIRST_PRESS(input, prev_input, J_UP)) {
       if (scroll_speed == SCROLL_SPEED_NORMAL) {
         move_sprite(PLAYER_SPRITE_ID, 32, 104);
         scroll_speed = SCROLL_SPEED_TURBO;
+        game_mode = TURBO;
+        display_highscores();
       }
       else if (scroll_speed == SCROLL_SPEED_HARD) {
         move_sprite(PLAYER_SPRITE_ID, 32, 72);
         scroll_speed = SCROLL_SPEED_NORMAL;
+        game_mode = NORMAL;
+        display_highscores();
       }
       else {
         move_sprite(PLAYER_SPRITE_ID, 32, 88);
         scroll_speed = SCROLL_SPEED_HARD;
+        game_mode = HARD;
+        display_highscores();
       }
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN)) {
       if (scroll_speed == SCROLL_SPEED_NORMAL) {
         move_sprite(PLAYER_SPRITE_ID, 32, 88);
         scroll_speed = SCROLL_SPEED_HARD;
+        game_mode = HARD;
+        display_highscores();
       }
       else if (scroll_speed == SCROLL_SPEED_HARD) {
         move_sprite(PLAYER_SPRITE_ID, 32, 104);
         scroll_speed = SCROLL_SPEED_TURBO;
+        game_mode = TURBO;
+        display_highscores();
       }
       else {
         move_sprite(PLAYER_SPRITE_ID, 32, 72);
         scroll_speed = SCROLL_SPEED_NORMAL;
+        game_mode = NORMAL;
+        display_highscores();
       }
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A) || KEY_FIRST_PRESS(input, prev_input, J_B)) {
@@ -163,6 +189,7 @@ static uint8_t show_speed_selection_screen(void) {
 
 #if ENABLE_COLLISIONS
 static void show_gameover_screen(void) {
+  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT+1, gameover_titlescreen);
   move_bkg(0, 0);
 
@@ -198,18 +225,6 @@ static void handle_gameover(void) {
 }
 #endif
 
-void wait_for_start_keypress(void){
-  waitpadup();
-  while (1){
-    if (joypad() & J_START){
-      waitpadup();
-      return;
-    }
-    vsync();
-  }
-}
-
-
 void main(void) {
 #if ENABLE_MUSIC
   // Load music.
@@ -222,6 +237,8 @@ void main(void) {
   mute_all_channels();
 
 #endif
+  
+#if ENABLE_INTRO
   /* 
    * Display Logo 
    */
@@ -231,7 +248,7 @@ void main(void) {
    * Display intro scene
    */
   show_intro();
-
+#endif
   /*
    * SETUP GAME ASSETS
    */

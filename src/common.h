@@ -13,6 +13,7 @@
 #define ENABLE_MUSIC 1
 #define ENABLE_WEAPONS 1
 #define ENABLE_COLLISIONS 1
+#define ENABLE_INTRO 0
 
 /*
  * Keys
@@ -104,11 +105,26 @@
 #define MOD8(n) ((n) & 0x7)
 #define MOD32(n) ((n) & 0x1F)
 
+/*
+ * Game Modes 
+ */
+enum game_modes {
+  NORMAL=0,
+  HARD=1,
+  TURBO=2,
+};
+
+/*
+ * Other declarations 
+ * 
+ */
+
 extern struct Sprite player_sprite;
 extern uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
 extern uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
 extern uint16_t point_score;
 
+extern enum game_modes game_mode;
 static void wait(uint8_t num_frames) {
   for (uint8_t i = 0; i < num_frames; ++i) {
     vsync();
