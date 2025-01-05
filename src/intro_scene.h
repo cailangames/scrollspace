@@ -31,7 +31,9 @@ static void show_intro(void){
   HIDE_BKG;
   // Load intro tiles and map into VRAM
   set_bkg_data(0, sizeof(intro_stars_tiles)/TILE_SIZE_BYTES, intro_stars_tiles);
+  set_bkg_data(0xC, sizeof(intro_atmosphere_tiles)/TILE_SIZE_BYTES, intro_atmosphere_tiles);
   set_bkg_tiles(0, 0, 32, 18, intro_stars_map);
+  set_bkg_tiles(0, 18, 32, 14, intro_atmosphere_map);
   
   // Load player sprite and set it to sprite 0
   set_sprite_data(0, 1, player_data);
@@ -71,53 +73,34 @@ static void show_intro(void){
 
   /* Enter planet animation */
   // Align screen to the right
-  set_bkg_data(0xC, sizeof(intro_atmosphere_tiles)/TILE_SIZE_BYTES, intro_atmosphere_tiles);
-  while (SCX_REG != 95){
-    scroll_bkg(1,0);
+  while (SCX_REG != 96){
+    scroll_bkg(1,1);
     vsync();
   }
 
-  // Load first 12 columns of atmosphere and scroll the bkg
-  set_bkg_submap(0, 0, 12, 18, intro_atmosphere_map, 32);
-  for (idx=0; idx < 12*8; idx++){
-    scroll_bkg(1,0);
+  set_bkg_submap(0, 0, 32, 4, intro_atmosphere_map+14*32, 32);
+  while (SCY_REG != 112){
+    scroll_bkg(1,1);
     vsync();
   }
 
-  // Load next 12 columns of atmosphere and scroll the bkg
-  set_bkg_submap(12, 0, 12, 18, intro_atmosphere_map, 32);
-  for (idx=0; idx < 12*8; idx++){
-    scroll_bkg(1,0);
+  set_bkg_submap(0, 4, 32, 4, intro_atmosphere_map+4*32, 32);
+  set_bkg_tiles(0,8,20,6, empty_screen);
+  set_bkg_tiles(20,8,12,6, empty_screen);
+
+  // Fully descend into  
+  while (SCY_REG != 224){
+    scroll_bkg(1,1);
     vsync();
   }
+  
+  set_bkg_tiles(0,14,20,12, empty_screen);
+  set_bkg_tiles(20,14,12,12, empty_screen);
 
-  // Load last 8 columns of atmosphere and scroll the bkg
-  set_bkg_submap(24, 0, 8, 18, intro_atmosphere_map, 32);
-  for (idx=0; idx < 8*8; idx++){
-    scroll_bkg(1,0);
+  while (SCY_REG != 0){
+    scroll_bkg(1,1);
     vsync();
   }
-
-  // Load first 12 columns of empty screen
-  set_bkg_submap(0, 0, 12, 18, empty_screen, 32);
-  for (idx=0; idx < 12*8; idx++){
-    scroll_bkg(1,0);
-    vsync();
-  }
-
-  // Load next 12 columns of empty screen
-  set_bkg_submap(12, 0, 8, 18, empty_screen, 32);
-  for (idx=0; idx < 8*8; idx++){
-    scroll_bkg(1,0);
-    vsync();
-  }
-
-  // // Load last 8 columns of empty screen
-  // set_bkg_submap(24, 0, 8, 18, empty_screen, 32);
-  // for (idx=0; idx < 8*8; idx++){
-    // scroll_bkg(1,0);
-    // vsync();
-  // }
 
   // End of intro scene
   HIDE_SPRITES;
