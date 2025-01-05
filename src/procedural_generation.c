@@ -155,7 +155,7 @@ void generate_column(uint8_t column_idx) BANKED {
       // Create a shield tile.
       coll_map[map_index] = SHIELD_ID;
       bkg_map[map_index] = SHIELD_TILE;
-    } else if (n > 55000) {
+    } else if (n > 60000) {
       // Create a mine tile.
       coll_map[map_index] = MINE_HEALTH;
       bkg_map[map_index] = MINE_IDX;
