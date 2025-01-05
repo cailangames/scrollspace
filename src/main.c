@@ -110,8 +110,7 @@ static void show_title_screen(uint8_t restart_song) {
   }
 #endif
   // Wait for the player to press start before going to the next screen.
-  waitpad(J_START);
-  waitpadup();
+  wait_for_start_keypress();
 }
 
 // Shows the speed selection screen and returns the speed chosen by the player.
@@ -171,8 +170,7 @@ static void show_gameover_screen(void) {
 
   SHOW_BKG;
   fade_in();
-  waitpad(J_START);
-  waitpadup();
+  wait_for_start_keypress();
   fade_out();
   HIDE_BKG;
 }
@@ -199,6 +197,18 @@ static void handle_gameover(void) {
   show_title_screen(1);
 }
 #endif
+
+void wait_for_start_keypress(void){
+  waitpadup();
+  while (1){
+    if (joypad() & J_START){
+      waitpadup();
+      return;
+    }
+    vsync();
+  }
+}
+
 
 void main(void) {
 #if ENABLE_MUSIC
@@ -349,9 +359,7 @@ void main(void) {
 #if ENABLE_MUSIC
         mute_all_channels();
 #endif
-        waitpadup();
-        waitpad(J_START);
-        waitpadup();
+        wait_for_start_keypress();
 #if ENABLE_MUSIC
         play_all_channels();
 #endif
