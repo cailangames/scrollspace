@@ -232,8 +232,8 @@ def get_background_data_and_map(im, name, gb_code, offset=37, debug=False):
 fn_path = "../assets/intro_stars.png"
 tilemap_offset = 0#37
 
-fn_path = "../assets/intro_atmosphere.png"
-tilemap_offset = 0xC #37
+# fn_path = "../assets/intro_atmosphere.png"
+# tilemap_offset = 0xC #37
 
 # fn_path = "../assets/tutorial-screen.png" 
 # tilemap_offset = 59 #37
