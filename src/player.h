@@ -104,8 +104,6 @@ void init_player(void) {
 
 // Moves the player's ship based on the given input.
 void move_player(uint8_t input) {
-  uint8_t dx = 0;
-  uint8_t dy = 0;
   player_sprite.dir = RIGHT;
   player_sprite.sprite_tile_id = player_sprite_base_id;
   // Reset player collision box to default.
@@ -116,15 +114,24 @@ void move_player(uint8_t input) {
 
   // Check input. Note that the player can move in two directions, e.g. "up and right" or "down and left".
   if (KEY_PRESSED(input, J_RIGHT)) {
-    dx = player_sprite.speed;
+    player_sprite.x += player_sprite.speed;
+    if (player_sprite.x > SCREEN_R) {
+      player_sprite.x = SCREEN_R;
+    }
   } else if (KEY_PRESSED(input, J_LEFT)) {
-    dx = -player_sprite.speed;
     player_sprite.dir = LEFT;
+    player_sprite.x -= player_sprite.speed;
+    if (player_sprite.x < SCREEN_L) {
+      player_sprite.x = SCREEN_L;
+    }
   }
 
   if (KEY_PRESSED(input, J_UP)) {
-    dy = -player_sprite.speed;
     player_sprite.dir |= UP;
+    player_sprite.y -= player_sprite.speed;
+    if (player_sprite.y < SCREEN_T) {
+      player_sprite.y = SCREEN_T;
+    }
     player_sprite.sprite_tile_id = player_sprite_base_id + 1;
 
     // Make collision box smaller when plane is "tilted".
@@ -133,8 +140,11 @@ void move_player(uint8_t input) {
     player_sprite.cb.w = 3;
     player_sprite.cb.h = 1;
   } else if (KEY_PRESSED(input, J_DOWN)) {
-    dy = player_sprite.speed;
     player_sprite.dir |= DOWN;
+    player_sprite.y += player_sprite.speed;
+    if (player_sprite.y > SCREEN_B) {
+      player_sprite.y = SCREEN_B;
+    }
     player_sprite.sprite_tile_id = player_sprite_base_id + 2;
 
     // Make collision box smaller when plane is "tilted".
@@ -144,22 +154,7 @@ void move_player(uint8_t input) {
     player_sprite.cb.h = 1;
   }
 
-  // Update player position.
-  player_sprite.x += dx;
-  if (player_sprite.x < SCREEN_L) {
-    player_sprite.x = SCREEN_L;
-  } else if (player_sprite.x > SCREEN_R) {
-    player_sprite.x = SCREEN_R;
-  }
-
-  player_sprite.y += dy;
-  if (player_sprite.y < SCREEN_T) {
-    player_sprite.y = SCREEN_T;
-  } else if (player_sprite.y > SCREEN_B) {
-    player_sprite.y = SCREEN_B;
-  }
-
-  // Update collision box.
+  // Update the position of the collision box.
   player_sprite.cb.x = player_sprite.x + player_sprite.cb_x_offset;
   player_sprite.cb.y = player_sprite.y + player_sprite.cb_y_offset;
 
@@ -237,16 +232,32 @@ bool handle_player_collisions(void) {
           if (player_sprite.dir & RIGHT) {
             // Move the sprite to the left.
             player_sprite.x -= PLAYER_COLLISION_KNOCKBACK;
+            if (player_sprite.x < SCREEN_L) {
+              player_sprite.x = SCREEN_L;
+            }
+            player_sprite.cb.x = player_sprite.x + player_sprite.cb_x_offset;
           } else if (player_sprite.dir & LEFT) {
             // Move the sprite to the right.
             player_sprite.x += PLAYER_COLLISION_KNOCKBACK;
+            if (player_sprite.x > SCREEN_R) {
+              player_sprite.x = SCREEN_R;
+            }
+            player_sprite.cb.x = player_sprite.x + player_sprite.cb_x_offset;
           }
           if (player_sprite.dir & UP) {
             // Move the sprite down.
             player_sprite.y += PLAYER_COLLISION_KNOCKBACK;
+            if (player_sprite.y > SCREEN_B) {
+              player_sprite.y = SCREEN_B;
+            }
+            player_sprite.cb.y = player_sprite.y + player_sprite.cb_y_offset;
           } else if (player_sprite.dir & DOWN) {
             // Move the sprite up.
             player_sprite.y -= PLAYER_COLLISION_KNOCKBACK;
+            if (player_sprite.y < SCREEN_T) {
+              player_sprite.y = SCREEN_T;
+            }
+            player_sprite.cb.y = player_sprite.y + player_sprite.cb_y_offset;
           }
           move_sprite(PLAYER_SPRITE_ID, player_sprite.x, player_sprite.y);
           break;
