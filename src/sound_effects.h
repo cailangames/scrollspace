@@ -28,8 +28,8 @@ void play_gun_sound(void) {
   // Stop channel before playing sound effect.
   hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
 
-  NR12_REG = 0x0;
-  NR14_REG = 0x0;
+  NR12_REG = 0x00;
+  NR14_REG = 0x00;
 
   // Play sound effect.
   NR10_REG = 0x4D;
@@ -47,8 +47,8 @@ void play_bomb_sound(void) {
   // Stop channel before playing sound effect.
   hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
 
-  NR42_REG = 0x0;
-  NR44_REG = 0x0;
+  NR42_REG = 0x00;
+  NR44_REG = 0x00;
 
   // Play sound effect.
   NR41_REG = 0x00;
@@ -60,19 +60,37 @@ void play_bomb_sound(void) {
   hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
 }
 
+// Plays the player collision sound effect.
+void play_collision_sound(void) {
+  // Stop channel before playing sound effect.
+  hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
+
+  NR42_REG = 0x00;
+  NR44_REG = 0x00;
+
+  // Play sound effect.
+  NR41_REG = 0x00;
+  NR42_REG = 0xF1;
+  NR43_REG = 0x70;
+  NR44_REG = 0x80;
+
+  // Restart channel.
+  hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
+}
+
 // Plays the health sound effect.
 void play_health_sound(void) {
   // Stop channel before playing sound effect.
   hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
 
-  NR12_REG = 0x0;
-  NR14_REG = 0x0;
+  NR12_REG = 0x00;
+  NR14_REG = 0x00;
 
   // Play sound effect.
   NR10_REG = 0x75;
   NR11_REG = 0x86;
-  NR12_REG = 0x5F;
-  NR13_REG = 0x62;
+  NR12_REG = 0x7F;
+  NR13_REG = 0x75;
   NR14_REG = 0x86;
 
   // Restart channel.
@@ -82,19 +100,20 @@ void play_health_sound(void) {
 // Plays the shield sound effect.
 void play_shield_sound(void) {
   // Stop channel before playing sound effect.
-  hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
+  hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
 
-  NR42_REG = 0x0;
-  NR44_REG = 0x0;
+  NR12_REG = 0x00;
+  NR14_REG = 0x00;
 
   // Play sound effect.
-  NR41_REG = 0x3F;
-  NR42_REG = 0x74;
-  NR43_REG = 0x2C;
-  NR44_REG = 0xC0;
+  NR10_REG = 0x74;
+  NR11_REG = 0xFF;
+  NR12_REG = 0x7A;
+  NR13_REG = 0x73;
+  NR14_REG = 0x86;
 
   // Restart channel.
-  hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
+  hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
 }
 
 // Plays the game over sound effect.
@@ -102,8 +121,8 @@ void play_gameover_sound(void) {
   // Stop channel before playing sound effect.
   hUGE_mute_channel(HT_CH1, HT_CH_MUTE);
 
-  NR12_REG = 0x0;
-  NR14_REG = 0x0;
+  NR12_REG = 0x00;
+  NR14_REG = 0x00;
 
   // Play sound effect.
   NR10_REG = 0x1C;

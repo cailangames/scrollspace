@@ -73,7 +73,7 @@
 #define HEALTH_KIT_ID 255
 #define HEALTH_KIT_VALUE 5
 #define COLLISION_DAMAGE 3
-#define COLLISION_TIMEOUT 24
+#define COLLISION_TIMEOUT 60
 // A BOMB_RADIUS of N will create square bomb explosions of (2*N+1, 2*N+1) size in tiles. The +1 is
 // for the center row, which is centered on the ship.
 #define BOMB_RADIUS 3

@@ -260,6 +260,7 @@ bool handle_player_collisions(void) {
             player_sprite.cb.y = player_sprite.y + player_sprite.cb_y_offset;
           }
           move_sprite(PLAYER_SPRITE_ID, player_sprite.x, player_sprite.y);
+          play_collision_sound();
           break;
       }
     }
