@@ -22,7 +22,7 @@ static void fade_out(void) {
       BGP_REG = 0xFF;
       break;
     }
-    wait(10);
+    wait_frames(10);
   }
 }
 
@@ -39,7 +39,7 @@ static void fade_in(void) {
       BGP_REG = 0xE4;
       break;
     }
-    wait(10);
+    wait_frames(10);
   }
 }
 

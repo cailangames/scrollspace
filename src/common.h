@@ -4,7 +4,6 @@
 #define _COMMON_H_
 
 #include <stdint.h>
-#include <gb/gb.h>
 
 #include "sprites.h"
 
@@ -115,20 +114,14 @@ enum game_modes {
 };
 
 /*
- * Other declarations 
- * 
+ * Other declarations
  */
-
 extern struct Sprite player_sprite;
 extern uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
 extern uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
 extern uint16_t point_score;
-
 extern enum game_modes game_mode;
-static void wait(uint8_t num_frames) {
-  for (uint8_t i = 0; i < num_frames; ++i) {
-    vsync();
-  }
-}
+
+extern void wait_frames(uint8_t n);
 
 #endif

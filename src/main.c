@@ -60,6 +60,12 @@ static void increment_timer_score_isr(void) {
 }
 #endif
 
+void wait_frames(uint8_t n) {
+  for (uint8_t i = 0; i < n; ++i) {
+    vsync();
+  }
+}
+
 void wait_for_keypress(uint8_t key){
   waitpadup();
   while (1){
@@ -107,7 +113,7 @@ static void load_data(void) {
 static void show_title_screen(uint8_t restart_song) {
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, game_titlescreen);
-  wait(30);
+  wait_frames(30);
   if (restart_song){
     fade_in();
     SHOW_BKG;
@@ -208,7 +214,7 @@ static void handle_gameover(void) {
   remove_VBL(hUGE_dosound);
   
   set_sprite_tile(PLAYER_SPRITE_ID, DEATH_SPRITE);
-  wait(10);
+  wait_frames(10);
   HIDE_BKG;
   play_gameover_sound();
   fade_out();
@@ -330,7 +336,7 @@ void main(void) {
     mute_all_channels();
 #endif
 
-    wait(10);
+    wait_frames(10);
 
 #if ENABLE_MUSIC
     if (scroll_pixels_per_frame == SCROLL_SPEED_NORMAL) {
@@ -352,7 +358,7 @@ void main(void) {
     }
     set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
 
-    wait(15);
+    wait_frames(15);
 
     // Reset scores and window tiles.
     reset_scores();

@@ -24,7 +24,7 @@ static void show_logo_screen(void) {
   
   // Enable music
   play_all_channels();
-  wait(60);
+  wait_frames(60);
   fade_in();
   SHOW_BKG;
 
