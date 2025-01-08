@@ -1,13 +1,14 @@
-#ifndef _CAILANGAMES_LOGO_H_
-#define _CAILANGAMES_LOGO_H_
+#ifndef _CAILAN_GAMES_LOGO_H_
+#define _CAILAN_GAMES_LOGO_H_
 
 #include <gb/gb.h>
 
-#include "common.h"
-#include "sound_effects.h"
 #include "cailan_games_logo_map.h"
 #include "cailan_games_logo_tiles.h"
+#include "common.h"
+#include "display_effects.h"
 #include "logo_cursor_sprites.h"
+#include "sound_effects.h"
 
 // Shows the logo screen.
 static void show_logo_screen(void) {

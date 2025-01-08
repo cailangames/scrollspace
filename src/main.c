@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -8,17 +9,17 @@
 #include <hUGEDriver.h>
 #include <rand.h>
 
+#include "cailan_games_logo.h"
 #include "collision.h"
 #include "common.h"
+#include "display_effects.h"
+#include "intro_scene.h"
 #include "player.h"
 #include "procedural_generation.h"
 #include "score.h"
 #include "sound_effects.h"
-#include "display_effects.h"
 #include "sprites.h"
 #include "weapons.h"
-#include "cailan_games_logo.h"
-  #include "intro_scene.h"
 
 // Sprite data
 #include "player_shield_sprites.h"
