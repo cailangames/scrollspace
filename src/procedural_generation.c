@@ -138,7 +138,7 @@ void generate_column(uint8_t column_idx) BANKED {
 
   for (uint16_t row = 0; row < COLUMN_HEIGHT; ++row) {
     // TODO: Add random variance.
-    uint16_t map_index = MAP_ARRAY_INDEX_ROW_OFFSET(row);
+    uint16_t map_index = MAP_INDEX_ROW_OFFSET(row);
     if (row < cave_top || row > cave_bottom) {
       // Create a block.
       coll_map[map_index] = BLOCK_HEALTH;

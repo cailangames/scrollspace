@@ -61,7 +61,7 @@ static void drop_bomb(void) {
       // No need to calculate or draw the part of the bomb explosion that's off screen.
       break;
     }
-    uint16_t row_offset = MAP_ARRAY_INDEX_ROW_OFFSET(row);
+    uint16_t row_offset = MAP_INDEX_ROW_OFFSET(row);
     for (uint8_t j = 0; j < BOMB_LENGTH; ++j) {
       uint8_t col = MOD32(col_left + j);  // MOD32 is for screen wrap-around.
 

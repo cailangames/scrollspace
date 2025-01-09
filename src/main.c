@@ -134,9 +134,31 @@ static void show_title_screen(uint8_t restart_song) {
 
 // Shows the speed selection screen and returns the speed chosen by the player.
 static uint8_t show_speed_selection_screen(void) {
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, speed_titlescreen);
+  // Write "NORMAL".
+  background_map[MAP_INDEX(6, 7)] = CHAR_N;
+  background_map[MAP_INDEX(6, 8)] = CHAR_O;
+  background_map[MAP_INDEX(6, 9)] = CHAR_R;
+  background_map[MAP_INDEX(6, 10)] = CHAR_M;
+  background_map[MAP_INDEX(6, 11)] = CHAR_A;
+  background_map[MAP_INDEX(6, 12)] = CHAR_L;
+
+  // Write "HARD".
+  background_map[MAP_INDEX(8, 7)] = CHAR_H;
+  background_map[MAP_INDEX(8, 8)] = CHAR_A;
+  background_map[MAP_INDEX(8, 9)] = CHAR_R;
+  background_map[MAP_INDEX(8, 10)] = CHAR_D;
+
+  // Write "TURBO".
+  background_map[MAP_INDEX(10, 7)] = CHAR_T;
+  background_map[MAP_INDEX(10, 8)] = CHAR_U;
+  background_map[MAP_INDEX(10, 9)] = CHAR_R;
+  background_map[MAP_INDEX(10, 10)] = CHAR_B;
+  background_map[MAP_INDEX(10, 11)] = CHAR_O;
+
+  set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
+
   set_sprite_tile(PLAYER_SPRITE_ID, 0);
-  move_sprite(PLAYER_SPRITE_ID, 32, 72);
+  move_sprite(PLAYER_SPRITE_ID, 32, 64);
   SHOW_SPRITES;
   uint8_t scroll_speed = SCROLL_SPEED_NORMAL;
   uint8_t prev_input = 0;
@@ -146,19 +168,19 @@ static uint8_t show_speed_selection_screen(void) {
     uint8_t input = joypad();
     if (KEY_FIRST_PRESS(input, prev_input, J_UP)) {
       if (scroll_speed == SCROLL_SPEED_NORMAL) {
-        move_sprite(PLAYER_SPRITE_ID, 32, 104);
+        move_sprite(PLAYER_SPRITE_ID, 32, 96);
         scroll_speed = SCROLL_SPEED_TURBO;
         game_mode = TURBO;
         display_highscores();
       }
       else if (scroll_speed == SCROLL_SPEED_HARD) {
-        move_sprite(PLAYER_SPRITE_ID, 32, 72);
+        move_sprite(PLAYER_SPRITE_ID, 32, 64);
         scroll_speed = SCROLL_SPEED_NORMAL;
         game_mode = NORMAL;
         display_highscores();
       }
       else {
-        move_sprite(PLAYER_SPRITE_ID, 32, 88);
+        move_sprite(PLAYER_SPRITE_ID, 32, 80);
         scroll_speed = SCROLL_SPEED_HARD;
         game_mode = HARD;
         display_highscores();
@@ -166,19 +188,19 @@ static uint8_t show_speed_selection_screen(void) {
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN)) {
       if (scroll_speed == SCROLL_SPEED_NORMAL) {
-        move_sprite(PLAYER_SPRITE_ID, 32, 88);
+        move_sprite(PLAYER_SPRITE_ID, 32, 80);
         scroll_speed = SCROLL_SPEED_HARD;
         game_mode = HARD;
         display_highscores();
       }
       else if (scroll_speed == SCROLL_SPEED_HARD) {
-        move_sprite(PLAYER_SPRITE_ID, 32, 104);
+        move_sprite(PLAYER_SPRITE_ID, 32, 96);
         scroll_speed = SCROLL_SPEED_TURBO;
         game_mode = TURBO;
         display_highscores();
       }
       else {
-        move_sprite(PLAYER_SPRITE_ID, 32, 72);
+        move_sprite(PLAYER_SPRITE_ID, 32, 64);
         scroll_speed = SCROLL_SPEED_NORMAL;
         game_mode = NORMAL;
         display_highscores();
@@ -452,13 +474,13 @@ void main(void) {
 
       // Update tiles for background objects that sprites collided with.
       if (player_sprite.collided) {
-        set_bkg_tile_xy(player_sprite.collided_col, player_sprite.collided_row, background_map[MAP_ARRAY_INDEX_ROW_OFFSET(player_sprite.collided_row) + player_sprite.collided_col]);
+        set_bkg_tile_xy(player_sprite.collided_col, player_sprite.collided_row, background_map[MAP_INDEX_ROW_OFFSET(player_sprite.collided_row) + player_sprite.collided_col]);
         player_sprite.collided = false;
       }
       struct Sprite* b = bullet_sprites;
       for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
         if (b->collided) {
-          set_bkg_tile_xy(b->collided_col, b->collided_row, background_map[MAP_ARRAY_INDEX_ROW_OFFSET(b->collided_row) + b->collided_col]);
+          set_bkg_tile_xy(b->collided_col, b->collided_row, background_map[MAP_INDEX_ROW_OFFSET(b->collided_row) + b->collided_col]);
           b->collided = false;
         }
         ++b;

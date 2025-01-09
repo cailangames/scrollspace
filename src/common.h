@@ -31,6 +31,7 @@
 #define SCREEN_L 8
 #define SCREEN_R 160
 #define SCREEN_TILE_WIDTH 20
+#define SCREEN_TILE_HEIGHT 18
 #define SCREEN_SCROLL_WIDTH (SCREEN_TILE_WIDTH+2)
 #define ROW_WIDTH 32
 #define COLUMN_HEIGHT 17
@@ -42,7 +43,8 @@
  */
 #define TILE_SIZE_BYTES 16
 // Bit-shift by 5 is equivalent to multiply by 32, which is the ROW_WIDTH.
-#define MAP_ARRAY_INDEX_ROW_OFFSET(ROW_IDX) ((ROW_IDX) << 5)
+#define MAP_INDEX(row, column) (((row) << 5) + column)
+#define MAP_INDEX_ROW_OFFSET(row) ((row) << 5)
 #define EMPTY_TILE_IDX 0
 // Indexes 1-36 are used for fonts.
 #define MAPBLOCK_IDX 37
@@ -96,6 +98,36 @@
 #define SCROLL_SPEED_TURBO 3
 #define POINTS_PER_MINE 2
 #define POINTS_PER_SCREEN_SCROLLED 5
+
+/*
+ * Font
+ */
+#define CHAR_A 0x0B
+#define CHAR_B 0x0C
+#define CHAR_C 0x0D
+#define CHAR_D 0x0E
+#define CHAR_E 0x0F
+#define CHAR_F 0x10
+#define CHAR_G 0x11
+#define CHAR_H 0x12
+#define CHAR_I 0x13
+#define CHAR_J 0x14
+#define CHAR_K 0x15
+#define CHAR_L 0x16
+#define CHAR_M 0x17
+#define CHAR_N 0x18
+#define CHAR_O 0x19
+#define CHAR_P 0x1A
+#define CHAR_Q 0x1B
+#define CHAR_R 0x1C
+#define CHAR_S 0x1D
+#define CHAR_T 0x1E
+#define CHAR_U 0x1F
+#define CHAR_V 0x20
+#define CHAR_W 0x21
+#define CHAR_X 0x22
+#define CHAR_Y 0x23
+#define CHAR_Z 0x24
 
 /*
  * Math
