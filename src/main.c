@@ -142,13 +142,15 @@ static uint8_t show_speed_selection_screen(void) {
   background_map[MAP_INDEX(6, 11)] = CHAR_A;
   background_map[MAP_INDEX(6, 12)] = CHAR_L;
 
-  // Write "HARD".
+  // Write "HARD" and a lock icon.
+  background_map[MAP_INDEX(8, 5)] = LOCK_TILE;
   background_map[MAP_INDEX(8, 7)] = CHAR_H;
   background_map[MAP_INDEX(8, 8)] = CHAR_A;
   background_map[MAP_INDEX(8, 9)] = CHAR_R;
   background_map[MAP_INDEX(8, 10)] = CHAR_D;
 
-  // Write "TURBO".
+  // Write "TURBO" and a lock icon.
+  background_map[MAP_INDEX(10, 5)] = LOCK_TILE;
   background_map[MAP_INDEX(10, 7)] = CHAR_T;
   background_map[MAP_INDEX(10, 8)] = CHAR_U;
   background_map[MAP_INDEX(10, 9)] = CHAR_R;

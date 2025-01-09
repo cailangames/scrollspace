@@ -55,6 +55,7 @@
 #define HEALTH_KIT_TILE (MAPBLOCK_IDX+7)
 #define HEALTH_BAR_START (MAPBLOCK_IDX+14)
 #define COLON_FONT_IDX 57
+#define LOCK_TILE 67
 
 /*
  * Sprites
