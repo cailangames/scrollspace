@@ -140,7 +140,7 @@
 /*
  * Game Modes 
  */
-enum game_modes {
+enum GameMode {
   NORMAL=0,
   HARD=1,
   TURBO=2,
@@ -153,7 +153,7 @@ extern struct Sprite player_sprite;
 extern uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
 extern uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
 extern uint16_t point_score;
-extern enum game_modes game_mode;
+extern enum GameMode game_mode;
 
 extern void wait_frames(uint8_t n);
 

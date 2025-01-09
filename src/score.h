@@ -23,8 +23,6 @@
 
 #define RAM_BANK0_ADDRESS 0xA000
 
-enum game_modes game_mode;
-
 struct HighScore {
   uint16_t points;
   uint8_t hours;

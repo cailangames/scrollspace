@@ -40,6 +40,7 @@ extern const hUGESong_t intro_song;
 extern const hUGESong_t main_song;
 extern const hUGESong_t main_song_fast;
 
+enum GameMode game_mode = NORMAL;
 struct Sprite player_sprite;
 uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
 uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
@@ -132,8 +133,8 @@ static void show_title_screen(uint8_t restart_song) {
   wait_for_keypress(J_START);
 }
 
-// Shows the speed selection screen and returns the speed chosen by the player.
-static uint8_t show_speed_selection_screen(void) {
+// Shows the mode selection screen and stores the mode chosen by the player in `game_mode`.
+static void show_mode_selection_screen(void) {
   // Write "NORMAL".
   background_map[MAP_INDEX(6, 7)] = CHAR_N;
   background_map[MAP_INDEX(6, 8)] = CHAR_O;
@@ -157,54 +158,48 @@ static uint8_t show_speed_selection_screen(void) {
   background_map[MAP_INDEX(10, 10)] = CHAR_B;
   background_map[MAP_INDEX(10, 11)] = CHAR_O;
 
-  set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
+  // Note that the previous value of `game_mode` is used here. For convenience, we want to remember
+  // which mode the player selected last and default the cursor to that mode.
+  uint8_t y = (game_mode == NORMAL) ? 64 : (game_mode == HARD) ? 80 : 96;
 
+  vsync();
+  set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
   set_sprite_tile(PLAYER_SPRITE_ID, 0);
-  move_sprite(PLAYER_SPRITE_ID, 32, 64);
+  move_sprite(PLAYER_SPRITE_ID, 32, y);
   SHOW_SPRITES;
-  uint8_t scroll_speed = SCROLL_SPEED_NORMAL;
-  uint8_t prev_input = 0;
-  game_mode = NORMAL;
   display_highscores();
+
+  uint8_t prev_input = 0;
   while (true) {
+    vsync();
     uint8_t input = joypad();
     if (KEY_FIRST_PRESS(input, prev_input, J_UP)) {
-      if (scroll_speed == SCROLL_SPEED_NORMAL) {
-        move_sprite(PLAYER_SPRITE_ID, 32, 96);
-        scroll_speed = SCROLL_SPEED_TURBO;
+      if (game_mode == NORMAL) {
         game_mode = TURBO;
+        move_sprite(PLAYER_SPRITE_ID, 32, 96);
         display_highscores();
-      }
-      else if (scroll_speed == SCROLL_SPEED_HARD) {
-        move_sprite(PLAYER_SPRITE_ID, 32, 64);
-        scroll_speed = SCROLL_SPEED_NORMAL;
+      } else if (game_mode == HARD) {
         game_mode = NORMAL;
+        move_sprite(PLAYER_SPRITE_ID, 32, 64);
         display_highscores();
-      }
-      else {
-        move_sprite(PLAYER_SPRITE_ID, 32, 80);
-        scroll_speed = SCROLL_SPEED_HARD;
+      } else {
         game_mode = HARD;
+        move_sprite(PLAYER_SPRITE_ID, 32, 80);
         display_highscores();
       }
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN)) {
-      if (scroll_speed == SCROLL_SPEED_NORMAL) {
-        move_sprite(PLAYER_SPRITE_ID, 32, 80);
-        scroll_speed = SCROLL_SPEED_HARD;
+      if (game_mode == NORMAL) {
         game_mode = HARD;
+        move_sprite(PLAYER_SPRITE_ID, 32, 80);
         display_highscores();
-      }
-      else if (scroll_speed == SCROLL_SPEED_HARD) {
-        move_sprite(PLAYER_SPRITE_ID, 32, 96);
-        scroll_speed = SCROLL_SPEED_TURBO;
+      } else if (game_mode == HARD) {
         game_mode = TURBO;
+        move_sprite(PLAYER_SPRITE_ID, 32, 96);
         display_highscores();
-      }
-      else {
-        move_sprite(PLAYER_SPRITE_ID, 32, 64);
-        scroll_speed = SCROLL_SPEED_NORMAL;
+      } else {
         game_mode = NORMAL;
+        move_sprite(PLAYER_SPRITE_ID, 32, 64);
         display_highscores();
       }
     }
@@ -212,10 +207,8 @@ static uint8_t show_speed_selection_screen(void) {
       break;
     }
     prev_input = input;
-    vsync();
   }
   HIDE_SPRITES;
-  return scroll_speed;
 }
 
 #if ENABLE_COLLISIONS
@@ -303,7 +296,7 @@ void main(void) {
    */
   show_title_screen(0);
 
-  uint8_t scroll_pixels_per_frame;  // How many pixels to scroll each frame
+  uint8_t scroll_speed_ppf;  // How many pixels per frame to scroll the screen
   uint8_t input;  // The joypad input of this frame
   uint8_t prev_input;  // The joypad input of the previous frame
   uint8_t scroll_count;  // How many pixels have been scrolled in the current column
@@ -337,9 +330,16 @@ void main(void) {
     update_window_score = false;
 
     /*
-     * SPEED SELECTION SCREEN
+     * MODE SELECTION SCREEN
      */
-    scroll_pixels_per_frame = show_speed_selection_screen();
+    show_mode_selection_screen();
+    if (game_mode == NORMAL) {
+      scroll_speed_ppf = SCROLL_SPEED_NORMAL;
+    } else if (game_mode == HARD) {
+      scroll_speed_ppf = SCROLL_SPEED_HARD;
+    } else {
+      scroll_speed_ppf = SCROLL_SPEED_TURBO;
+    }
 
     // Copy tutorial screen tiles to the background.
     for (uint8_t i = 0; i < COLUMN_HEIGHT; ++i) {
@@ -364,10 +364,9 @@ void main(void) {
     wait_frames(10);
 
 #if ENABLE_MUSIC
-    if (scroll_pixels_per_frame == SCROLL_SPEED_NORMAL) {
+    if (game_mode == NORMAL) {
       hUGE_init(&main_song);
-    }
-    else {
+    } else {
       hUGE_init(&main_song_fast);
     }
     play_all_channels();
@@ -438,7 +437,7 @@ void main(void) {
       prev_input = input;
 
       // Update scroll counts and generate a new column, if necessary.
-      scroll_count += scroll_pixels_per_frame;
+      scroll_count += scroll_speed_ppf;
       if (scroll_count >= PIXELS_PER_COLUMN) {
         scroll_count = MOD8(scroll_count);
         generated_column_idx = MOD32(generated_column_idx + 1);  // MOD32 is for screen wrap-around.
@@ -472,7 +471,7 @@ void main(void) {
        * COPY TO VRAM
        */
       // Scroll the background.
-      scroll_bkg(scroll_pixels_per_frame, 0);
+      scroll_bkg(scroll_speed_ppf, 0);
 
       // Update tiles for background objects that sprites collided with.
       if (player_sprite.collided) {
