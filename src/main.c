@@ -219,7 +219,7 @@ static uint8_t show_speed_selection_screen(void) {
 #if ENABLE_COLLISIONS
 static void show_gameover_screen(void) {
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT+1, gameover_titlescreen);
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, gameover_titlescreen);
   move_bkg(0, 0);
 
   display_gameover_scores();
