@@ -21,8 +21,6 @@
 
 #include "common.h"
 
-#define RAM_BANK0_ADDRESS 0xA000
-
 struct HighScore {
   uint16_t points;
   uint8_t hours;
@@ -41,22 +39,20 @@ static uint8_t high_score_tiles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 static void highscores2tiles(void) {
   // Get high scores from external RAM.
-  struct HighScore *highscore = (struct HighScore *) RAM_BANK0_ADDRESS;
-
-  if (game_mode == HARD){
-    highscore++;
-  }
-  else if (game_mode == TURBO){
-    highscore++;
-    highscore++;
+  struct HighScore* highscore = (struct HighScore*)RAM_BANK0_ADDRESS;
+  if (game_mode == HARD) {
+    ++highscore;
+  } else if (game_mode == TURBO) {
+    ++highscore;
+    ++highscore;
   }
 
   // Write out "BEST ".
-  high_score_tiles[0] = 0xC;
-  high_score_tiles[1] = 0xF;
-  high_score_tiles[2] = 0x1D;
-  high_score_tiles[3] = 0x1E;
-  high_score_tiles[4] = 0x0;
+  high_score_tiles[0] = CHAR_B;
+  high_score_tiles[1] = CHAR_E;
+  high_score_tiles[2] = CHAR_S;
+  high_score_tiles[3] = CHAR_T;
+  high_score_tiles[4] = 0;
 
   // Seconds
   uint8_t tenths = highscore->seconds/10;
@@ -83,35 +79,39 @@ static void highscores2tiles(void) {
   uint8_t single = (highscore->points - tenk*10000 - onek*1000 - oneh*100 - tens*10);
   high_score_tiles[13] = 0;
   high_score_tiles[14] = tenk + 0x01;
-  high_score_tiles[15] = onek + 0x1;
-  high_score_tiles[16] = oneh + 0x1;
-  high_score_tiles[17] = tens + 0x1;
-  high_score_tiles[18] = single + 0x1;
+  high_score_tiles[15] = onek + 0x01;
+  high_score_tiles[16] = oneh + 0x01;
+  high_score_tiles[17] = tens + 0x01;
+  high_score_tiles[18] = single + 0x01;
   high_score_tiles[19] = 0;
 }
 
-// Initializes the external RAM and reads the high scores from it. Returns true if high scores are
-// found in the external RAM, false otherwise. If no high scores are found, then they're initialized
-// with zeroes.
-bool init_highscores(void) {
+// Checks if the high scores meet the thresholds for unlocking the harder game modes, and sets the
+// output bool pointers accordingly.
+void update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked) {
+  struct HighScore* highscore = (struct HighScore*)RAM_BANK0_ADDRESS;
+  *hard_mode_unlocked = (highscore->points >= HARD_MODE_UNLOCK_POINTS);
+  ++highscore;
+  *turbo_mode_unlocked = (highscore->points >= TURBO_MODE_UNLOCK_POINTS);
+}
+
+// Initializes the external RAM and reads each mode's high scores from it. If no high scores are
+// found, then they're initialized with zeroes.
+void init_highscores(void) {
   // Turn on RAM and read the high scores (if present).
   ENABLE_RAM;
   SWITCH_RAM(0);
-  struct HighScore *highscore = (struct HighScore *) RAM_BANK0_ADDRESS;
-  if (highscore->points == 0xFFFF){
-    for (uint8_t i=0; i < 3; i++){
+  struct HighScore* highscore = (struct HighScore*)RAM_BANK0_ADDRESS;
+  if (highscore->points == 0xFFFF) {
+    // High scores are *not* present. Initialize them with zeroes.
+    for (uint8_t i = 0; i < 3; ++i) {
       highscore->points = 0;
       highscore->hours = 0;
       highscore->minutes = 0;
       highscore->seconds = 0;
-      highscore++;
+      ++highscore;
     }
-
-    return false;
   }
-
-  // High scores found. Return true.
-  return true;
 }
 
 // Increments the timer-based score.
@@ -167,10 +167,10 @@ void update_point_score_tiles(void) {
   score_tiles[1] = 0;
   score_tiles[2] = 0;
   score_tiles[3] = tenk + 0x01;
-  score_tiles[4] = onek + 0x1;
-  score_tiles[5] = oneh + 0x1;
-  score_tiles[6] = tens + 0x1;
-  score_tiles[7] = single + 0x1;
+  score_tiles[4] = onek + 0x01;
+  score_tiles[5] = oneh + 0x01;
+  score_tiles[6] = tens + 0x01;
+  score_tiles[7] = single + 0x01;
 }
 
 // Writes the score tiles to the window.
@@ -188,13 +188,12 @@ void display_highscores(void) {
 // Converts the point-based and timer-based scores to tiles and displays them in the gameover screen.
 void display_gameover_scores(void) {
   // Get high scores from external RAM.
-  struct HighScore *highscore = (struct HighScore *)RAM_BANK0_ADDRESS;
-  if (game_mode == HARD){
-    highscore++;
-  }
-  else if (game_mode == TURBO){
-    highscore++;
-    highscore++;
+  struct HighScore* highscore = (struct HighScore*)RAM_BANK0_ADDRESS;
+  if (game_mode == HARD) {
+    ++highscore;
+  } else if (game_mode == TURBO) {
+    ++highscore;
+    ++highscore;
   }
 
   uint16_t last_points = highscore->points;
@@ -214,7 +213,7 @@ void display_gameover_scores(void) {
     // Write the current score as the new high score.
     set_bkg_tiles(6, 10, 8, 1, score_tiles);
 
-    // Persist the high score by updating the high score.
+    // Persist the high score by updating it in external RAM.
     highscore->hours = timer_hours;
     highscore->minutes = timer_minutes;
     highscore->seconds = timer_seconds;
@@ -235,7 +234,7 @@ void display_gameover_scores(void) {
     // Write the current score as the new high score.
     set_bkg_tiles(6, 11, 8, 1, score_tiles);
 
-    // Persist the high score by updating the high score
+    // Persist the high score by updating it in external RAM.
     highscore->points = point_score;
   } else {
     // Display the last high score.

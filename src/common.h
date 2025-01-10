@@ -65,6 +65,11 @@
 #define BULLET_SPRITE 19
 
 /*
+ * Banks
+ */
+#define RAM_BANK0_ADDRESS 0xA000
+
+/*
  * Tunable parameters
  */
 #define MAX_BULLETS 3
@@ -99,6 +104,8 @@
 #define SCROLL_SPEED_TURBO 3
 #define POINTS_PER_MINE 2
 #define POINTS_PER_SCREEN_SCROLLED 5
+#define HARD_MODE_UNLOCK_POINTS 50
+#define TURBO_MODE_UNLOCK_POINTS 50
 
 /*
  * Font

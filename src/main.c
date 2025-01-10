@@ -48,6 +48,8 @@ uint16_t point_score = 0;
 
 static const uint8_t blank_win_tiles[SCREEN_TILE_WIDTH] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
+static bool hard_mode_unlocked = false;
+static bool turbo_mode_unlocked = false;
 static bool game_paused = true;
 // Whether or not to show the timer-based score. If false, the points-based score is shown instead.
 // Note: The value of this variable is kept between runs of the game.
@@ -143,15 +145,19 @@ static void show_mode_selection_screen(void) {
   background_map[MAP_INDEX(6, 11)] = CHAR_A;
   background_map[MAP_INDEX(6, 12)] = CHAR_L;
 
-  // Write "HARD" and a lock icon.
-  background_map[MAP_INDEX(8, 5)] = LOCK_TILE;
+  // Write "HARD" and a lock icon (if not unlocked).
+  if (!hard_mode_unlocked) {
+    background_map[MAP_INDEX(8, 5)] = LOCK_TILE;
+  }
   background_map[MAP_INDEX(8, 7)] = CHAR_H;
   background_map[MAP_INDEX(8, 8)] = CHAR_A;
   background_map[MAP_INDEX(8, 9)] = CHAR_R;
   background_map[MAP_INDEX(8, 10)] = CHAR_D;
 
-  // Write "TURBO" and a lock icon.
-  background_map[MAP_INDEX(10, 5)] = LOCK_TILE;
+  // Write "TURBO" and a lock icon (if not unlocked).
+  if (!turbo_mode_unlocked) {
+    background_map[MAP_INDEX(10, 5)] = LOCK_TILE;
+  }
   background_map[MAP_INDEX(10, 7)] = CHAR_T;
   background_map[MAP_INDEX(10, 8)] = CHAR_U;
   background_map[MAP_INDEX(10, 9)] = CHAR_R;
@@ -204,7 +210,12 @@ static void show_mode_selection_screen(void) {
       }
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A) || KEY_FIRST_PRESS(input, prev_input, J_B)) {
-      break;
+      if ((game_mode == HARD && !hard_mode_unlocked) || (game_mode == TURBO && !turbo_mode_unlocked)) {
+        // Mode not unlocked yet. Play a sound to let the player know.
+        play_collision_sound();
+      } else {
+        break;
+      }
     }
     prev_input = input;
   }
@@ -218,6 +229,7 @@ static void show_gameover_screen(void) {
   move_bkg(0, 0);
 
   display_gameover_scores();
+  update_modes_unlocked(&hard_mode_unlocked, &turbo_mode_unlocked);
 
   SHOW_BKG;
   fade_in();
@@ -283,6 +295,7 @@ void main(void) {
   move_win(7, 136);
   // Initialize high scores.
   init_highscores();
+  update_modes_unlocked(&hard_mode_unlocked, &turbo_mode_unlocked);
   // Make sure ROM bank 1 is loaded (in addition to the always-loaded ROM bank 0).
   SWITCH_ROM(1);
 
