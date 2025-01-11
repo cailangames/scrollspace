@@ -172,64 +172,73 @@ static void show_mode_selection_screen(void) {
   set_sprite_tile(PLAYER_SPRITE_ID, 0);
   move_sprite(PLAYER_SPRITE_ID, 32, y);
   SHOW_SPRITES;
-  display_highscores();
 
   uint8_t prev_input = 0;
+  uint8_t prev_y = 0;  // Note that y != prev_y for the first frame so that the window is updated properly.
   while (true) {
     vsync();
+    // Update displays.
+    if (y != prev_y) {
+      // Update the window message.
+      if (game_mode == HARD && !hard_mode_unlocked) {
+        display_hardmode_unlock_msg();
+      } else if (game_mode == TURBO && !turbo_mode_unlocked) {
+        display_turbomode_unlock_msg();
+      } else {
+        display_highscores();
+      }
+      prev_y = y;
+    }
+
+    // Handle input.
     uint8_t input = joypad();
     if (KEY_FIRST_PRESS(input, prev_input, J_UP)) {
       if (game_mode == NORMAL) {
         game_mode = TURBO;
-        move_sprite(PLAYER_SPRITE_ID, 32, 96);
+        y = 96;
+        move_sprite(PLAYER_SPRITE_ID, 32, y);
       } else if (game_mode == HARD) {
         game_mode = NORMAL;
-        move_sprite(PLAYER_SPRITE_ID, 32, 64);
+        y = 64;
+        move_sprite(PLAYER_SPRITE_ID, 32, y);
       } else {
         game_mode = HARD;
-        move_sprite(PLAYER_SPRITE_ID, 32, 80);
+        y = 80;
+        move_sprite(PLAYER_SPRITE_ID, 32, y);
       }
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN)) {
       if (game_mode == NORMAL) {
         game_mode = HARD;
-        move_sprite(PLAYER_SPRITE_ID, 32, 80);
+        y = 80;
+        move_sprite(PLAYER_SPRITE_ID, 32, y);
       } else if (game_mode == HARD) {
         game_mode = TURBO;
-        move_sprite(PLAYER_SPRITE_ID, 32, 96);
+        y = 96;
+        move_sprite(PLAYER_SPRITE_ID, 32, y);
       } else {
         game_mode = NORMAL;
-        move_sprite(PLAYER_SPRITE_ID, 32, 64);
+        y = 64;
+        move_sprite(PLAYER_SPRITE_ID, 32, y);
       }
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A) || KEY_FIRST_PRESS(input, prev_input, J_B)) {
       if ((game_mode == HARD && !hard_mode_unlocked) || (game_mode == TURBO && !turbo_mode_unlocked)) {
-        // Mode not unlocked yet. Play a sound to let the player know.
+        // Mode not unlocked yet. Let the player know by shaking the ship and playing a sound.
         play_collision_sound();
+        for (uint8_t i = 0; i < 2; ++i) {
+          move_sprite(PLAYER_SPRITE_ID, 34, y);
+          wait_frames(2);
+          move_sprite(PLAYER_SPRITE_ID, 32, y);
+          wait_frames(2);
+          move_sprite(PLAYER_SPRITE_ID, 30, y);
+          wait_frames(2);
+          move_sprite(PLAYER_SPRITE_ID, 32, y);
+          wait_frames(2);
+        }
       } else {
         break;
       }
-    }
-
-    if (game_mode == HARD){
-      if (hard_mode_unlocked){
-        display_highscores();
-      }
-      else{
-        display_hardmode_unlock_msg();
-      }
-    }
-    else if (game_mode == TURBO){
-      if (turbo_mode_unlocked){
-        display_highscores();
-      }
-      else{
-        display_turbomode_unlock_msg();
-      }
-    }
-    else {
-      // NORMAL mode
-      display_highscores();
     }
 
     prev_input = input;
