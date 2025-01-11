@@ -122,7 +122,6 @@ static void show_title_screen(uint8_t restart_song) {
     fade_in();
     SHOW_BKG;
   }
-  // display_highscores();
   SHOW_WIN;
 #if ENABLE_MUSIC
   if (restart_song){
@@ -183,30 +182,24 @@ static void show_mode_selection_screen(void) {
       if (game_mode == NORMAL) {
         game_mode = TURBO;
         move_sprite(PLAYER_SPRITE_ID, 32, 96);
-        display_highscores();
       } else if (game_mode == HARD) {
         game_mode = NORMAL;
         move_sprite(PLAYER_SPRITE_ID, 32, 64);
-        display_highscores();
       } else {
         game_mode = HARD;
         move_sprite(PLAYER_SPRITE_ID, 32, 80);
-        display_highscores();
       }
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN)) {
       if (game_mode == NORMAL) {
         game_mode = HARD;
         move_sprite(PLAYER_SPRITE_ID, 32, 80);
-        display_highscores();
       } else if (game_mode == HARD) {
         game_mode = TURBO;
         move_sprite(PLAYER_SPRITE_ID, 32, 96);
-        display_highscores();
       } else {
         game_mode = NORMAL;
         move_sprite(PLAYER_SPRITE_ID, 32, 64);
-        display_highscores();
       }
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A) || KEY_FIRST_PRESS(input, prev_input, J_B)) {
@@ -217,6 +210,28 @@ static void show_mode_selection_screen(void) {
         break;
       }
     }
+
+    if (game_mode == HARD){
+      if (hard_mode_unlocked){
+        display_highscores();
+      }
+      else{
+        display_hardmode_unlock_msg();
+      }
+    }
+    else if (game_mode == TURBO){
+      if (turbo_mode_unlocked){
+        display_highscores();
+      }
+      else{
+        display_turbomode_unlock_msg();
+      }
+    }
+    else {
+      // NORMAL mode
+      display_highscores();
+    }
+
     prev_input = input;
   }
   HIDE_SPRITES;

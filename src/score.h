@@ -40,6 +40,9 @@ static bool score_update_needed = false;
 
 static uint8_t score_tiles[8] = {0,0,0,0,0,0,0,0};
 static uint8_t high_score_tiles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static uint8_t unlock_msg_hard [20] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, 0, CHAR_A, CHAR_T, 0, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t unlock_msg_turbo [20] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, 0, CHAR_A, CHAR_T, 0, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t buff[10];
 
 static void highscores2tiles(void) {
   // Get high scores from external RAM.
@@ -198,6 +201,16 @@ inline void write_score_to_window(void) {
 void display_highscores(void) {
   highscores2tiles();
   set_win_tiles(0, 0, 20, 1, high_score_tiles);
+}
+
+// Displays the unlock HARD mode message
+void display_hardmode_unlock_msg(void){
+  set_win_tiles(0, 0, 20, 1, unlock_msg_hard);
+}
+
+// Displays the unlock TURBO mode message
+void display_turbomode_unlock_msg(void){
+  set_win_tiles(0, 0, 20, 1, unlock_msg_turbo);
 }
 
 // Converts the point-based and timer-based scores to tiles and displays them in the gameover screen.
