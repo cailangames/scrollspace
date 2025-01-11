@@ -29,10 +29,6 @@ static void show_logo_screen(void) {
   fade_in();
   SHOW_BKG;
 
-  // Initialize the CBT SFX and add it to the VBL
-  // CBTFX_PLAY_SFX_02;
-  // add_VBL(CBTFX_update);
-
   // The cursor has two sprites: A top half and a bottom half. The below code controls both halves
   // and blinks them while the logo screen is playing.
   move_sprite(0, 119+8, 75+17);
@@ -51,9 +47,7 @@ static void show_logo_screen(void) {
     vsync();
   }
 
-  // Remove the CBT SFX from the VBL
   vsync();
-  // remove_VBL(CBTFX_update);
   mute_all_channels();
 
   fade_out();
