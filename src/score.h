@@ -266,8 +266,10 @@ void reset_scores(void) {
   timer_seconds = 0;
   timer_minutes = 0;
   timer_hours = 0;
-  update_timer_score_tiles();
-  score_update_needed = false;
+  score_update_needed = true;
+  update_point_score_tiles();
+  // score_update_needed = false;
+  // update_timer_score_tiles();
 }
 
 #endif

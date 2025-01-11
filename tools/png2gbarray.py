@@ -224,12 +224,13 @@ def get_background_data_and_map(im, name, gb_code, offset=37, debug=False):
 #fn_path = "../assets/projectiles.png"
 #fn_path = "../assets/powerups.png"
 #fn_path = "../assets/player.png"
+fn_path = "../assets/player_large.png"
 #fn_path = "../assets/player_shield.png"
 #fn_path = "../assets/progressbar.png"
 #fn_path = "../assets/font-extras.png" 
 #fn_path = "../assets/lock.png"
 #fn_path = "../assets/logo-cursor.png"
-fn_path = "../assets/intro_stars.png"
+# fn_path = "../assets/intro_stars.png"
 tilemap_offset = 0#37
 
 # fn_path = "../assets/intro_atmosphere.png"

@@ -4,7 +4,7 @@
 #include <gb/gb.h>
 
 #include "common.h"
-#include "player_sprites.h"
+#include "player_large_sprites.h"
 #include "intro_stars_tiles.h"
 #include "intro_stars_map.h"
 #include "intro_atmosphere_tiles.h"
@@ -36,11 +36,17 @@ static void show_intro(void){
   set_bkg_tiles(0, 18, 32, 14, intro_atmosphere_map);
   
   // Load player sprite and set it to sprite 0
-  set_sprite_data(0, 1, player_data);
+  set_sprite_data(0, 4, player_large_data);
   set_sprite_tile(0, 0);
+  set_sprite_tile(1, 1);
+  set_sprite_tile(2, 2);
+  set_sprite_tile(3, 3);
 
   // Move sprite to initial position
   move_sprite(0, x, y);
+  move_sprite(1, x+8, y);
+  move_sprite(2, x, y+8);
+  move_sprite(3, x+8, y+8);
   fade_in();
   
   SHOW_BKG;
@@ -53,6 +59,9 @@ static void show_intro(void){
     x += dx[idx];
     ++t;
     move_sprite(0, x, y);
+    move_sprite(1, x+8, y);
+    move_sprite(2, x, y+8);
+    move_sprite(3, x+8, y+8);
     vsync();
     if (idx < 12){
       scroll_bkg(2, 0);
@@ -103,6 +112,10 @@ static void show_intro(void){
   }
 
   // End of intro scene
+  move_sprite(0, 0, 0);
+  move_sprite(1, 0, 0);
+  move_sprite(2, 0, 0);
+  move_sprite(3, 0, 0);
   HIDE_SPRITES;
   move_bkg(0,0);
   return;

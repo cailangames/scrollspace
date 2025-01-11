@@ -53,7 +53,7 @@ static bool turbo_mode_unlocked = false;
 static bool game_paused = true;
 // Whether or not to show the timer-based score. If false, the points-based score is shown instead.
 // Note: The value of this variable is kept between runs of the game.
-static bool show_timer_score = true;
+static bool show_timer_score = false;
 
 #if ENABLE_SCORING
 static void increment_timer_score_isr(void) {
