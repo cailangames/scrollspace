@@ -28,6 +28,10 @@ struct HighScore {
   uint8_t seconds;
 };
 
+static const uint8_t ram_signature[] = {CHAR_P, CHAR_G, CHAR_I, CHAR_S};
+#define RAM_SIGNATURE_LENGTH (sizeof(ram_signature) / sizeof(uint8_t))
+#define HIGH_SCORE_ADDRESS (RAM_BANK0_ADDRESS + RAM_SIGNATURE_LENGTH)
+
 static uint8_t timer_frames = 0;
 static uint8_t timer_seconds = 0;
 static uint8_t timer_minutes = 0;
@@ -39,7 +43,7 @@ static uint8_t high_score_tiles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 static void highscores2tiles(void) {
   // Get high scores from external RAM.
-  struct HighScore* highscore = (struct HighScore*)RAM_BANK0_ADDRESS;
+  const struct HighScore* highscore = (const struct HighScore*)HIGH_SCORE_ADDRESS;
   if (game_mode == HARD) {
     ++highscore;
   } else if (game_mode == TURBO) {
@@ -89,7 +93,7 @@ static void highscores2tiles(void) {
 // Checks if the high scores meet the thresholds for unlocking the harder game modes, and sets the
 // output bool pointers accordingly.
 void update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked) {
-  struct HighScore* highscore = (struct HighScore*)RAM_BANK0_ADDRESS;
+  const struct HighScore* highscore = (const struct HighScore*)HIGH_SCORE_ADDRESS;
   *hard_mode_unlocked = (highscore->points >= HARD_MODE_UNLOCK_POINTS);
   ++highscore;
   *turbo_mode_unlocked = (highscore->points >= TURBO_MODE_UNLOCK_POINTS);
@@ -101,16 +105,27 @@ void init_highscores(void) {
   // Turn on RAM and read the high scores (if present).
   ENABLE_RAM;
   SWITCH_RAM(0);
-  struct HighScore* highscore = (struct HighScore*)RAM_BANK0_ADDRESS;
-  if (highscore->points == 0xFFFF) {
-    // High scores are *not* present. Initialize them with zeroes.
-    for (uint8_t i = 0; i < 3; ++i) {
-      highscore->points = 0;
-      highscore->hours = 0;
-      highscore->minutes = 0;
-      highscore->seconds = 0;
-      ++highscore;
+  uint8_t* ram_ptr = (uint8_t*)RAM_BANK0_ADDRESS;
+  bool initialized = true;
+  for (uint8_t i = 0; i < RAM_SIGNATURE_LENGTH; ++i) {
+    if (ram_ptr[i] != ram_signature[i]) {
+      initialized = false;
     }
+  }
+  if (initialized) {
+    return;
+  }
+  // High scores are *not* present. Initialize them with zeroes and write the signature.
+  for (uint8_t i = 0; i < RAM_SIGNATURE_LENGTH; ++i) {
+    ram_ptr[i] = ram_signature[i];
+  }
+  struct HighScore* highscore = (struct HighScore*)HIGH_SCORE_ADDRESS;
+  for (uint8_t i = 0; i < 3; ++i) {
+    highscore->points = 0;
+    highscore->hours = 0;
+    highscore->minutes = 0;
+    highscore->seconds = 0;
+    ++highscore;
   }
 }
 
@@ -188,7 +203,7 @@ void display_highscores(void) {
 // Converts the point-based and timer-based scores to tiles and displays them in the gameover screen.
 void display_gameover_scores(void) {
   // Get high scores from external RAM.
-  struct HighScore* highscore = (struct HighScore*)RAM_BANK0_ADDRESS;
+  struct HighScore* highscore = (struct HighScore*)HIGH_SCORE_ADDRESS;
   if (game_mode == HARD) {
     ++highscore;
   } else if (game_mode == TURBO) {
