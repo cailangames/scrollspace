@@ -42,7 +42,6 @@ static uint8_t score_tiles[8] = {0,0,0,0,0,0,0,0};
 static uint8_t high_score_tiles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 static uint8_t unlock_msg_hard [20] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, 0, CHAR_A, CHAR_T, 0, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0};
 static uint8_t unlock_msg_turbo [20] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, 0, CHAR_A, CHAR_T, 0, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0};
-static uint8_t buff[10];
 
 static void highscores2tiles(void) {
   // Get high scores from external RAM.
