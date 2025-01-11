@@ -54,7 +54,6 @@
 #define SHIELD_TILE (MAPBLOCK_IDX+6)
 #define HEALTH_KIT_TILE (MAPBLOCK_IDX+7)
 #define HEALTH_BAR_START (MAPBLOCK_IDX+14)
-#define COLON_FONT_IDX 57
 #define LOCK_TILE 67
 
 /*
@@ -104,12 +103,24 @@
 #define SCROLL_SPEED_TURBO 3
 #define POINTS_PER_MINE 2
 #define POINTS_PER_SCREEN_SCROLLED 5
+// IMPORTANT: If you update these thresholds, you must update the unlock messages in score.h too.
 #define HARD_MODE_UNLOCK_POINTS 500
 #define TURBO_MODE_UNLOCK_POINTS 500
 
 /*
  * Font
  */
+#define CHAR_SPACE 0x00
+#define CHAR_0 0x01
+#define CHAR_1 0x02
+#define CHAR_2 0x03
+#define CHAR_3 0x04
+#define CHAR_4 0x05
+#define CHAR_5 0x06
+#define CHAR_6 0x07
+#define CHAR_7 0x08
+#define CHAR_8 0x09
+#define CHAR_9 0x0A
 #define CHAR_A 0x0B
 #define CHAR_B 0x0C
 #define CHAR_C 0x0D
@@ -136,6 +147,7 @@
 #define CHAR_X 0x22
 #define CHAR_Y 0x23
 #define CHAR_Z 0x24
+#define CHAR_COLON 0x39
 
 /*
  * Math

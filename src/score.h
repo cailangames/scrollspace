@@ -32,6 +32,10 @@ static const uint8_t ram_signature[] = {CHAR_P, CHAR_G, CHAR_I, CHAR_S};
 #define RAM_SIGNATURE_LENGTH (sizeof(ram_signature) / sizeof(uint8_t))
 #define HIGH_SCORE_ADDRESS (RAM_BANK0_ADDRESS + RAM_SIGNATURE_LENGTH)
 
+// TODO: Make these const when we have more ROM space available.
+static /*const*/ uint8_t unlock_msg_hard[20] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, CHAR_COLON, 0, CHAR_5, CHAR_0, CHAR_0, 0, CHAR_N, CHAR_O, CHAR_R, CHAR_M, CHAR_A, CHAR_L, 0, 0};
+static /*const*/ uint8_t unlock_msg_turbo[20] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, CHAR_COLON, 0, CHAR_5, CHAR_0, CHAR_0, 0, CHAR_H, CHAR_A, CHAR_R, CHAR_D, 0, 0, 0, 0};
+
 static uint8_t timer_frames = 0;
 static uint8_t timer_seconds = 0;
 static uint8_t timer_minutes = 0;
@@ -40,8 +44,6 @@ static bool score_update_needed = false;
 
 static uint8_t score_tiles[8] = {0,0,0,0,0,0,0,0};
 static uint8_t high_score_tiles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-static uint8_t unlock_msg_hard [20] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, 0, CHAR_A, CHAR_T, 0, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0};
-static uint8_t unlock_msg_turbo [20] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, 0, CHAR_A, CHAR_T, 0, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0};
 
 static void highscores2tiles(void) {
   // Get high scores from external RAM.
@@ -64,13 +66,13 @@ static void highscores2tiles(void) {
   uint8_t tenths = highscore->seconds/10;
   high_score_tiles[12] = (highscore->seconds - 10*tenths) + 0x01;
   high_score_tiles[11] = tenths + 0x01;
-  high_score_tiles[10] = COLON_FONT_IDX;
+  high_score_tiles[10] = CHAR_COLON;
 
   // Minutes
   tenths = highscore->minutes/10;
   high_score_tiles[9] = (highscore->minutes - 10*tenths) + 0x01;
   high_score_tiles[8] = tenths + 0x01;
-  high_score_tiles[7] = COLON_FONT_IDX;
+  high_score_tiles[7] = CHAR_COLON;
 
   // Hours
   tenths = highscore->hours/10;
@@ -158,13 +160,13 @@ void update_timer_score_tiles(void) {
   uint8_t sec_tenths = timer_seconds/10;
   score_tiles[7] = (timer_seconds - 10*sec_tenths) + 0x01;
   score_tiles[6] = sec_tenths + 0x01;
-  score_tiles[5] = COLON_FONT_IDX;
+  score_tiles[5] = CHAR_COLON;
 
   // Minutes
   uint8_t min_tenths = timer_minutes/10;
   score_tiles[4] = (timer_minutes - 10*min_tenths) + 0x01;
   score_tiles[3] = min_tenths + 0x01;
-  score_tiles[2] = COLON_FONT_IDX;
+  score_tiles[2] = CHAR_COLON;
 
   // Hours
   uint8_t hour_tenths = timer_hours/10;
