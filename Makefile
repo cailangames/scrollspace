@@ -14,10 +14,12 @@ LCC	= $(GBDK_HOME)bin/lcc
 # "make pocket" and "make pocket-clean"
 TARGETS = gb pocket
 
-LCCFLAGS_gb = -Wa-l -Wl-m -Wm-yoA -Wm-yt0x1B -Wf-bo1 -Wf-bo2 -Wb-ext=.rel -Wm-yS -Wm-ya4 
+LCCFLAGS_gb = -Wa-l -Wl-m -Wm-yoA -Wm-ya4 -Wm-yt0x1B -Wm-yn"$(PROJECT_NAME)"
 LCCFLAGS_pocket = $(LCCFLAGS_gb) 
 
 LCCFLAGS += $(LCCFLAGS_$(EXT))
+
+CFLAGS += -Wf-MMD
 
 PROJECT_NAME = ScrollSpace
 

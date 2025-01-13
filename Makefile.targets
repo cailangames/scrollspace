@@ -8,6 +8,7 @@ endif
 # Debug flag - Set to make a debug build of the game.
 ifeq ($(DEBUG), 1)
 CFLAGS += -debug
+LCCFLAGS += -v  # verbose flag
 endif
 
 VERSION = 1.0
