@@ -89,7 +89,7 @@ static void load_sprite_data(void){
 
 static void load_data(void) {
   // Load background tiles.
-  uint8_t tile_index = MAPBLOCK_IDX;
+  uint8_t tile_index = WALL_BLOCK_TILE;
   set_bkg_data(tile_index, sizeof(block_tiles)/TILE_SIZE_BYTES, block_tiles);
   tile_index += sizeof(block_tiles)/TILE_SIZE_BYTES;
   set_bkg_data(tile_index, sizeof(powerup_tiles)/TILE_SIZE_BYTES, powerup_tiles);

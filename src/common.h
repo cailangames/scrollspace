@@ -45,16 +45,16 @@
 // Bit-shift by 5 is equivalent to multiply by 32, which is the ROW_WIDTH.
 #define MAP_INDEX(row, column) (((row) << 5) + column)
 #define MAP_INDEX_ROW_OFFSET(row) ((row) << 5)
-#define EMPTY_TILE_IDX 0
-// Indexes 1-36 are used for fonts.
-#define MAPBLOCK_IDX 37
-#define MINE_IDX (MAPBLOCK_IDX+2)
-#define CRATERBLOCK_IDX (MAPBLOCK_IDX+3)
-#define BOMB_READY_ICON (MAPBLOCK_IDX+5)
-#define SHIELD_TILE (MAPBLOCK_IDX+6)
-#define HEALTH_KIT_TILE (MAPBLOCK_IDX+7)
-#define HEALTH_BAR_START (MAPBLOCK_IDX+14)
-#define LOCK_TILE 67
+// Note: Indexes 0x01-0x24 are used for font characters.
+#define EMPTY_TILE        0x00
+#define WALL_BLOCK_TILE   0x25
+#define MINE_TILE         0x27
+#define CRATER_TILE       0x28
+#define BOMB_READY_ICON   0x2A
+#define SHIELD_TILE       0x2B
+#define HEALTH_KIT_TILE   0x2C
+#define HEALTH_BAR_START  0x33
+#define LOCK_TILE         0x43
 
 /*
  * Sprites

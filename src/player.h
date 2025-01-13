@@ -219,7 +219,7 @@ bool handle_player_collisions(void) {
           iframes_counter = COLLISION_TIMEOUT;
           if (collision_id <= PLAYER_COLLISION_DAMAGE) {
             // The wall or mine is destroyed.
-            if (background_map[collision_idx] == MINE_IDX) {
+            if (background_map[collision_idx] == MINE_TILE) {
               point_score += POINTS_PER_MINE;
             }
             collision_map[collision_idx] = 0;

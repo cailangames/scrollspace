@@ -67,11 +67,11 @@ static void drop_bomb(void) {
 
       uint16_t idx = row_offset + col;
       // If we are destroying a mine, add to the score.
-      if (background_map[idx] == MINE_IDX) {
+      if (background_map[idx] == MINE_TILE) {
         incremental_score += POINTS_PER_MINE;
       }
       collision_map[idx] = 0;
-      background_map[idx] = CRATERBLOCK_IDX;
+      background_map[idx] = CRATER_TILE;
     }
     ++height;
   }
@@ -163,7 +163,7 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
     play_bomb_sound();
     drop_bomb();
     bomb_cooldown_frames = BOMB_COOLDOWN_FRAMES;
-    bomb_icon = EMPTY_TILE_IDX;
+    bomb_icon = EMPTY_TILE;
     bomb_icon_update_needed = true;
     bomb_dropped = true;
   }
@@ -192,7 +192,7 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
           // The bullet collided with a wall or mine.
           if (collision_map[collision_idx] <= BULLET_DAMAGE) {
             // The wall or mine is destroyed.
-            if (background_map[collision_idx] == MINE_IDX) {
+            if (background_map[collision_idx] == MINE_TILE) {
               point_score += POINTS_PER_MINE;
             }
             collision_map[collision_idx] = 0;

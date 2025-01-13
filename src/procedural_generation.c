@@ -142,7 +142,7 @@ void generate_column(uint8_t column_idx) BANKED {
     if (row < cave_top || row > cave_bottom) {
       // Create a block.
       coll_map[map_index] = BLOCK_HEALTH;
-      bkg_map[map_index] = MAPBLOCK_IDX;
+      bkg_map[map_index] = WALL_BLOCK_TILE;
       continue;
     }
 
@@ -158,11 +158,11 @@ void generate_column(uint8_t column_idx) BANKED {
     } else if (n > 60000) {
       // Create a mine tile.
       coll_map[map_index] = MINE_HEALTH;
-      bkg_map[map_index] = MINE_IDX;
+      bkg_map[map_index] = MINE_TILE;
     } else {
       // Create an empty tile.
       coll_map[map_index] = 0;
-      bkg_map[map_index] = EMPTY_TILE_IDX;
+      bkg_map[map_index] = EMPTY_TILE;
     }
   }
 
