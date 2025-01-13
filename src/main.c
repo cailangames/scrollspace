@@ -136,18 +136,12 @@ static void show_mode_selection_screen(void) {
   background_map[MAP_INDEX(6, 12)] = CHAR_L;
 
   // Write "HARD" and a lock icon (if not unlocked).
-  if (!hard_mode_unlocked) {
-    background_map[MAP_INDEX(8, 5)] = LOCK_TILE;
-  }
   background_map[MAP_INDEX(8, 7)] = CHAR_H;
   background_map[MAP_INDEX(8, 8)] = CHAR_A;
   background_map[MAP_INDEX(8, 9)] = CHAR_R;
   background_map[MAP_INDEX(8, 10)] = CHAR_D;
 
   // Write "TURBO" and a lock icon (if not unlocked).
-  if (!turbo_mode_unlocked) {
-    background_map[MAP_INDEX(10, 5)] = LOCK_TILE;
-  }
   background_map[MAP_INDEX(10, 7)] = CHAR_T;
   background_map[MAP_INDEX(10, 8)] = CHAR_U;
   background_map[MAP_INDEX(10, 9)] = CHAR_R;
@@ -166,9 +160,15 @@ static void show_mode_selection_screen(void) {
 
   uint8_t prev_input = 0;
   uint8_t prev_y = 0;  // Note that y != prev_y for the first frame so that the window is updated properly.
+  bool update_locks = true;
   while (true) {
     vsync();
     // Update displays.
+    if (update_locks) {
+      set_bkg_tile_xy(5, 8, hard_mode_unlocked ? EMPTY_TILE : LOCK_TILE);
+      set_bkg_tile_xy(5, 10, turbo_mode_unlocked ? EMPTY_TILE : LOCK_TILE);
+      update_locks = false;
+    }
     if (y != prev_y) {
       // Update the window message.
       if (game_mode == HARD && !hard_mode_unlocked) {
@@ -183,7 +183,18 @@ static void show_mode_selection_screen(void) {
 
     // Handle input.
     uint8_t input = joypad();
-    if (KEY_FIRST_PRESS(input, prev_input, J_UP)) {
+    if (KEY_PRESSED(input, J_SELECT)) {
+      // It's cheatin' time!
+      if (KEY_PRESSED(input, J_UP) && KEY_PRESSED(input, J_A) && (!hard_mode_unlocked || !turbo_mode_unlocked)) {
+        // Unlock hard and turbo modes.
+        hard_mode_unlocked = true;
+        turbo_mode_unlocked = true;
+        update_locks = true;
+        prev_y = 0;  // Updates the window.
+        play_bomb_sound();
+      }
+    }
+    else if (KEY_FIRST_PRESS(input, prev_input, J_UP)) {
       if (game_mode == NORMAL) {
         game_mode = TURBO;
         y = 96;

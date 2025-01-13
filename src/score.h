@@ -98,9 +98,13 @@ static void highscores2tiles(void) {
 // output bool pointers accordingly.
 void update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked) {
   const struct HighScore* highscore = (const struct HighScore*)HIGH_SCORE_ADDRESS;
-  *hard_mode_unlocked = (highscore->points >= HARD_MODE_UNLOCK_POINTS);
+  if (highscore->points >= HARD_MODE_UNLOCK_POINTS) {
+    *hard_mode_unlocked = true;
+  }
   ++highscore;
-  *turbo_mode_unlocked = (highscore->points >= TURBO_MODE_UNLOCK_POINTS);
+  if (highscore->points >= TURBO_MODE_UNLOCK_POINTS) {
+    *turbo_mode_unlocked = true;
+  }
 }
 
 // Initializes the external RAM and reads each mode's high scores from it. If no high scores are
