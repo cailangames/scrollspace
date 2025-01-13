@@ -22,19 +22,10 @@
 #include "weapons.h"
 
 // Sprite data
-#include "player_shield_sprites.h"
-#include "player_sprites.h"
-#include "projectiles_sprites.h"
+#include "sprite_data.h"
 
 // Tile data
-#include "block_tiles.h"
-#include "font_extras_tiles.h"
-#include "lock_tiles.h"
-#include "powerups_tiles.h"
-#include "progressbar_tiles.h"
-#include "title_screens.h"
-#include "tutorial_screen_map.h"
-#include "tutorial_screen_tiles.h"
+#include "tile_data.h"
 
 extern const hUGESong_t intro_song;
 extern const hUGESong_t main_song;
@@ -91,9 +82,9 @@ static void load_font(void){
 
 static void load_sprite_data(void){
   // Load sprite data.
-  set_sprite_data(0, 10, player_data);
-  set_sprite_data(10, 9, player_shield_data);
-  set_sprite_data(19, 3, projectiles_data);
+  set_sprite_data(0, 10, player_sprites);
+  set_sprite_data(10, 9, player_shield_sprites);
+  set_sprite_data(19, 3, projectile_sprites);
 }
 
 static void load_data(void) {
@@ -101,10 +92,10 @@ static void load_data(void) {
   uint8_t tile_index = MAPBLOCK_IDX;
   set_bkg_data(tile_index, sizeof(block_tiles)/TILE_SIZE_BYTES, block_tiles);
   tile_index += sizeof(block_tiles)/TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(powerups_tiles)/TILE_SIZE_BYTES, powerups_tiles);
-  tile_index += sizeof(powerups_tiles)/TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(progressbar_tiles)/TILE_SIZE_BYTES, progressbar_tiles);
-  tile_index += sizeof(progressbar_tiles)/TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(powerup_tiles)/TILE_SIZE_BYTES, powerup_tiles);
+  tile_index += sizeof(powerup_tiles)/TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(health_bar_tiles)/TILE_SIZE_BYTES, health_bar_tiles);
+  tile_index += sizeof(health_bar_tiles)/TILE_SIZE_BYTES;
   set_bkg_data(tile_index, sizeof(font_extras_tiles)/TILE_SIZE_BYTES, font_extras_tiles);
   tile_index += sizeof(font_extras_tiles)/TILE_SIZE_BYTES;
   set_bkg_data(tile_index, sizeof(tutorial_screen_tiles)/TILE_SIZE_BYTES, tutorial_screen_tiles);
@@ -116,7 +107,7 @@ static void load_data(void) {
 // Shows the title screen.
 static void show_title_screen(uint8_t restart_song) {
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, game_titlescreen);
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, title_screen_map);
   wait_frames(30);
   if (restart_song){
     fade_in();
@@ -249,7 +240,7 @@ static void show_mode_selection_screen(void) {
 #if ENABLE_COLLISIONS
 static void show_gameover_screen(void) {
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, gameover_titlescreen);
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, gameover_screen_map);
   move_bkg(0, 0);
 
   display_gameover_scores();

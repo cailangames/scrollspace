@@ -3,12 +3,11 @@
 
 #include <gb/gb.h>
 
-#include "cailan_games_logo_map.h"
-#include "cailan_games_logo_tiles.h"
 #include "common.h"
 #include "display_effects.h"
-#include "logo_cursor_sprites.h"
 #include "sound_effects.h"
+#include "sprite_data.h"
+#include "tile_data.h"
 
 // Shows the logo screen.
 static void show_logo_screen(void) {
@@ -19,7 +18,7 @@ static void show_logo_screen(void) {
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, cailan_games_logo_map);
   
   // Load the cursor sprite into VRAM
-  set_sprite_data(0, 1, logo_cursor_data);
+  set_sprite_data(0, 1, logo_cursor_sprites);
   set_sprite_tile(0, 0);
   set_sprite_tile(1, 0);
   

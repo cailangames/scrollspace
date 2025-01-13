@@ -25,50 +25,50 @@ static enum animation_state damage_animation_state = HIDDEN;
 // Invincibility frames counter, either from taking damage or picking up a shield.
 static uint8_t iframes_counter = 0;
 // Tile data for the health bar.
-static uint8_t health_bar_tiles[8];
+static uint8_t health_bar_window_tiles[8];
 
 // Updates the health bar tiles based on the given health. Call `write_health_bar_to_window()` to
 // write these tiles to the window.
 void update_health_bar_tiles(int8_t health) {
   if (health == 100) {
-    health_bar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
+    health_bar_window_tiles[0] = HEALTH_BAR_START;  // left edge of bar
     for (uint8_t i = 1; i < 7; ++i) {
-      health_bar_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
+      health_bar_window_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
     }
-    health_bar_tiles[7] = HEALTH_BAR_START + 2;  // right edge of bar
+    health_bar_window_tiles[7] = HEALTH_BAR_START + 2;  // right edge of bar
   }
   else if (health >= 88) {
-    health_bar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
+    health_bar_window_tiles[0] = HEALTH_BAR_START;  // left edge of bar
     for (uint8_t i = 1; i < 7; ++i) {
-      health_bar_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
+      health_bar_window_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
     }
-    health_bar_tiles[7] = HEALTH_BAR_START + 5;  // right edge of bar
+    health_bar_window_tiles[7] = HEALTH_BAR_START + 5;  // right edge of bar
   }
   else if (health >= 16) {
     uint8_t idx = health / 12;
-    health_bar_tiles[0] = HEALTH_BAR_START;  // left edge of bar
+    health_bar_window_tiles[0] = HEALTH_BAR_START;  // left edge of bar
     for (uint8_t i = 1; i < 7; ++i) {
       if (i < idx) {
-        health_bar_tiles[i] = HEALTH_BAR_START + 1;  // fill
+        health_bar_window_tiles[i] = HEALTH_BAR_START + 1;  // fill
       } else {
-        health_bar_tiles[i] = HEALTH_BAR_START + 4;  // clear
+        health_bar_window_tiles[i] = HEALTH_BAR_START + 4;  // clear
       }
     }
-    health_bar_tiles[7] = HEALTH_BAR_START + 5;  // clear right edge of bar
+    health_bar_window_tiles[7] = HEALTH_BAR_START + 5;  // clear right edge of bar
   }
   else if (health > 0) {
-    health_bar_tiles[1] = HEALTH_BAR_START + 4;
-    health_bar_tiles[0] = HEALTH_BAR_START;
+    health_bar_window_tiles[1] = HEALTH_BAR_START + 4;
+    health_bar_window_tiles[0] = HEALTH_BAR_START;
   }
   else {
-    health_bar_tiles[1] = HEALTH_BAR_START + 4;  // clear bottom 2 tiles
-    health_bar_tiles[0] = HEALTH_BAR_START + 3;
+    health_bar_window_tiles[1] = HEALTH_BAR_START + 4;  // clear bottom 2 tiles
+    health_bar_window_tiles[0] = HEALTH_BAR_START + 3;
   }
 }
 
 // Writes the health bar tiles to the window.
 inline void write_health_bar_to_window(void) {
-  set_win_tiles(0, 0, 8, 1, health_bar_tiles);
+  set_win_tiles(0, 0, 8, 1, health_bar_window_tiles);
 }
 
 // Initializes the player's variables.

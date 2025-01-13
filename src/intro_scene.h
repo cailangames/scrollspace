@@ -4,12 +4,8 @@
 #include <gb/gb.h>
 
 #include "common.h"
-#include "player_large_sprites.h"
-#include "intro_stars_tiles.h"
-#include "intro_stars_map.h"
-#include "intro_atmosphere_tiles.h"
-#include "intro_atmosphere_map.h"
-#include "title_screens.h"
+#include "sprite_data.h"
+#include "tile_data.h"
 
 extern const hUGESong_t intro_song;
 
@@ -36,7 +32,7 @@ static void show_intro(void){
   set_bkg_tiles(0, 18, 32, 14, intro_atmosphere_map);
   
   // Load player sprite and set it to sprite 0
-  set_sprite_data(0, 4, player_large_data);
+  set_sprite_data(0, 4, player_large_sprites);
   set_sprite_tile(0, 0);
   set_sprite_tile(1, 1);
   set_sprite_tile(2, 2);
@@ -94,8 +90,8 @@ static void show_intro(void){
   }
 
   set_bkg_submap(0, 4, 32, 4, intro_atmosphere_map+4*32, 32);
-  set_bkg_tiles(0,8,20,6, empty_screen);
-  set_bkg_tiles(20,8,12,6, empty_screen);
+  set_bkg_tiles(0,8,20,6, empty_screen_map);
+  set_bkg_tiles(20,8,12,6, empty_screen_map);
 
   // Fully descend into  
   while (SCY_REG != 224){
@@ -103,8 +99,8 @@ static void show_intro(void){
     vsync();
   }
   
-  set_bkg_tiles(0,14,20,12, empty_screen);
-  set_bkg_tiles(20,14,12,12, empty_screen);
+  set_bkg_tiles(0,14,20,12, empty_screen_map);
+  set_bkg_tiles(20,14,12,12, empty_screen_map);
 
   while (SCY_REG != 0){
     scroll_bkg(1,1);

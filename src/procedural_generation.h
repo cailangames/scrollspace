@@ -3,8 +3,6 @@
 #ifndef _PROCEDURAL_GENERATION_H_
 #define _PROCEDURAL_GENERATION_H_
 
-#pragma bank 1
-
 #include <stdint.h>
 
 #include <gb/gb.h>

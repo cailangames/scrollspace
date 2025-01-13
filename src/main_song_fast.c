@@ -1,3 +1,5 @@
+#pragma bank 1
+
 #include <hUGEDriver.h>
 
 static const unsigned char order_cnt = 28;
