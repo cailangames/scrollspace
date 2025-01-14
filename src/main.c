@@ -37,6 +37,9 @@ uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
 uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
 uint16_t point_score = 0;
 
+static const uint8_t confirmation_prompt_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, CHAR_A, CHAR_R, CHAR_E, 0, CHAR_Y, CHAR_O, CHAR_U, 0, CHAR_S, CHAR_U, CHAR_R, CHAR_E, 0, 0, 0, 0};
+static const uint8_t yes_or_no_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, 0, CHAR_Y, CHAR_E, CHAR_S, 0, 0, 0, 0, CHAR_CURSOR, 0, CHAR_N, CHAR_O, 0, 0, 0, 0};
+
 static bool hard_mode_unlocked = false;
 static bool turbo_mode_unlocked = false;
 static bool game_paused = true;
@@ -64,6 +67,15 @@ void wait_for_keypress(uint8_t key){
   while (1){
     if (joypad() & key){
       waitpadup();
+      return;
+    }
+    vsync();
+  }
+}
+
+void wait_for_key_release(uint8_t keys) {
+  while (true) {
+    if (!(joypad() & keys)) {
       return;
     }
     vsync();
@@ -100,6 +112,46 @@ static void load_data(void) {
   tile_index += sizeof(tutorial_screen_tiles)/TILE_SIZE_BYTES;
   set_bkg_data(tile_index, sizeof(lock_tiles)/TILE_SIZE_BYTES, lock_tiles);
   tile_index += sizeof(lock_tiles)/TILE_SIZE_BYTES;
+}
+
+// Displays a confirmation prompt to the player to confirm whether or not they want to perform an
+// action. Returns true if the player confirmed the action, false otherwise.
+static bool confirm_action(void) {
+  vsync();
+  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, confirmation_prompt_msg);
+  set_win_tiles(0, 1, SCREEN_TILE_WIDTH, 1, yes_or_no_msg);
+  move_win(7, 128);  // Need 2 rows in the window for the confirmation prompt.
+  wait_for_key_release(J_START | J_A);
+
+  bool yes_highlighted = false;
+  bool update_cursor = false;
+  uint8_t prev_input = 0;
+  while (true) {
+    vsync();
+    if (update_cursor) {
+      if (yes_highlighted) {
+        set_win_tile_xy(3, 1, CHAR_CURSOR);
+        set_win_tile_xy(12, 1, EMPTY_TILE);
+      } else {
+        set_win_tile_xy(3, 1, EMPTY_TILE);
+        set_win_tile_xy(12, 1, CHAR_CURSOR);
+      }
+      update_cursor = false;
+    }
+
+    uint8_t input = joypad();
+    if (KEY_FIRST_PRESS(input, prev_input, J_RIGHT) && yes_highlighted) {
+      yes_highlighted = false;
+      update_cursor = true;
+    } else if (KEY_FIRST_PRESS(input, prev_input, J_LEFT) && !yes_highlighted) {
+      yes_highlighted = true;
+      update_cursor = true;
+    } else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A)) {
+      move_win(7, 136);
+      return yes_highlighted;
+    }
+    prev_input = input;
+  }
 }
 
 // Shows the title screen.
@@ -249,13 +301,16 @@ static void show_mode_selection_screen(void) {
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A)) {
       if (game_mode == CLEAR_DATA) {
-        // TODO: Add a "are you sure?" prompt here.
-        play_bomb_sound();
-        clear_score_data();
-        hard_mode_unlocked = false;
-        turbo_mode_unlocked = false;
-        update_locks = true;
+        if (confirm_action()) {
+          play_bomb_sound();
+          clear_score_data();
+          hard_mode_unlocked = false;
+          turbo_mode_unlocked = false;
+          update_locks = true;
+        }
         prev_y = 0;  // Updates the window.
+        prev_input = (J_START | J_A);  // Makes sure these keys are released before triggering this again.
+        continue;
       } else if ((game_mode == HARD && !hard_mode_unlocked) || (game_mode == TURBO && !turbo_mode_unlocked)) {
         // Mode not unlocked yet. Let the player know by shaking the ship and playing a sound.
         play_collision_sound();

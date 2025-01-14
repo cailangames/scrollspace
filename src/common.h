@@ -148,6 +148,7 @@
 #define CHAR_Y 0x23
 #define CHAR_Z 0x24
 #define CHAR_COLON 0x39
+#define CHAR_CURSOR 0x3A
 
 /*
  * Math
