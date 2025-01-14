@@ -163,6 +163,7 @@ enum GameMode {
   NORMAL=0,
   HARD=1,
   TURBO=2,
+  CLEAR_DATA=3,
 };
 
 /*

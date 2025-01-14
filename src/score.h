@@ -32,9 +32,9 @@ static const uint8_t ram_signature[] = {CHAR_P, CHAR_G, CHAR_I, CHAR_S};
 #define RAM_SIGNATURE_LENGTH (sizeof(ram_signature) / sizeof(uint8_t))
 #define HIGH_SCORE_ADDRESS (RAM_BANK0_ADDRESS + RAM_SIGNATURE_LENGTH)
 
-// TODO: Make these const when we have more ROM space available.
-static /*const*/ uint8_t unlock_msg_hard[20] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, CHAR_COLON, 0, CHAR_5, CHAR_0, CHAR_0, 0, CHAR_N, CHAR_O, CHAR_R, CHAR_M, CHAR_A, CHAR_L, 0, 0};
-static /*const*/ uint8_t unlock_msg_turbo[20] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, CHAR_COLON, 0, CHAR_5, CHAR_0, CHAR_0, 0, CHAR_H, CHAR_A, CHAR_R, CHAR_D, 0, 0, 0, 0};
+static const uint8_t unlock_msg_hard[SCREEN_TILE_WIDTH] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, CHAR_COLON, 0, CHAR_5, CHAR_0, CHAR_0, 0, CHAR_N, CHAR_O, CHAR_R, CHAR_M, CHAR_A, CHAR_L, 0, 0};
+static const uint8_t unlock_msg_turbo[SCREEN_TILE_WIDTH] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, CHAR_COLON, 0, CHAR_5, CHAR_0, CHAR_0, 0, CHAR_H, CHAR_A, CHAR_R, CHAR_D, 0, 0, 0, 0};
+static const uint8_t clear_data_msg[SCREEN_TILE_WIDTH] = {CHAR_D, CHAR_E, CHAR_L, CHAR_E, CHAR_T, CHAR_E, CHAR_S, 0, CHAR_H, CHAR_I, CHAR_G, CHAR_H, 0, CHAR_S, CHAR_C, CHAR_O, CHAR_R, CHAR_E, CHAR_S, 0};
 
 static uint8_t timer_frames = 0;
 static uint8_t timer_seconds = 0;
@@ -102,6 +102,18 @@ void clear_window(void) {
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, high_score_tiles);
 }
 
+// Clears (zeroes out) the high score data in the external RAM.
+void clear_score_data(void) {
+  struct HighScore* highscore = (struct HighScore*)HIGH_SCORE_ADDRESS;
+  for (uint8_t i = 0; i < 3; ++i) {
+    highscore->points = 0;
+    highscore->hours = 0;
+    highscore->minutes = 0;
+    highscore->seconds = 0;
+    ++highscore;
+  }
+}
+
 // Checks if the high scores meet the thresholds for unlocking the harder game modes, and sets the
 // output bool pointers accordingly.
 void update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked) {
@@ -131,18 +143,11 @@ void init_highscores(void) {
   if (initialized) {
     return;
   }
-  // High scores are *not* present. Initialize them with zeroes and write the signature.
+  // High scores are *not* present. Write the signature and initialize scores with zeroes.
   for (uint8_t i = 0; i < RAM_SIGNATURE_LENGTH; ++i) {
     ram_ptr[i] = ram_signature[i];
   }
-  struct HighScore* highscore = (struct HighScore*)HIGH_SCORE_ADDRESS;
-  for (uint8_t i = 0; i < 3; ++i) {
-    highscore->points = 0;
-    highscore->hours = 0;
-    highscore->minutes = 0;
-    highscore->seconds = 0;
-    ++highscore;
-  }
+  clear_score_data();
 }
 
 // Increments the timer-based score.
@@ -224,6 +229,11 @@ void display_hardmode_unlock_msg(void) {
 // Displays the unlock TURBO mode message
 void display_turbomode_unlock_msg(void) {
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, unlock_msg_turbo);
+}
+
+// Displays the window message for the "clear data" option.
+void display_clear_data_msg(void) {
+  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, clear_data_msg);
 }
 
 // Converts the point-based and timer-based scores to tiles and displays them in the gameover screen.

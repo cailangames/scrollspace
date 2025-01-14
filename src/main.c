@@ -125,30 +125,53 @@ static void show_title_screen(uint8_t restart_song) {
 
 // Shows the mode selection screen and stores the mode chosen by the player in `game_mode`.
 static void show_mode_selection_screen(void) {
+  // Add walls at the top and bottom of the screen.
+  uint16_t row_offset = MAP_INDEX_ROW_OFFSET(COLUMN_HEIGHT-1);
+  for (uint8_t i = 0; i < SCREEN_TILE_WIDTH; ++i) {
+    background_map[i] = WALL_BLOCK_TILE;
+    background_map[row_offset+i] = WALL_BLOCK_TILE;
+  }
+
   // Write "NORMAL".
-  background_map[MAP_INDEX(6, 7)] = CHAR_N;
-  background_map[MAP_INDEX(6, 8)] = CHAR_O;
-  background_map[MAP_INDEX(6, 9)] = CHAR_R;
-  background_map[MAP_INDEX(6, 10)] = CHAR_M;
-  background_map[MAP_INDEX(6, 11)] = CHAR_A;
-  background_map[MAP_INDEX(6, 12)] = CHAR_L;
+  row_offset = MAP_INDEX_ROW_OFFSET(3);
+  background_map[row_offset+7] = CHAR_N;
+  background_map[row_offset+8] = CHAR_O;
+  background_map[row_offset+9] = CHAR_R;
+  background_map[row_offset+10] = CHAR_M;
+  background_map[row_offset+11] = CHAR_A;
+  background_map[row_offset+12] = CHAR_L;
 
   // Write "HARD".
-  background_map[MAP_INDEX(8, 7)] = CHAR_H;
-  background_map[MAP_INDEX(8, 8)] = CHAR_A;
-  background_map[MAP_INDEX(8, 9)] = CHAR_R;
-  background_map[MAP_INDEX(8, 10)] = CHAR_D;
+  row_offset = MAP_INDEX_ROW_OFFSET(6);
+  background_map[row_offset+7] = CHAR_H;
+  background_map[row_offset+8] = CHAR_A;
+  background_map[row_offset+9] = CHAR_R;
+  background_map[row_offset+10] = CHAR_D;
 
   // Write "TURBO".
-  background_map[MAP_INDEX(10, 7)] = CHAR_T;
-  background_map[MAP_INDEX(10, 8)] = CHAR_U;
-  background_map[MAP_INDEX(10, 9)] = CHAR_R;
-  background_map[MAP_INDEX(10, 10)] = CHAR_B;
-  background_map[MAP_INDEX(10, 11)] = CHAR_O;
+  row_offset = MAP_INDEX_ROW_OFFSET(9);
+  background_map[row_offset+7] = CHAR_T;
+  background_map[row_offset+8] = CHAR_U;
+  background_map[row_offset+9] = CHAR_R;
+  background_map[row_offset+10] = CHAR_B;
+  background_map[row_offset+11] = CHAR_O;
+
+  // Write "CLEAR DATA".
+  row_offset = MAP_INDEX_ROW_OFFSET(14);
+  background_map[row_offset+7] = CHAR_C;
+  background_map[row_offset+8] = CHAR_L;
+  background_map[row_offset+9] = CHAR_E;
+  background_map[row_offset+10] = CHAR_A;
+  background_map[row_offset+11] = CHAR_R;
+  background_map[row_offset+12] = 0;
+  background_map[row_offset+13] = CHAR_D;
+  background_map[row_offset+14] = CHAR_A;
+  background_map[row_offset+15] = CHAR_T;
+  background_map[row_offset+16] = CHAR_A;
 
   // Note that the previous value of `game_mode` is used here. For convenience, we want to remember
   // which mode the player selected last and default the cursor to that mode.
-  uint8_t y = (game_mode == NORMAL) ? 64 : (game_mode == HARD) ? 80 : 96;
+  uint8_t y = (game_mode == NORMAL) ? 40 : (game_mode == HARD) ? 64 : 88;
 
   vsync();
   set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
@@ -163,13 +186,15 @@ static void show_mode_selection_screen(void) {
     vsync();
     // Update displays.
     if (update_locks) {
-      set_bkg_tile_xy(5, 8, hard_mode_unlocked ? EMPTY_TILE : LOCK_TILE);
-      set_bkg_tile_xy(5, 10, turbo_mode_unlocked ? EMPTY_TILE : LOCK_TILE);
+      set_bkg_tile_xy(5, 6, hard_mode_unlocked ? EMPTY_TILE : LOCK_TILE);
+      set_bkg_tile_xy(5, 9, turbo_mode_unlocked ? EMPTY_TILE : LOCK_TILE);
       update_locks = false;
     }
     if (y != prev_y) {
       // Update the window message.
-      if (game_mode == HARD && !hard_mode_unlocked) {
+      if (game_mode == CLEAR_DATA) {
+        display_clear_data_msg();
+      } else if (game_mode == HARD && !hard_mode_unlocked) {
         display_hardmode_unlock_msg();
       } else if (game_mode == TURBO && !turbo_mode_unlocked) {
         display_turbomode_unlock_msg();
@@ -193,37 +218,45 @@ static void show_mode_selection_screen(void) {
       }
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_UP)) {
-      if (game_mode == NORMAL) {
-        game_mode = TURBO;
-        y = 96;
-        move_sprite(PLAYER_SPRITE_ID, 32, y);
-      } else if (game_mode == HARD) {
+      if (game_mode == HARD) {
         game_mode = NORMAL;
+        y = 40;
+        move_sprite(PLAYER_SPRITE_ID, 32, y);
+      } else if (game_mode == TURBO) {
+        game_mode = HARD;
         y = 64;
         move_sprite(PLAYER_SPRITE_ID, 32, y);
-      } else {
-        game_mode = HARD;
-        y = 80;
+      } else if (game_mode == CLEAR_DATA) {
+        game_mode = TURBO;
+        y = 88;
         move_sprite(PLAYER_SPRITE_ID, 32, y);
       }
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN)) {
       if (game_mode == NORMAL) {
         game_mode = HARD;
-        y = 80;
+        y = 64;
         move_sprite(PLAYER_SPRITE_ID, 32, y);
       } else if (game_mode == HARD) {
         game_mode = TURBO;
-        y = 96;
+        y = 88;
         move_sprite(PLAYER_SPRITE_ID, 32, y);
-      } else {
-        game_mode = NORMAL;
-        y = 64;
+      } else if (game_mode == TURBO) {
+        game_mode = CLEAR_DATA;
+        y = 128;
         move_sprite(PLAYER_SPRITE_ID, 32, y);
       }
     }
-    else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A) || KEY_FIRST_PRESS(input, prev_input, J_B)) {
-      if ((game_mode == HARD && !hard_mode_unlocked) || (game_mode == TURBO && !turbo_mode_unlocked)) {
+    else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A)) {
+      if (game_mode == CLEAR_DATA) {
+        // TODO: Add a "are you sure?" prompt here.
+        play_bomb_sound();
+        clear_score_data();
+        hard_mode_unlocked = false;
+        turbo_mode_unlocked = false;
+        update_locks = true;
+        prev_y = 0;  // Updates the window.
+      } else if ((game_mode == HARD && !hard_mode_unlocked) || (game_mode == TURBO && !turbo_mode_unlocked)) {
         // Mode not unlocked yet. Let the player know by shaking the ship and playing a sound.
         play_collision_sound();
         for (uint8_t i = 0; i < 2; ++i) {
