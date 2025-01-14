@@ -42,8 +42,8 @@ static uint8_t timer_minutes = 0;
 static uint8_t timer_hours = 0;
 static bool score_update_needed = false;
 
-static uint8_t score_tiles[8] = {0,0,0,0,0,0,0,0};
-static uint8_t high_score_tiles[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static uint8_t score_tiles[8];
+static uint8_t high_score_tiles[SCREEN_TILE_WIDTH];
 
 static void highscores2tiles(void) {
   // Get high scores from external RAM.
@@ -92,6 +92,14 @@ static void highscores2tiles(void) {
   high_score_tiles[17] = tens + 0x01;
   high_score_tiles[18] = single + 0x01;
   high_score_tiles[19] = 0;
+}
+
+// Clears the window with empty tiles.
+void clear_window(void) {
+  for (uint8_t i = 0; i < SCREEN_TILE_WIDTH; ++i) {
+    high_score_tiles[i] = 0;
+  }
+  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, high_score_tiles);
 }
 
 // Checks if the high scores meet the thresholds for unlocking the harder game modes, and sets the
@@ -205,17 +213,17 @@ inline void write_score_to_window(void) {
 // The high scores are retrieved from RAM bank 0 as described in this file's header comment.
 void display_highscores(void) {
   highscores2tiles();
-  set_win_tiles(0, 0, 20, 1, high_score_tiles);
+  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, high_score_tiles);
 }
 
 // Displays the unlock HARD mode message
-void display_hardmode_unlock_msg(void){
-  set_win_tiles(0, 0, 20, 1, unlock_msg_hard);
+void display_hardmode_unlock_msg(void) {
+  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, unlock_msg_hard);
 }
 
 // Displays the unlock TURBO mode message
-void display_turbomode_unlock_msg(void){
-  set_win_tiles(0, 0, 20, 1, unlock_msg_turbo);
+void display_turbomode_unlock_msg(void) {
+  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, unlock_msg_turbo);
 }
 
 // Converts the point-based and timer-based scores to tiles and displays them in the gameover screen.
@@ -286,8 +294,6 @@ void reset_scores(void) {
   timer_hours = 0;
   score_update_needed = true;
   update_point_score_tiles();
-  // score_update_needed = false;
-  // update_timer_score_tiles();
 }
 
 #endif

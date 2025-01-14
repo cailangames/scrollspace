@@ -37,8 +37,6 @@ uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
 uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
 uint16_t point_score = 0;
 
-static const uint8_t blank_win_tiles[SCREEN_TILE_WIDTH] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-
 static bool hard_mode_unlocked = false;
 static bool turbo_mode_unlocked = false;
 static bool game_paused = true;
@@ -106,7 +104,7 @@ static void load_data(void) {
 
 // Shows the title screen.
 static void show_title_screen(uint8_t restart_song) {
-  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
+  clear_window();
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, title_screen_map);
   wait_frames(30);
   if (restart_song){
@@ -135,13 +133,13 @@ static void show_mode_selection_screen(void) {
   background_map[MAP_INDEX(6, 11)] = CHAR_A;
   background_map[MAP_INDEX(6, 12)] = CHAR_L;
 
-  // Write "HARD" and a lock icon (if not unlocked).
+  // Write "HARD".
   background_map[MAP_INDEX(8, 7)] = CHAR_H;
   background_map[MAP_INDEX(8, 8)] = CHAR_A;
   background_map[MAP_INDEX(8, 9)] = CHAR_R;
   background_map[MAP_INDEX(8, 10)] = CHAR_D;
 
-  // Write "TURBO" and a lock icon (if not unlocked).
+  // Write "TURBO".
   background_map[MAP_INDEX(10, 7)] = CHAR_T;
   background_map[MAP_INDEX(10, 8)] = CHAR_U;
   background_map[MAP_INDEX(10, 9)] = CHAR_R;
@@ -250,7 +248,7 @@ static void show_mode_selection_screen(void) {
 
 #if ENABLE_COLLISIONS
 static void show_gameover_screen(void) {
-  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
+  clear_window();
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, gameover_screen_map);
   move_bkg(0, 0);
 
@@ -389,7 +387,7 @@ void main(void) {
     set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
 
     // Reset the window tiles.
-    set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, blank_win_tiles);
+    clear_window();
 
     init_player();
     write_health_bar_to_window();
