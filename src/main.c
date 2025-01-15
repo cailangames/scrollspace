@@ -421,11 +421,12 @@ void main(void) {
    */
   show_title_screen(0);
 
-  uint8_t scroll_speed_ppf;  // How many pixels per frame to scroll the screen
+  fixed screen_pos_x;  // The x position of the screen (high 8 bits: pixels, low 8 bits: subpixels)
+  fixed scroll_speed;  // How many pixels per frame to scroll the screen (high 8 bits: pixels, low 8 bits: subpixels)
   uint8_t input;  // The joypad input of this frame
   uint8_t prev_input;  // The joypad input of the previous frame
-  uint8_t scroll_count;  // How many pixels have been scrolled in the current column
-  uint8_t col_count;  // How many columns have been scrolled in the current screen
+  uint8_t prev_left_column;  // The left-most column on the screen in the previous frame. Used to track when the background has scrolled a full column's worth of pixels.
+  uint8_t column_count;  // How many columns have been scrolled in the current screen
   bool generated_column;  // Whether or not a column was generated this frame
   uint8_t generated_column_idx;  // The index of the generated column
   bool update_window_score;  // Whether or not the score in the window needs to be updated
@@ -446,10 +447,11 @@ void main(void) {
     reset_generation_state();
 
     // Initialize other variables.
+    screen_pos_x.w = 0x0000;
     input = 0;
     prev_input = 0;
-    scroll_count = 0;
-    col_count = 0;
+    prev_left_column = 0;
+    column_count = 0;
     generated_column = false;
     generated_column_idx = 0;
     update_window_score = false;
@@ -459,11 +461,11 @@ void main(void) {
      */
     show_mode_selection_screen();
     if (game_mode == NORMAL) {
-      scroll_speed_ppf = SCROLL_SPEED_NORMAL;
+      scroll_speed.w = SCROLL_SPEED_NORMAL;
     } else if (game_mode == HARD) {
-      scroll_speed_ppf = SCROLL_SPEED_HARD;
+      scroll_speed.w = SCROLL_SPEED_HARD;
     } else {
-      scroll_speed_ppf = SCROLL_SPEED_TURBO;
+      scroll_speed.w = SCROLL_SPEED_TURBO;
     }
 
     // Copy tutorial screen tiles to the background.
@@ -561,17 +563,18 @@ void main(void) {
 
       prev_input = input;
 
-      // Update scroll counts and generate a new column, if necessary.
-      scroll_count += scroll_speed_ppf;
-      if (scroll_count >= PIXELS_PER_COLUMN) {
-        scroll_count = MOD8(scroll_count);
+      // Update screen position and generate a new column, if necessary.
+      screen_pos_x.w += scroll_speed.w;
+      uint8_t left_column = screen_pos_x.h >> 3;
+      if (left_column != prev_left_column) {
+        prev_left_column = left_column;
         generated_column_idx = MOD32(generated_column_idx + 1);  // MOD32 is for screen wrap-around.
         generate_column(generated_column_idx);
         generated_column = true;
 
-        ++col_count;
-        if (col_count == COLUMNS_PER_SCREEN) {
-          col_count = 0;
+        ++column_count;
+        if (column_count == COLUMNS_PER_SCREEN) {
+          column_count = 0;
           point_score += POINTS_PER_SCREEN_SCROLLED;
         }
       }
@@ -596,7 +599,7 @@ void main(void) {
        * COPY TO VRAM
        */
       // Scroll the background.
-      scroll_bkg(scroll_speed_ppf, 0);
+      SCX_REG = screen_pos_x.h;
 
       // Update tiles for background objects that sprites collided with.
       if (player_sprite.collided) {

@@ -96,11 +96,13 @@
 #define PLAYER_COLLISION_DAMAGE 2
 // In pixels
 #define PLAYER_COLLISION_KNOCKBACK 8
-// All speeds are in pixels per frame.
+// Pixels per frame.
 #define PLAYER_SPEED 1
-#define SCROLL_SPEED_NORMAL 1
-#define SCROLL_SPEED_HARD 2
-#define SCROLL_SPEED_TURBO 3
+// The scroll speeds are 16-bit fixed point numbers, where the high 8 bits are the pixels
+// (per frame) and the low 8 bits are the subpixels.
+#define SCROLL_SPEED_NORMAL 0x0100
+#define SCROLL_SPEED_HARD 0x0200
+#define SCROLL_SPEED_TURBO 0x0300
 #define POINTS_PER_MINE 2
 #define POINTS_PER_SCREEN_SCROLLED 5
 // IMPORTANT: If you update these thresholds, you must update the unlock messages in score.h too.
