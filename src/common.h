@@ -90,16 +90,15 @@
 #define BULLET_DAMAGE 1
 #define BULLET_COLLISION_X_OFFSET 0
 #define BULLET_COLLISION_Y_OFFSET 2
-#define PLAYER_START_X 20
-#define PLAYER_START_Y 80
+#define PLAYER_START_X 0x1400
+#define PLAYER_START_Y 0x5000
 #define PLAYER_MAX_HEALTH 100
 #define PLAYER_COLLISION_DAMAGE 2
-// In pixels
-#define PLAYER_COLLISION_KNOCKBACK 8
-// Pixels per frame.
-#define PLAYER_SPEED 1
-// The scroll speeds are 16-bit fixed point numbers, where the high 8 bits are the pixels
+#define PLAYER_COLLISION_KNOCKBACK 0x0800
+// The speeds are 16-bit fixed point numbers, where the high 8 bits are the pixels
 // (per frame) and the low 8 bits are the subpixels.
+#define PLAYER_SPEED           0x0100
+#define BULLET_SPEED           0x0400
 #define SCROLL_SPEED_NORMAL    0x0100
 #define SCROLL_SPEED_HARD      0x0200
 #define SCROLL_SPEED_TURBO     0x0300

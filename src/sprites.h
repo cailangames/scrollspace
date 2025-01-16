@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <types.h>
+
 enum Direction {
   NONE=0,
   UP=1,
@@ -22,9 +24,9 @@ struct CollisionBox {
 struct Sprite {
   uint8_t sprite_id;
   uint8_t sprite_tile_id;
-  uint8_t x;
-  uint8_t y;
-  uint8_t speed;
+  fixed x;
+  fixed y;
+  fixed speed;
   enum Direction direction;
   uint8_t cb_x_offset;
   uint8_t cb_y_offset;

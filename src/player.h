@@ -75,14 +75,14 @@ inline void write_health_bar_to_window(void) {
 void init_player(void) {
   player_sprite.sprite_id = PLAYER_SPRITE_ID;
   player_sprite.sprite_tile_id = 0;
-  player_sprite.x = PLAYER_START_X;
-  player_sprite.y = PLAYER_START_Y;
-  player_sprite.speed = PLAYER_SPEED;
+  player_sprite.x.w = PLAYER_START_X;
+  player_sprite.y.w = PLAYER_START_Y;
+  player_sprite.speed.w = PLAYER_SPEED;
   player_sprite.direction = RIGHT;
   player_sprite.cb_x_offset = 1;
   player_sprite.cb_y_offset = 2;
-  player_sprite.cb.x = PLAYER_START_X + player_sprite.cb_x_offset;
-  player_sprite.cb.y = PLAYER_START_Y + player_sprite.cb_y_offset;
+  player_sprite.cb.x = player_sprite.x.h + player_sprite.cb_x_offset;
+  player_sprite.cb.y = player_sprite.y.h + player_sprite.cb_y_offset;
   player_sprite.cb.w = 5;
   player_sprite.cb.h = 4;
   player_sprite.health = PLAYER_MAX_HEALTH;
@@ -91,7 +91,7 @@ void init_player(void) {
   player_sprite.collided = false;
   player_sprite.collided_row = 0;
   player_sprite.collided_col = 0;
-  move_sprite(PLAYER_SPRITE_ID, PLAYER_START_X, PLAYER_START_Y);
+  move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
 
   player_sprite_base_id = 0;
   shield_active = false;
@@ -113,23 +113,23 @@ void move_player(uint8_t input) {
 
   // Check input. Note that the player can move in two directions, e.g. "up and right" or "down and left".
   if (KEY_PRESSED(input, J_RIGHT)) {
-    player_sprite.x += player_sprite.speed;
-    if (player_sprite.x > SCREEN_R) {
-      player_sprite.x = SCREEN_R;
+    player_sprite.x.w += player_sprite.speed.w;
+    if (player_sprite.x.h > SCREEN_R) {
+      player_sprite.x.w = ((uint16_t)(SCREEN_R) << 8);
     }
   } else if (KEY_PRESSED(input, J_LEFT)) {
     player_sprite.direction = LEFT;
-    player_sprite.x -= player_sprite.speed;
-    if (player_sprite.x < SCREEN_L) {
-      player_sprite.x = SCREEN_L;
+    player_sprite.x.w -= player_sprite.speed.w;
+    if (player_sprite.x.h < SCREEN_L) {
+      player_sprite.x.w = ((uint16_t)(SCREEN_L) << 8);
     }
   }
 
   if (KEY_PRESSED(input, J_UP)) {
     player_sprite.direction |= UP;
-    player_sprite.y -= player_sprite.speed;
-    if (player_sprite.y < SCREEN_T) {
-      player_sprite.y = SCREEN_T;
+    player_sprite.y.w -= player_sprite.speed.w;
+    if (player_sprite.y.h < SCREEN_T) {
+      player_sprite.y.w = ((uint16_t)(SCREEN_T) << 8);
     }
     player_sprite.sprite_tile_id = player_sprite_base_id + 1;
 
@@ -140,9 +140,9 @@ void move_player(uint8_t input) {
     player_sprite.cb.h = 1;
   } else if (KEY_PRESSED(input, J_DOWN)) {
     player_sprite.direction |= DOWN;
-    player_sprite.y += player_sprite.speed;
-    if (player_sprite.y > SCREEN_B) {
-      player_sprite.y = SCREEN_B;
+    player_sprite.y.w += player_sprite.speed.w;
+    if (player_sprite.y.h > SCREEN_B) {
+      player_sprite.y.w = ((uint16_t)(SCREEN_B) << 8);
     }
     player_sprite.sprite_tile_id = player_sprite_base_id + 2;
 
@@ -154,12 +154,12 @@ void move_player(uint8_t input) {
   }
 
   // Update the position of the collision box.
-  player_sprite.cb.x = player_sprite.x + player_sprite.cb_x_offset;
-  player_sprite.cb.y = player_sprite.y + player_sprite.cb_y_offset;
+  player_sprite.cb.x = player_sprite.x.h + player_sprite.cb_x_offset;
+  player_sprite.cb.y = player_sprite.y.h + player_sprite.cb_y_offset;
 
   // Move the player's sprite.
   set_sprite_tile(PLAYER_SPRITE_ID, player_sprite.sprite_tile_id);
-  move_sprite(PLAYER_SPRITE_ID, player_sprite.x, player_sprite.y);
+  move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
 }
 
 // Checks if the player collided with anything and updates the player's position (e.g. due to
@@ -175,7 +175,7 @@ bool handle_player_collisions(void) {
       player_sprite_base_id -= 10;
     }
     if (damage_animation_state == HIDDEN) {
-      move_sprite(PLAYER_SPRITE_ID, player_sprite.x, player_sprite.y);
+      move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
       damage_animation_state = SHOWN;
     }
     // Normal collision check for player
@@ -230,35 +230,35 @@ bool handle_player_collisions(void) {
           // Handle knockback: Push sprite in the opposite direction that it's moving.
           if (player_sprite.direction & RIGHT) {
             // Move the sprite to the left.
-            player_sprite.x -= PLAYER_COLLISION_KNOCKBACK;
-            if (player_sprite.x < SCREEN_L) {
-              player_sprite.x = SCREEN_L;
+            player_sprite.x.w -= PLAYER_COLLISION_KNOCKBACK;
+            if (player_sprite.x.h < SCREEN_L) {
+              player_sprite.x.w = ((uint16_t)(SCREEN_L) << 8);
             }
-            player_sprite.cb.x = player_sprite.x + player_sprite.cb_x_offset;
+            player_sprite.cb.x = player_sprite.x.h + player_sprite.cb_x_offset;
           } else if (player_sprite.direction & LEFT) {
             // Move the sprite to the right.
-            player_sprite.x += PLAYER_COLLISION_KNOCKBACK;
-            if (player_sprite.x > SCREEN_R) {
-              player_sprite.x = SCREEN_R;
+            player_sprite.x.w += PLAYER_COLLISION_KNOCKBACK;
+            if (player_sprite.x.h > SCREEN_R) {
+              player_sprite.x.w = ((uint16_t)(SCREEN_R) << 8);
             }
-            player_sprite.cb.x = player_sprite.x + player_sprite.cb_x_offset;
+            player_sprite.cb.x = player_sprite.x.h + player_sprite.cb_x_offset;
           }
           if (player_sprite.direction & UP) {
             // Move the sprite down.
-            player_sprite.y += PLAYER_COLLISION_KNOCKBACK;
-            if (player_sprite.y > SCREEN_B) {
-              player_sprite.y = SCREEN_B;
+            player_sprite.y.w += PLAYER_COLLISION_KNOCKBACK;
+            if (player_sprite.y.h > SCREEN_B) {
+              player_sprite.y.w = ((uint16_t)(SCREEN_B) << 8);
             }
-            player_sprite.cb.y = player_sprite.y + player_sprite.cb_y_offset;
+            player_sprite.cb.y = player_sprite.y.h + player_sprite.cb_y_offset;
           } else if (player_sprite.direction & DOWN) {
             // Move the sprite up.
-            player_sprite.y -= PLAYER_COLLISION_KNOCKBACK;
-            if (player_sprite.y < SCREEN_T) {
-              player_sprite.y = SCREEN_T;
+            player_sprite.y.w -= PLAYER_COLLISION_KNOCKBACK;
+            if (player_sprite.y.h < SCREEN_T) {
+              player_sprite.y.w = ((uint16_t)(SCREEN_T) << 8);
             }
-            player_sprite.cb.y = player_sprite.y + player_sprite.cb_y_offset;
+            player_sprite.cb.y = player_sprite.y.h + player_sprite.cb_y_offset;
           }
-          move_sprite(PLAYER_SPRITE_ID, player_sprite.x, player_sprite.y);
+          move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
           play_collision_sound();
           break;
       }
@@ -269,7 +269,7 @@ bool handle_player_collisions(void) {
     --iframes_counter;
     if (!shield_active) {
       if (damage_animation_state == HIDDEN) {
-        move_sprite(PLAYER_SPRITE_ID, player_sprite.x, player_sprite.y);
+        move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
         damage_animation_state = SHOWN;
       } else {
         move_sprite(PLAYER_SPRITE_ID, 0, 0);
@@ -315,6 +315,7 @@ bool handle_player_collisions(void) {
     // Update health bar after a collision.
     update_health_bar_tiles(player_sprite.health);
     // Update the ship sprite based on the current health.
+    // TODO: Make these values consistent with the health pickup values above.
     if (player_sprite.health > 50) {
       player_sprite_base_id = 0;
     } else if (player_sprite.health > 25) {

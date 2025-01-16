@@ -35,10 +35,10 @@ static uint8_t bombed_height = 0;
 // square in front of the player with sides of length `2*BOMB_RADIUS+1` tiles.
 static void drop_bomb(void) {
   uint8_t row_count = BOMB_LENGTH;
-  uint8_t row_top = (player_sprite.y - SCREEN_T) >> 3;
+  uint8_t row_top = (player_sprite.y.h - SCREEN_T) >> 3;
   // Because of integer division, the bomb explosion can look like it's not centered with the ship.
   // The following code fixes that.
-  uint8_t row_pixel_delta = (player_sprite.y - SCREEN_T) - (row_top << 3);
+  uint8_t row_pixel_delta = (player_sprite.y.h - SCREEN_T) - (row_top << 3);
   if (row_pixel_delta >= 4) {
     ++row_top;
   }
@@ -51,7 +51,7 @@ static void drop_bomb(void) {
     row_count = row_count - (BOMB_RADIUS - row_top);
     row_top = 0;
   }
-  uint16_t x_left = player_sprite.x - SCREEN_L;
+  uint16_t x_left = player_sprite.x.h - SCREEN_L;
   uint16_t col_left = MOD32(((x_left + SCX_REG) >> 3) + 1);  // Add 1 to be in front of the player. MOD32 is for screen wrap-around.
   uint8_t incremental_score = 0;
   uint8_t height = 0;
@@ -97,21 +97,21 @@ void init_weapons(void) {
     b->lifespan = 0;
     b->health = 0;
     b->direction = RIGHT;
-    b->speed = 4;
-    b->x = 0;
-    b->y = 0;
+    b->speed.w = BULLET_SPEED;
+    b->x.w = 0;
+    b->y.w = 0;
     // Collision box
     b->cb_x_offset = BULLET_COLLISION_X_OFFSET;
     b->cb_y_offset = BULLET_COLLISION_Y_OFFSET;
-    b->cb.x = b->x + BULLET_COLLISION_X_OFFSET;
-    b->cb.y = b->y + BULLET_COLLISION_Y_OFFSET;
+    b->cb.x = b->x.h + BULLET_COLLISION_X_OFFSET;
+    b->cb.y = b->y.h + BULLET_COLLISION_Y_OFFSET;
     b->cb.w = 4;
     b->cb.h = 4;
     b->collided = false;
     b->collided_row = 0;
     b->collided_col = 0;
     set_sprite_tile(b->sprite_id, b->sprite_tile_id);
-    move_sprite(b->sprite_id, b->x, b->y);
+    move_sprite(b->sprite_id, b->x.h, b->y.h);
 
     ++b;
   }
@@ -138,11 +138,11 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
       }
       b->active = true;
       b->lifespan = BULLET_LIFESPAN;
-      b->x = player_sprite.x;
-      b->cb.x = b->x + BULLET_COLLISION_X_OFFSET;
-      b->y = player_sprite.y;
-      b->cb.y = b->y + BULLET_COLLISION_Y_OFFSET;
-      move_sprite(b->sprite_id, b->x, b->y);
+      b->x.w = player_sprite.x.w;
+      b->cb.x = b->x.h + BULLET_COLLISION_X_OFFSET;
+      b->y.w = player_sprite.y.w;
+      b->cb.y = b->y.h + BULLET_COLLISION_Y_OFFSET;
+      move_sprite(b->sprite_id, b->x.h, b->y.h);
       ++active_bullet_count;
       play_gun_sound();
       break;
@@ -176,13 +176,13 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
         ++b;
         continue;
       }
-      b->x += b->speed;
-      b->cb.x = b->x + BULLET_COLLISION_X_OFFSET;
-      if (b->x > SCREEN_R || --b->lifespan == 0) {
+      b->x.w += b->speed.w;
+      b->cb.x = b->x.h + BULLET_COLLISION_X_OFFSET;
+      if (b->x.h > SCREEN_R || --b->lifespan == 0) {
         // Hide sprite.
         b->active = false;
-        b->x = 0;
-        b->y = 0;
+        b->x.w = 0;
+        b->y.w = 0;
         --active_bullet_count;
       }
       else {
@@ -202,13 +202,13 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
           }
           // Hide bullet sprite.
           b->active = false;
-          b->x = 0;
-          b->y = 0;
+          b->x.w = 0;
+          b->y.w = 0;
           --active_bullet_count;
         }
       }
       // Update bullet's sprite position.
-      move_sprite(b->sprite_id, b->x, b->y);
+      move_sprite(b->sprite_id, b->x.h, b->y.h);
 
       ++b;
     }
