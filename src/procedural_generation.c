@@ -147,22 +147,22 @@ void generate_column(uint8_t column_idx) BANKED {
     }
 
     uint16_t n = randw();
-    if (n > 65300) {
-      // Create a health tile.
-      coll_map[map_index] = HEALTH_KIT_ID;
-      bkg_map[map_index] = HEALTH_KIT_TILE;
-    } else if (n > 65000) {
-      // Create a shield tile.
-      coll_map[map_index] = SHIELD_ID;
-      bkg_map[map_index] = SHIELD_TILE;
-    } else if (n > 60000) {
-      // Create a mine tile.
-      coll_map[map_index] = MINE_HEALTH;
-      bkg_map[map_index] = MINE_TILE;
-    } else {
+    if (n < UINT16_MAX - (MINE_PROBABILITY + SHIELD_PICKUP_PROBABILITY + HEALTH_PICKUP_PROBABILITY)) {
       // Create an empty tile.
       coll_map[map_index] = 0;
       bkg_map[map_index] = EMPTY_TILE;
+    } else if (n < UINT16_MAX - (SHIELD_PICKUP_PROBABILITY + HEALTH_PICKUP_PROBABILITY)) {
+      // Create a mine tile.
+      coll_map[map_index] = MINE_HEALTH;
+      bkg_map[map_index] = MINE_TILE;
+    } else if (n < UINT16_MAX - HEALTH_PICKUP_PROBABILITY) {
+      // Create a shield tile.
+      coll_map[map_index] = SHIELD_ID;
+      bkg_map[map_index] = SHIELD_TILE;
+    } else {
+      // Create a health tile.
+      coll_map[map_index] = HEALTH_KIT_ID;
+      bkg_map[map_index] = HEALTH_KIT_TILE;
     }
   }
 

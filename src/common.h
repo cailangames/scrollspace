@@ -72,21 +72,21 @@
  * Tunable parameters
  */
 #define MAX_BULLETS 3
-#define BLOCK_HEALTH 4
-#define MINE_HEALTH 2
+#define BLOCK_HEALTH 2
+#define MINE_HEALTH 1
 #define POWERUP_RESERVED_IDS 235
 #define SHIELD_ID 254
 #define SHIELD_DURATION (8*20)
 #define HEALTH_KIT_ID 255
 #define HEALTH_KIT_VALUE 5
-#define COLLISION_DAMAGE 3
+#define COLLISION_DAMAGE 5
 #define COLLISION_TIMEOUT 60
 // A BOMB_RADIUS of N will create square bomb explosions of (2*N+1, 2*N+1) size in tiles. The +1 is
 // for the center row, which is centered on the ship.
 #define BOMB_RADIUS 3
 #define BOMB_LENGTH (BOMB_RADIUS*2 + 1)
 #define BOMB_COOLDOWN_FRAMES 420
-#define BULLET_LIFESPAN 20
+#define BULLET_LIFESPAN 25
 #define BULLET_DAMAGE 1
 #define BULLET_COLLISION_X_OFFSET 0
 #define BULLET_COLLISION_Y_OFFSET 2
@@ -100,14 +100,22 @@
 #define PLAYER_SPEED 1
 // The scroll speeds are 16-bit fixed point numbers, where the high 8 bits are the pixels
 // (per frame) and the low 8 bits are the subpixels.
-#define SCROLL_SPEED_NORMAL 0x0100
-#define SCROLL_SPEED_HARD 0x0200
-#define SCROLL_SPEED_TURBO 0x0300
+#define SCROLL_SPEED_NORMAL    0x0100
+#define SCROLL_SPEED_HARD      0x0200
+#define SCROLL_SPEED_TURBO     0x0300
+#define SCROLL_SPEED_TURBO_MAX 0x0400
+#define SCROLL_SPEED_INCREASE  0x0040
+// Increase the difficulty after this many screens have been scrolled.
+#define DIFFICULTY_INCREASE_SCREEN_COUNT 10
 #define POINTS_PER_MINE 2
 #define POINTS_PER_SCREEN_SCROLLED 5
 // IMPORTANT: If you update these thresholds, you must update the unlock messages in score.h too.
 #define HARD_MODE_UNLOCK_POINTS 500
 #define TURBO_MODE_UNLOCK_POINTS 500
+// The below probabilities are out of 65,535 (uint16_t max).
+#define HEALTH_PICKUP_PROBABILITY 100
+#define SHIELD_PICKUP_PROBABILITY 100
+#define MINE_PROBABILITY 2000
 
 /*
  * Font

@@ -43,6 +43,8 @@ static const uint8_t yes_or_no_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, 0, CHAR_Y, 
 static bool hard_mode_unlocked = false;
 static bool turbo_mode_unlocked = false;
 static bool game_paused = true;
+// How many pixels per frame to scroll the screen (high 8 bits: pixels, low 8 bits: subpixels)
+static fixed scroll_speed;
 // Whether or not to show the timer-based score. If false, the points-based score is shown instead.
 // Note: The value of this variable is kept between runs of the game.
 static bool show_timer_score = false;
@@ -373,6 +375,24 @@ static void handle_gameover(void) {
 }
 #endif
 
+// Incrementally increases the difficulty of the game, e.g. by increasing the scroll speed.
+static void increase_difficulty(void) {
+  scroll_speed.w += SCROLL_SPEED_INCREASE;
+  if (game_mode == NORMAL) {
+    if (scroll_speed.w > SCROLL_SPEED_HARD) {
+      scroll_speed.w = SCROLL_SPEED_HARD;
+    }
+  } else if (game_mode == HARD) {
+    if (scroll_speed.w > SCROLL_SPEED_TURBO) {
+      scroll_speed.w = SCROLL_SPEED_TURBO;
+    }
+  } else {
+    if (scroll_speed.w > SCROLL_SPEED_TURBO_MAX) {
+      scroll_speed.w = SCROLL_SPEED_TURBO_MAX;
+    }
+  }
+}
+
 void main(void) {
 #if ENABLE_MUSIC
   // Load music.
@@ -422,11 +442,11 @@ void main(void) {
   show_title_screen(0);
 
   fixed screen_pos_x;  // The x position of the screen (high 8 bits: pixels, low 8 bits: subpixels)
-  fixed scroll_speed;  // How many pixels per frame to scroll the screen (high 8 bits: pixels, low 8 bits: subpixels)
   uint8_t input;  // The joypad input of this frame
   uint8_t prev_input;  // The joypad input of the previous frame
   uint8_t prev_left_column;  // The left-most column on the screen in the previous frame. Used to track when the background has scrolled a full column's worth of pixels.
   uint8_t column_count;  // How many columns have been scrolled in the current screen
+  uint8_t difficulty_countdown;  // A count-down of the number of screens before a difficulty increase
   bool generated_column;  // Whether or not a column was generated this frame
   uint8_t generated_column_idx;  // The index of the generated column
   bool update_window_score;  // Whether or not the score in the window needs to be updated
@@ -452,6 +472,7 @@ void main(void) {
     prev_input = 0;
     prev_left_column = 0;
     column_count = 0;
+    difficulty_countdown = DIFFICULTY_INCREASE_SCREEN_COUNT;
     generated_column = false;
     generated_column_idx = 0;
     update_window_score = false;
@@ -576,6 +597,12 @@ void main(void) {
         if (column_count == COLUMNS_PER_SCREEN) {
           column_count = 0;
           point_score += POINTS_PER_SCREEN_SCROLLED;
+
+          --difficulty_countdown;
+          if (difficulty_countdown == 0) {
+            increase_difficulty();
+            difficulty_countdown = DIFFICULTY_INCREASE_SCREEN_COUNT;
+          }
         }
       }
 
