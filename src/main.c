@@ -114,6 +114,8 @@ static void load_data(void) {
   tile_index += sizeof(tutorial_screen_tiles)/TILE_SIZE_BYTES;
   set_bkg_data(tile_index, sizeof(lock_tiles)/TILE_SIZE_BYTES, lock_tiles);
   tile_index += sizeof(lock_tiles)/TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(title_screen_tiles)/TILE_SIZE_BYTES, title_screen_tiles);
+  tile_index += sizeof(title_screen_tiles)/TILE_SIZE_BYTES;
 }
 
 // Displays a confirmation prompt to the player to confirm whether or not they want to perform an
@@ -159,7 +161,7 @@ static bool confirm_action(void) {
 // Shows the title screen.
 static void show_title_screen(uint8_t restart_song) {
   clear_window();
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, COLUMN_HEIGHT, title_screen_map);
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, title_screen_map);
   wait_frames(30);
   if (restart_song){
     fade_in();

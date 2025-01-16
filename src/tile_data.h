@@ -16,6 +16,7 @@ extern const uint8_t intro_stars_tiles[208];
 extern const uint8_t intro_stars_map[576];
 extern const uint8_t intro_atmosphere_tiles[368];
 extern const uint8_t intro_atmosphere_map[576];
+extern const uint8_t title_screen_tiles[736];
 extern const uint8_t title_screen_map[360];
 extern const uint8_t gameover_screen_map[360];
 extern const uint8_t empty_screen_map[576];

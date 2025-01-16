@@ -220,18 +220,19 @@ def get_background_data_and_map(im, name, gb_code, offset=37, debug=False):
 
     return tile_data_array, tilemap_array
 
+image_type = None
 #fn_path = "../assets/block.png"
 #fn_path = "../assets/projectiles.png"
 #fn_path = "../assets/powerups.png"
 #fn_path = "../assets/player.png"
-fn_path = "../assets/player_large.png"
+# fn_path = "../assets/player_large.png"
 #fn_path = "../assets/player_shield.png"
 #fn_path = "../assets/progressbar.png"
 #fn_path = "../assets/font-extras.png" 
 #fn_path = "../assets/lock.png"
 #fn_path = "../assets/logo-cursor.png"
 # fn_path = "../assets/intro_stars.png"
-tilemap_offset = 0#37
+# tilemap_offset = 0#37
 
 # fn_path = "../assets/intro_atmosphere.png"
 # tilemap_offset = 0xC #37
@@ -241,6 +242,10 @@ tilemap_offset = 0#37
 
 # fn_path = "../assets/cailan-games-logo.png" 
 # tilemap_offset = 0# 68
+
+fn_path = "../assets/title_screen.png" 
+tilemap_offset = 0x44
+image_type = "background"
 
 filename = os.path.splitext(os.path.split(fn_path)[-1])[0].lower()
 filename = filename.replace("-","_")
@@ -259,23 +264,33 @@ if len(im.shape) > 2:
     im = im[:,:,:3]
     im = im.sum(axis=2)
 
-    # Look for the RGB sum of 356 to assign the sprite dictionary (transparency color)
-    if len(np.argwhere(im == 356)) > 0:
-      image_type = "sprite"
+    if image_type is None:
+      # Look for the RGB sum of 356 to assign the sprite dictionary (transparency color)
+      if len(np.argwhere(im == 356)) > 0:
+        image_type = "sprite"
+        gb_code = gb_code_sprite_rgb
+      else:
+        image_type = "background"
+        gb_code = gb_code_bkg_rgb
+    elif image_type == "sprite":
       gb_code = gb_code_sprite_rgb
     else:
-      image_type = "background"
       gb_code = gb_code_bkg_rgb
 
 else:
     # Aseprite Indexed PNG
-    # Look for the Aseprite index 3 to assign the background dictionary
-    if len(np.argwhere(im == 3)) > 0:
-      image_type = "background"
-      gb_code = gb_code_bkg_indexed
-    else:
-      image_type = "sprite"
+    if image_type is None:
+      # Look for the Aseprite index 3 to assign the background dictionary
+      if len(np.argwhere(im == 3)) > 0:
+        image_type = "background"
+        gb_code = gb_code_bkg_indexed
+      else:
+        image_type = "sprite"
+        gb_code = gb_code_sprite_indexed
+    elif image_type == "sprite":
       gb_code = gb_code_sprite_indexed
+    else:
+      gb_code = gb_code_bkg_indexed
 
 if image_type == "sprite":
     array_string = get_sprite_array(im, filename, gb_code, debug=True)
