@@ -92,12 +92,11 @@ void init_weapons(void) {
   struct Sprite* b = bullet_sprites;
   for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
     b->active = false;
-    b->type = BULLET;
     b->sprite_id = i + 1;  // +1 so we don't override the player (always sprite_id 0)
     b->sprite_tile_id = BULLET_SPRITE;
     b->lifespan = 0;
     b->health = 0;
-    b->dir = RIGHT;
+    b->direction = RIGHT;
     b->speed = 4;
     b->x = 0;
     b->y = 0;

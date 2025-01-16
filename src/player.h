@@ -13,15 +13,15 @@
 #include "sound_effects.h"
 #include "sprites.h"
 
-enum animation_state{
+enum AnimationState {
   HIDDEN=0,
-  SHOWN=1
+  SHOWN=1,
 };
 
 static uint8_t player_sprite_base_id = 0;
 static bool shield_active = false;
 // Used during the damage recovery to toggle between showing and hidding the player sprite.
-static enum animation_state damage_animation_state = HIDDEN;
+static enum AnimationState damage_animation_state = HIDDEN;
 // Invincibility frames counter, either from taking damage or picking up a shield.
 static uint8_t iframes_counter = 0;
 // Tile data for the health bar.
@@ -73,13 +73,12 @@ inline void write_health_bar_to_window(void) {
 
 // Initializes the player's variables.
 void init_player(void) {
-  player_sprite.type = PLAYER;
   player_sprite.sprite_id = PLAYER_SPRITE_ID;
   player_sprite.sprite_tile_id = 0;
   player_sprite.x = PLAYER_START_X;
   player_sprite.y = PLAYER_START_Y;
   player_sprite.speed = PLAYER_SPEED;
-  player_sprite.dir = RIGHT;
+  player_sprite.direction = RIGHT;
   player_sprite.cb_x_offset = 1;
   player_sprite.cb_y_offset = 2;
   player_sprite.cb.x = PLAYER_START_X + player_sprite.cb_x_offset;
@@ -104,7 +103,7 @@ void init_player(void) {
 
 // Moves the player's ship based on the given input.
 void move_player(uint8_t input) {
-  player_sprite.dir = RIGHT;
+  player_sprite.direction = RIGHT;
   player_sprite.sprite_tile_id = player_sprite_base_id;
   // Reset player collision box to default.
   player_sprite.cb_x_offset = 1;
@@ -119,7 +118,7 @@ void move_player(uint8_t input) {
       player_sprite.x = SCREEN_R;
     }
   } else if (KEY_PRESSED(input, J_LEFT)) {
-    player_sprite.dir = LEFT;
+    player_sprite.direction = LEFT;
     player_sprite.x -= player_sprite.speed;
     if (player_sprite.x < SCREEN_L) {
       player_sprite.x = SCREEN_L;
@@ -127,7 +126,7 @@ void move_player(uint8_t input) {
   }
 
   if (KEY_PRESSED(input, J_UP)) {
-    player_sprite.dir |= UP;
+    player_sprite.direction |= UP;
     player_sprite.y -= player_sprite.speed;
     if (player_sprite.y < SCREEN_T) {
       player_sprite.y = SCREEN_T;
@@ -140,7 +139,7 @@ void move_player(uint8_t input) {
     player_sprite.cb.w = 3;
     player_sprite.cb.h = 1;
   } else if (KEY_PRESSED(input, J_DOWN)) {
-    player_sprite.dir |= DOWN;
+    player_sprite.direction |= DOWN;
     player_sprite.y += player_sprite.speed;
     if (player_sprite.y > SCREEN_B) {
       player_sprite.y = SCREEN_B;
@@ -229,14 +228,14 @@ bool handle_player_collisions(void) {
             collision_map[collision_idx] -= PLAYER_COLLISION_DAMAGE;
           }
           // Handle knockback: Push sprite in the opposite direction that it's moving.
-          if (player_sprite.dir & RIGHT) {
+          if (player_sprite.direction & RIGHT) {
             // Move the sprite to the left.
             player_sprite.x -= PLAYER_COLLISION_KNOCKBACK;
             if (player_sprite.x < SCREEN_L) {
               player_sprite.x = SCREEN_L;
             }
             player_sprite.cb.x = player_sprite.x + player_sprite.cb_x_offset;
-          } else if (player_sprite.dir & LEFT) {
+          } else if (player_sprite.direction & LEFT) {
             // Move the sprite to the right.
             player_sprite.x += PLAYER_COLLISION_KNOCKBACK;
             if (player_sprite.x > SCREEN_R) {
@@ -244,14 +243,14 @@ bool handle_player_collisions(void) {
             }
             player_sprite.cb.x = player_sprite.x + player_sprite.cb_x_offset;
           }
-          if (player_sprite.dir & UP) {
+          if (player_sprite.direction & UP) {
             // Move the sprite down.
             player_sprite.y += PLAYER_COLLISION_KNOCKBACK;
             if (player_sprite.y > SCREEN_B) {
               player_sprite.y = SCREEN_B;
             }
             player_sprite.cb.y = player_sprite.y + player_sprite.cb_y_offset;
-          } else if (player_sprite.dir & DOWN) {
+          } else if (player_sprite.direction & DOWN) {
             // Move the sprite up.
             player_sprite.y -= PLAYER_COLLISION_KNOCKBACK;
             if (player_sprite.y < SCREEN_T) {
