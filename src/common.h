@@ -97,7 +97,11 @@
 #define PLAYER_COLLISION_KNOCKBACK 0x0800
 // The speeds are 16-bit fixed point numbers, where the high 8 bits are the pixels
 // (per frame) and the low 8 bits are the subpixels.
-#define PLAYER_SPEED           0x0100
+#define PLAYER_SPEED_NORMAL    0x0100
+#define PLAYER_SPEED_HARD      0x0140
+#define PLAYER_SPEED_TURBO     0x0180
+#define PLAYER_SPEED_TURBO_MAX 0x01C0
+#define PLAYER_SPEED_INCREASE  0x0010
 #define BULLET_SPEED           0x0400
 #define SCROLL_SPEED_NORMAL    0x0100
 #define SCROLL_SPEED_HARD      0x0200

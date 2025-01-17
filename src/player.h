@@ -77,7 +77,6 @@ void init_player(void) {
   player_sprite.sprite_tile_id = 0;
   player_sprite.x.w = PLAYER_START_X;
   player_sprite.y.w = PLAYER_START_Y;
-  player_sprite.speed.w = PLAYER_SPEED;
   player_sprite.direction = RIGHT;
   player_sprite.cb_x_offset = 1;
   player_sprite.cb_y_offset = 2;
@@ -99,6 +98,14 @@ void init_player(void) {
   iframes_counter = 0;
 
   update_health_bar_tiles(PLAYER_MAX_HEALTH);
+
+  if (game_mode == NORMAL) {
+    player_sprite.speed.w = PLAYER_SPEED_NORMAL;
+  } else if (game_mode == HARD) {
+    player_sprite.speed.w = PLAYER_SPEED_HARD;
+  } else {
+    player_sprite.speed.w = PLAYER_SPEED_TURBO;
+  }
 }
 
 // Moves the player's ship based on the given input.

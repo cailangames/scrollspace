@@ -380,17 +380,27 @@ static void handle_gameover(void) {
 // Incrementally increases the difficulty of the game, e.g. by increasing the scroll speed.
 static void increase_difficulty(void) {
   scroll_speed.w += SCROLL_SPEED_INCREASE;
+  player_sprite.speed.w += PLAYER_SPEED_INCREASE;
   if (game_mode == NORMAL) {
     if (scroll_speed.w > SCROLL_SPEED_HARD) {
       scroll_speed.w = SCROLL_SPEED_HARD;
+    }
+    if (player_sprite.speed.w > PLAYER_SPEED_HARD) {
+      player_sprite.speed.w = PLAYER_SPEED_HARD;
     }
   } else if (game_mode == HARD) {
     if (scroll_speed.w > SCROLL_SPEED_TURBO) {
       scroll_speed.w = SCROLL_SPEED_TURBO;
     }
+    if (player_sprite.speed.w > PLAYER_SPEED_TURBO) {
+      player_sprite.speed.w = PLAYER_SPEED_TURBO;
+    }
   } else {
     if (scroll_speed.w > SCROLL_SPEED_TURBO_MAX) {
       scroll_speed.w = SCROLL_SPEED_TURBO_MAX;
+    }
+    if (player_sprite.speed.w > PLAYER_SPEED_TURBO_MAX) {
+      player_sprite.speed.w = PLAYER_SPEED_TURBO_MAX;
     }
   }
 }
