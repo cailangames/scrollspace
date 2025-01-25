@@ -196,17 +196,18 @@ bool handle_player_collisions(void) {
           background_map[collision_idx] = 0;
           // Update player health.
           // When updating this code, be wary that the max value of an int8_t is 127.
-          if (player_sprite.health < 20) {
-            player_sprite.health += 4*HEALTH_KIT_VALUE;
-          } else if (player_sprite.health < 50) {
-            player_sprite.health += 2*HEALTH_KIT_VALUE;
-          } else {
+          if (player_sprite.health > 50) {
             player_sprite.health += HEALTH_KIT_VALUE;
             if (player_sprite.health > PLAYER_MAX_HEALTH) {
               player_sprite.health = PLAYER_MAX_HEALTH;
             }
+          } else if (player_sprite.health > 25) {
+            player_sprite.health += 2*HEALTH_KIT_VALUE;
+          } else {
+            player_sprite.health += 4*HEALTH_KIT_VALUE;
           }
           health_changed = true;
+          point_score += POINTS_PER_PICKUP;
           play_health_sound();
           break;
         case SHIELD_ID:
@@ -216,6 +217,7 @@ bool handle_player_collisions(void) {
           shield_active = true;
           iframes_counter = SHIELD_DURATION;
           player_sprite_base_id += 10;
+          point_score += POINTS_PER_PICKUP;
           play_shield_sound();
           break;
         default:
@@ -286,29 +288,27 @@ bool handle_player_collisions(void) {
       // This will allow the player to pick up items while in the iframes state.
       uint16_t collision_idx = check_player_collisions(true);
       if (collision_idx != UINT16_MAX) {
+        collision_map[collision_idx] = 0;
+        background_map[collision_idx] = 0;
+        point_score += POINTS_PER_PICKUP;
         if (collision_map[collision_idx] == HEALTH_KIT_ID) {
-          // Pick up health kit.
-          collision_map[collision_idx] = 0;
-          background_map[collision_idx] = 0;
-          // Update player health.
+          // Pick up health kit and update player health.
           // When updating this code, be wary that the max value of an int8_t is 127.
-          if (player_sprite.health < 20) {
-            player_sprite.health += 4*HEALTH_KIT_VALUE;
-          } else if (player_sprite.health < 50) {
-            player_sprite.health += 2*HEALTH_KIT_VALUE;
-          } else {
+          if (player_sprite.health > 50) {
             player_sprite.health += HEALTH_KIT_VALUE;
             if (player_sprite.health > PLAYER_MAX_HEALTH) {
               player_sprite.health = PLAYER_MAX_HEALTH;
             }
+          } else if (player_sprite.health > 25) {
+            player_sprite.health += 2*HEALTH_KIT_VALUE;
+          } else {
+            player_sprite.health += 4*HEALTH_KIT_VALUE;
           }
           health_changed = true;
           play_health_sound();
         }
         else {
           // Pick up shield.
-          collision_map[collision_idx] = 0;
-          background_map[collision_idx] = 0;
           shield_active = true;
           iframes_counter = SHIELD_DURATION;
           player_sprite_base_id += 10;
@@ -322,7 +322,6 @@ bool handle_player_collisions(void) {
     // Update health bar after a collision.
     update_health_bar_tiles(player_sprite.health);
     // Update the ship sprite based on the current health.
-    // TODO: Make these values consistent with the health pickup values above.
     if (player_sprite.health > 50) {
       player_sprite_base_id = 0;
     } else if (player_sprite.health > 25) {

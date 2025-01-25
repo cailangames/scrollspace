@@ -111,6 +111,7 @@
 // Increase the difficulty after this many screens have been scrolled.
 #define DIFFICULTY_INCREASE_SCREEN_COUNT 10
 #define POINTS_PER_MINE 2
+#define POINTS_PER_PICKUP 2
 #define POINTS_PER_SCREEN_SCROLLED 5
 // IMPORTANT: If you update these thresholds, you must update the unlock messages in score.h too.
 #define HARD_MODE_UNLOCK_POINTS 500
