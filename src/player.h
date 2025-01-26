@@ -25,6 +25,8 @@ static enum AnimationState damage_animation_state = SHOWN;
 static uint8_t damage_animation_counter = 0;
 // Invincibility frames counter, either from taking damage or picking up a shield.
 static uint8_t iframes_counter = 0;
+// Keeps track of how many frames the player has been in the knockback state.
+static uint8_t knockback_counter = 0;
 // Tile data for the health bar.
 static uint8_t health_bar_window_tiles[8];
 
@@ -98,6 +100,7 @@ void init_player(void) {
   damage_animation_state = SHOWN;
   damage_animation_counter = 0;
   iframes_counter = 0;
+  knockback_counter = 0;
 
   update_health_bar_tiles(PLAYER_MAX_HEALTH);
 
@@ -110,9 +113,40 @@ void init_player(void) {
   }
 }
 
+// Knocks back the player (i.e. pushes the player sprite in the opposite direction that the player
+// was moving).
+void handle_knockback(void) {
+  if (player_sprite.direction & RIGHT) {
+    // Push the sprite to the left (accounting for the scroll speed).
+    player_sprite.x.w -= (scroll_speed.w + PLAYER_KNOCKBACK_SPEED);
+    if (player_sprite.x.h < SCREEN_L) {
+      player_sprite.x.w = ((uint16_t)(SCREEN_L) << 8);
+    }
+  } else if (player_sprite.direction & LEFT) {
+    // Push the sprite to the right.
+    player_sprite.x.w += PLAYER_KNOCKBACK_SPEED;
+    if (player_sprite.x.h > SCREEN_R) {
+      player_sprite.x.w = ((uint16_t)(SCREEN_R) << 8);
+    }
+  }
+
+  if (player_sprite.direction & UP) {
+    // Push the sprite down.
+    player_sprite.y.w += PLAYER_KNOCKBACK_SPEED;
+    if (player_sprite.y.h > SCREEN_B) {
+      player_sprite.y.w = ((uint16_t)(SCREEN_B) << 8);
+    }
+  } else if (player_sprite.direction & DOWN) {
+    // Push the sprite up.
+    player_sprite.y.w -= PLAYER_KNOCKBACK_SPEED;
+    if (player_sprite.y.h < SCREEN_T) {
+      player_sprite.y.w = ((uint16_t)(SCREEN_T) << 8);
+    }
+  }
+}
+
 // Moves the player's ship based on the given input.
 void move_player(uint8_t input) {
-  player_sprite.direction = RIGHT;
   player_sprite.sprite_tile_id = player_sprite_base_id;
   // Reset player collision box to default.
   player_sprite.cb_x_offset = 1;
@@ -120,46 +154,52 @@ void move_player(uint8_t input) {
   player_sprite.cb.w = 5;
   player_sprite.cb.h = 4;
 
-  // Check input. Note that the player can move in two directions, e.g. "up and right" or "down and left".
-  if (KEY_PRESSED(input, J_RIGHT)) {
-    player_sprite.x.w += player_sprite.speed.w;
-    if (player_sprite.x.h > SCREEN_R) {
-      player_sprite.x.w = ((uint16_t)(SCREEN_R) << 8);
+  if (knockback_counter != 0) {
+    --knockback_counter;
+    handle_knockback();
+  } else {
+    player_sprite.direction = RIGHT;
+    // Check input. Note that the player can move in two directions, e.g. "up and right" or "down and left".
+    if (KEY_PRESSED(input, J_RIGHT)) {
+      player_sprite.x.w += player_sprite.speed.w;
+      if (player_sprite.x.h > SCREEN_R) {
+        player_sprite.x.w = ((uint16_t)(SCREEN_R) << 8);
+      }
+    } else if (KEY_PRESSED(input, J_LEFT)) {
+      player_sprite.direction = LEFT;
+      player_sprite.x.w -= player_sprite.speed.w;
+      if (player_sprite.x.h < SCREEN_L) {
+        player_sprite.x.w = ((uint16_t)(SCREEN_L) << 8);
+      }
     }
-  } else if (KEY_PRESSED(input, J_LEFT)) {
-    player_sprite.direction = LEFT;
-    player_sprite.x.w -= player_sprite.speed.w;
-    if (player_sprite.x.h < SCREEN_L) {
-      player_sprite.x.w = ((uint16_t)(SCREEN_L) << 8);
-    }
-  }
 
-  if (KEY_PRESSED(input, J_UP)) {
-    player_sprite.direction |= UP;
-    player_sprite.y.w -= player_sprite.speed.w;
-    if (player_sprite.y.h < SCREEN_T) {
-      player_sprite.y.w = ((uint16_t)(SCREEN_T) << 8);
-    }
-    player_sprite.sprite_tile_id = player_sprite_base_id + 1;
+    if (KEY_PRESSED(input, J_UP)) {
+      player_sprite.direction |= UP;
+      player_sprite.y.w -= player_sprite.speed.w;
+      if (player_sprite.y.h < SCREEN_T) {
+        player_sprite.y.w = ((uint16_t)(SCREEN_T) << 8);
+      }
+      player_sprite.sprite_tile_id = player_sprite_base_id + 1;
 
-    // Make collision box smaller when plane is "tilted".
-    player_sprite.cb_x_offset = 2;
-    player_sprite.cb_y_offset = 3;
-    player_sprite.cb.w = 3;
-    player_sprite.cb.h = 1;
-  } else if (KEY_PRESSED(input, J_DOWN)) {
-    player_sprite.direction |= DOWN;
-    player_sprite.y.w += player_sprite.speed.w;
-    if (player_sprite.y.h > SCREEN_B) {
-      player_sprite.y.w = ((uint16_t)(SCREEN_B) << 8);
-    }
-    player_sprite.sprite_tile_id = player_sprite_base_id + 2;
+      // Make collision box smaller when plane is "tilted".
+      player_sprite.cb_x_offset = 2;
+      player_sprite.cb_y_offset = 3;
+      player_sprite.cb.w = 3;
+      player_sprite.cb.h = 1;
+    } else if (KEY_PRESSED(input, J_DOWN)) {
+      player_sprite.direction |= DOWN;
+      player_sprite.y.w += player_sprite.speed.w;
+      if (player_sprite.y.h > SCREEN_B) {
+        player_sprite.y.w = ((uint16_t)(SCREEN_B) << 8);
+      }
+      player_sprite.sprite_tile_id = player_sprite_base_id + 2;
 
-    // Make collision box smaller when plane is "tilted".
-    player_sprite.cb_x_offset = 2;
-    player_sprite.cb_y_offset = 4;
-    player_sprite.cb.w = 3;
-    player_sprite.cb.h = 1;
+      // Make collision box smaller when plane is "tilted".
+      player_sprite.cb_x_offset = 2;
+      player_sprite.cb_y_offset = 4;
+      player_sprite.cb.w = 3;
+      player_sprite.cb.h = 1;
+    }
   }
 
   // Update the position of the collision box.
@@ -228,6 +268,7 @@ bool handle_player_collisions(void) {
           health_changed = true;
           iframes_counter = IFRAMES_DURATION;
           damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
+          knockback_counter = PLAYER_KNOCKBACK_DURATION;
           if (collision_id <= PLAYER_COLLISION_DAMAGE) {
             // The wall or mine is destroyed.
             if (background_map[collision_idx] == MINE_TILE) {
@@ -239,38 +280,6 @@ bool handle_player_collisions(void) {
             // Apply damage to the wall or mine.
             collision_map[collision_idx] -= PLAYER_COLLISION_DAMAGE;
           }
-          // Handle knockback: Push sprite in the opposite direction that it's moving.
-          if (player_sprite.direction & RIGHT) {
-            // Move the sprite to the left.
-            player_sprite.x.w -= PLAYER_COLLISION_KNOCKBACK;
-            if (player_sprite.x.h < SCREEN_L) {
-              player_sprite.x.w = ((uint16_t)(SCREEN_L) << 8);
-            }
-            player_sprite.cb.x = player_sprite.x.h + player_sprite.cb_x_offset;
-          } else if (player_sprite.direction & LEFT) {
-            // Move the sprite to the right.
-            player_sprite.x.w += PLAYER_COLLISION_KNOCKBACK;
-            if (player_sprite.x.h > SCREEN_R) {
-              player_sprite.x.w = ((uint16_t)(SCREEN_R) << 8);
-            }
-            player_sprite.cb.x = player_sprite.x.h + player_sprite.cb_x_offset;
-          }
-          if (player_sprite.direction & UP) {
-            // Move the sprite down.
-            player_sprite.y.w += PLAYER_COLLISION_KNOCKBACK;
-            if (player_sprite.y.h > SCREEN_B) {
-              player_sprite.y.w = ((uint16_t)(SCREEN_B) << 8);
-            }
-            player_sprite.cb.y = player_sprite.y.h + player_sprite.cb_y_offset;
-          } else if (player_sprite.direction & DOWN) {
-            // Move the sprite up.
-            player_sprite.y.w -= PLAYER_COLLISION_KNOCKBACK;
-            if (player_sprite.y.h < SCREEN_T) {
-              player_sprite.y.w = ((uint16_t)(SCREEN_T) << 8);
-            }
-            player_sprite.cb.y = player_sprite.y.h + player_sprite.cb_y_offset;
-          }
-          move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
           play_collision_sound();
           break;
       }

@@ -35,6 +35,7 @@ enum GameMode game_mode = NORMAL;
 struct Sprite player_sprite;
 uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
 uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
+fixed scroll_speed;
 uint16_t point_score = 0;
 
 static const uint8_t confirmation_prompt_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, CHAR_A, CHAR_R, CHAR_E, 0, CHAR_Y, CHAR_O, CHAR_U, 0, CHAR_S, CHAR_U, CHAR_R, CHAR_E, 0, 0, 0, 0};
@@ -43,8 +44,6 @@ static const uint8_t yes_or_no_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, 0, CHAR_Y, 
 static bool hard_mode_unlocked = false;
 static bool turbo_mode_unlocked = false;
 static bool game_paused = true;
-// How many pixels per frame to scroll the screen (high 8 bits: pixels, low 8 bits: subpixels)
-static fixed scroll_speed;
 // Whether or not to show the timer-based score. If false, the points-based score is shown instead.
 // Note: The value of this variable is kept between runs of the game.
 static bool show_timer_score = false;
