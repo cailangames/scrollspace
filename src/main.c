@@ -38,7 +38,7 @@ uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
 fixed scroll_speed;
 uint16_t point_score = 0;
 
-static const uint8_t confirmation_prompt_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, CHAR_A, CHAR_R, CHAR_E, 0, CHAR_Y, CHAR_O, CHAR_U, 0, CHAR_S, CHAR_U, CHAR_R, CHAR_E, 0, 0, 0, 0};
+static const uint8_t confirmation_prompt_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, CHAR_A, CHAR_R, CHAR_E, 0, CHAR_Y, CHAR_O, CHAR_U, 0, CHAR_S, CHAR_U, CHAR_R, CHAR_E, CHAR_QUESTION_MARK, 0, 0, 0};
 static const uint8_t yes_or_no_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, 0, CHAR_Y, CHAR_E, CHAR_S, 0, 0, 0, 0, CHAR_CURSOR, 0, CHAR_N, CHAR_O, 0, 0, 0, 0};
 
 static bool hard_mode_unlocked = false;
@@ -63,11 +63,18 @@ void wait_frames(uint8_t n) {
   }
 }
 
+void waitkeyup(void){
+  while (joypad() != 0){
+    vsync();
+  }
+  vsync();
+}
+
 void wait_for_keypress(uint8_t key){
-  waitpadup();
+  waitkeyup();
   while (1){
     if (joypad() & key){
-      waitpadup();
+      waitkeyup();
       return;
     }
     vsync();
@@ -98,6 +105,10 @@ static void load_sprite_data(void){
   set_sprite_data(19, 3, projectile_sprites);
 }
 
+static void load_title_screen(void){
+  set_bkg_data(TITLE_SCREEN_OFFSET, sizeof(title_screen_tiles)/TILE_SIZE_BYTES, title_screen_tiles);
+}
+
 static void load_data(void) {
   // Load background tiles.
   uint8_t tile_index = WALL_BLOCK_TILE;
@@ -113,8 +124,6 @@ static void load_data(void) {
   tile_index += sizeof(tutorial_screen_tiles)/TILE_SIZE_BYTES;
   set_bkg_data(tile_index, sizeof(lock_tiles)/TILE_SIZE_BYTES, lock_tiles);
   tile_index += sizeof(lock_tiles)/TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(title_screen_tiles)/TILE_SIZE_BYTES, title_screen_tiles);
-  tile_index += sizeof(title_screen_tiles)/TILE_SIZE_BYTES;
 }
 
 // Displays a confirmation prompt to the player to confirm whether or not they want to perform an
@@ -159,14 +168,34 @@ static bool confirm_action(void) {
 
 // Shows the title screen.
 static void show_title_screen(uint8_t restart_song) {
+  HIDE_WIN;
   clear_window();
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, title_screen_map);
-  wait_frames(30);
+  // Copy title screen to background_map
+  for (uint8_t i = 0; i < SCREEN_TILE_HEIGHT; ++i) {
+    for (uint8_t j = 0; j < SCREEN_TILE_WIDTH; ++j) {
+      background_map[i*SCREEN_TILE_WIDTH+j] = title_screen_map[i*SCREEN_TILE_WIDTH+j];
+    }
+  }
+  
+  // Add Press Start text
+  background_map[11*SCREEN_TILE_WIDTH+6] = CHAR_P;
+  background_map[11*SCREEN_TILE_WIDTH+7] = CHAR_R;
+  background_map[11*SCREEN_TILE_WIDTH+8] = CHAR_E;
+  background_map[11*SCREEN_TILE_WIDTH+9] = CHAR_S;
+  background_map[11*SCREEN_TILE_WIDTH+10] = CHAR_S;
+
+  background_map[12*SCREEN_TILE_WIDTH+8] = CHAR_S;
+  background_map[12*SCREEN_TILE_WIDTH+9] = CHAR_T;
+  background_map[12*SCREEN_TILE_WIDTH+10] = CHAR_A;
+  background_map[12*SCREEN_TILE_WIDTH+11] = CHAR_R;
+  background_map[12*SCREEN_TILE_WIDTH+12] = CHAR_T;
+
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
+
   if (restart_song){
     fade_in();
     SHOW_BKG;
   }
-  SHOW_WIN;
 #if ENABLE_MUSIC
   if (restart_song){
     hUGE_init(&intro_song);
@@ -174,8 +203,53 @@ static void show_title_screen(uint8_t restart_song) {
     add_VBL(hUGE_dosound);
   }
 #endif
-  // Wait for the player to press start before going to the next screen.
-  wait_for_keypress(J_START);
+  
+  /*
+   * Blink PRESS START while waiting for user input
+   */
+
+  uint8_t counter = 0;
+  while (1){
+    if (joypad() & J_START){
+      waitkeyup();
+      return;
+    }
+    ++counter;
+    if (counter == 15){
+      // Add Press Start text
+      background_map[11*SCREEN_TILE_WIDTH+6] = EMPTY_TILE;
+      background_map[11*SCREEN_TILE_WIDTH+7] = EMPTY_TILE;
+      background_map[11*SCREEN_TILE_WIDTH+8] = EMPTY_TILE;
+      background_map[11*SCREEN_TILE_WIDTH+9] = EMPTY_TILE;
+      background_map[11*SCREEN_TILE_WIDTH+10] = EMPTY_TILE;
+
+      background_map[12*SCREEN_TILE_WIDTH+8] = EMPTY_TILE;
+      background_map[12*SCREEN_TILE_WIDTH+9] = EMPTY_TILE;
+      background_map[12*SCREEN_TILE_WIDTH+10] = EMPTY_TILE;
+      background_map[12*SCREEN_TILE_WIDTH+11] = EMPTY_TILE;
+      background_map[12*SCREEN_TILE_WIDTH+12] = EMPTY_TILE;
+    }
+    else if (counter == 30){
+      // Add Press Start text
+      background_map[11*SCREEN_TILE_WIDTH+6] = CHAR_P;
+      background_map[11*SCREEN_TILE_WIDTH+7] = CHAR_R;
+      background_map[11*SCREEN_TILE_WIDTH+8] = CHAR_E;
+      background_map[11*SCREEN_TILE_WIDTH+9] = CHAR_S;
+      background_map[11*SCREEN_TILE_WIDTH+10] = CHAR_S;
+
+      background_map[12*SCREEN_TILE_WIDTH+8] = CHAR_S;
+      background_map[12*SCREEN_TILE_WIDTH+9] = CHAR_T;
+      background_map[12*SCREEN_TILE_WIDTH+10] = CHAR_A;
+      background_map[12*SCREEN_TILE_WIDTH+11] = CHAR_R;
+      background_map[12*SCREEN_TILE_WIDTH+12] = CHAR_T;
+      counter = 0;
+    }
+    vsync();
+    set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
+  }
+
+  // // Wait for the player to press start before going to the next screen.
+  // wait_for_keypress(J_START);
 }
 
 // Shows the mode selection screen and stores the mode chosen by the player in `game_mode`.
@@ -233,6 +307,7 @@ static void show_mode_selection_screen(void) {
   set_sprite_tile(PLAYER_SPRITE_ID, 0);
   move_sprite(PLAYER_SPRITE_ID, 32, y);
   SHOW_SPRITES;
+  SHOW_WIN;
 
   uint8_t prev_input = 0;
   uint8_t prev_y = 0;  // Note that y != prev_y for the first frame so that the window is updated properly.
@@ -416,24 +491,27 @@ void main(void) {
   mute_all_channels();
 
 #endif
-  
+
 #if ENABLE_INTRO
   /* 
    * Display Logo 
    */
   show_logo_screen();
-
+  
   /** 
    * Display intro scene
    */
   show_intro();
+
 #endif
+  
   /*
    * SETUP GAME ASSETS
    */
   load_font();
   load_sprite_data();
   load_data();
+  load_title_screen();
   // Load Window.
   move_win(7, 136);
   // Initialize high scores.
@@ -506,6 +584,32 @@ void main(void) {
         background_map[i*ROW_WIDTH+j] = tutorial_screen_map[i*SCREEN_TILE_WIDTH+j];
       }
     }
+    
+    // Add text tp tutorial screen
+    background_map[5*ROW_WIDTH+7] = CHAR_A;
+    background_map[5*ROW_WIDTH+10] = CHAR_S;
+    background_map[5*ROW_WIDTH+11] = CHAR_H;
+    background_map[5*ROW_WIDTH+12] = CHAR_O;
+    background_map[5*ROW_WIDTH+13] = CHAR_O;
+    background_map[5*ROW_WIDTH+14] = CHAR_T;
+
+    background_map[8*ROW_WIDTH+7] = CHAR_B;
+    background_map[8*ROW_WIDTH+10] = CHAR_B;
+    background_map[8*ROW_WIDTH+11] = CHAR_O;
+    background_map[8*ROW_WIDTH+12] = CHAR_M;
+    background_map[8*ROW_WIDTH+13] = CHAR_B;
+
+    background_map[11*ROW_WIDTH+3] = CHAR_S;
+    background_map[11*ROW_WIDTH+4] = CHAR_T;
+    background_map[11*ROW_WIDTH+5] = CHAR_A;
+    background_map[11*ROW_WIDTH+6] = CHAR_R;
+    background_map[11*ROW_WIDTH+7] = CHAR_T;
+    background_map[11*ROW_WIDTH+10] = CHAR_P;
+    background_map[11*ROW_WIDTH+11] = CHAR_A;
+    background_map[11*ROW_WIDTH+12] = CHAR_U;
+    background_map[11*ROW_WIDTH+13] = CHAR_S;
+    background_map[11*ROW_WIDTH+14] = CHAR_E;
+
     set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
 
     // Reset the window tiles.
