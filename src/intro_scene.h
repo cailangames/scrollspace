@@ -26,8 +26,8 @@ static void show_intro(void){
 
   HIDE_BKG;
   // Load intro tiles and map into VRAM
-  set_bkg_data(0, sizeof(intro_stars_tiles)/TILE_SIZE_BYTES, intro_stars_tiles);
-  set_bkg_data(0xC, sizeof(intro_atmosphere_tiles)/TILE_SIZE_BYTES, intro_atmosphere_tiles);
+  set_bkg_data(INTRO_SCENE_OFFSET, sizeof(intro_stars_tiles)/TILE_SIZE_BYTES, intro_stars_tiles);
+  set_bkg_data(INTRO_SCENE_STARS_OFFSET, sizeof(intro_atmosphere_tiles)/TILE_SIZE_BYTES, intro_atmosphere_tiles);
   set_bkg_tiles(0, 0, 32, 18, intro_stars_map);
   set_bkg_tiles(0, 18, 32, 14, intro_atmosphere_map);
   

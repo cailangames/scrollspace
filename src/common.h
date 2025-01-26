@@ -54,7 +54,11 @@
 #define SHIELD_TILE       0x2B
 #define HEALTH_KIT_TILE   0x2C
 #define HEALTH_BAR_START  0x33
-#define LOCK_TILE         0x43
+#define LOCK_TILE         0x46
+
+#define INTRO_SCENE_OFFSET 0x80
+#define INTRO_SCENE_STARS_OFFSET 0x8C
+#define TITLE_SCREEN_OFFSET 0XA4
 
 /*
  * Sprites
@@ -162,6 +166,9 @@
 #define CHAR_Z 0x24
 #define CHAR_COLON 0x39
 #define CHAR_CURSOR 0x3A
+#define CHAR_PERIOD 0x3B
+#define CHAR_COMMA 0x3C
+#define CHAR_QUESTION_MARK 0x3D
 
 /*
  * Math

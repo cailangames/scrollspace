@@ -84,7 +84,8 @@ def get_sprite_array(im, array_name, gb_code, debug=False):
     ntiles = int(im.size/(8*8))  # Total number of 8x8 tiles = npixels/64
     stride = int(im.shape[1]/8)
 
-    c_array = f"const unsigned char {array_name}_data[] = "
+    c_array = f"const uint8_t {array_name}_data[{ntiles*16}];\n"
+    c_array += f"const uint8_t {array_name}_data[] = "
     c_array += "{\n"
     for i in range(ntiles):
         c_array += "  "
@@ -176,8 +177,9 @@ def get_background_data_and_map(im, name, gb_code, offset=37, debug=False):
         print(tile_data_array)
 
     tilemap_array = f"/*\nTile map size: {stride}x{int(ntiles/stride)}\n*/\n\n"
-    tilemap_array += f"const unsigned char {filename}_ntiles = {len(unique_tiles)};\n"
-    tilemap_array += f"const unsigned char {filename}_map[] = "
+    tilemap_array += f"const uint8_t {filename}_ntiles = {len(unique_tiles)};\n"
+    tilemap_array += f"const uint8_t {filename}_map[{stride*int(ntiles/stride)}];\n"
+    tilemap_array += f"const uint8_t {filename}_map[] = "
     tilemap_array += "{"
     for i in range(ntiles):
         if i % 20 == 0:
@@ -221,6 +223,7 @@ def get_background_data_and_map(im, name, gb_code, offset=37, debug=False):
     return tile_data_array, tilemap_array
 
 image_type = None
+tilemap_offset = 0
 #fn_path = "../assets/block.png"
 #fn_path = "../assets/projectiles.png"
 #fn_path = "../assets/powerups.png"
@@ -228,24 +231,28 @@ image_type = None
 # fn_path = "../assets/player_large.png"
 #fn_path = "../assets/player_shield.png"
 #fn_path = "../assets/progressbar.png"
-#fn_path = "../assets/font-extras.png" 
+fn_path = "../assets/font-extras.png" 
 #fn_path = "../assets/lock.png"
 #fn_path = "../assets/logo-cursor.png"
+
 # fn_path = "../assets/intro_stars.png"
-# tilemap_offset = 0#37
+# tilemap_offset = 0x80
+# image_type = "background"
 
 # fn_path = "../assets/intro_atmosphere.png"
-# tilemap_offset = 0xC #37
+# tilemap_offset = 0x80 + 0xC
+# image_type = "background"
 
-# fn_path = "../assets/tutorial-screen.png" 
-# tilemap_offset = 59 #37
+fn_path = "../assets/tutorial-screen.png" 
+tilemap_offset = 0x3E
+image_type = "background"
 
 # fn_path = "../assets/cailan-games-logo.png" 
 # tilemap_offset = 0# 68
 
-fn_path = "../assets/title_screen.png" 
-tilemap_offset = 0x44
-image_type = "background"
+# fn_path = "../assets/title_screen.png" 
+# tilemap_offset = 0xA4
+# image_type = "background"
 
 filename = os.path.splitext(os.path.split(fn_path)[-1])[0].lower()
 filename = filename.replace("-","_")
@@ -318,7 +325,7 @@ else:
 # coltiles = int(im.shape[1]/8)
 
 # s = ""
-# c_array = f"const unsigned char {filename}_data[] = "
+# c_array = f"const uint8_t {filename}_data[] = "
 # c_array += "{\n"
 
 # for i in range(ntiles):
