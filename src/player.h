@@ -21,7 +21,8 @@ enum AnimationState {
 static uint8_t player_sprite_base_id = 0;
 static bool shield_active = false;
 // Used during the damage recovery to toggle between showing and hidding the player sprite.
-static enum AnimationState damage_animation_state = HIDDEN;
+static enum AnimationState damage_animation_state = SHOWN;
+static uint8_t damage_animation_counter = 0;
 // Invincibility frames counter, either from taking damage or picking up a shield.
 static uint8_t iframes_counter = 0;
 // Tile data for the health bar.
@@ -94,7 +95,8 @@ void init_player(void) {
 
   player_sprite_base_id = 0;
   shield_active = false;
-  damage_animation_state = HIDDEN;
+  damage_animation_state = SHOWN;
+  damage_animation_counter = 0;
   iframes_counter = 0;
 
   update_health_bar_tiles(PLAYER_MAX_HEALTH);
@@ -196,17 +198,18 @@ bool handle_player_collisions(void) {
           background_map[collision_idx] = 0;
           // Update player health.
           // When updating this code, be wary that the max value of an int8_t is 127.
-          if (player_sprite.health < 20) {
-            player_sprite.health += 4*HEALTH_KIT_VALUE;
-          } else if (player_sprite.health < 50) {
-            player_sprite.health += 2*HEALTH_KIT_VALUE;
-          } else {
+          if (player_sprite.health > 50) {
             player_sprite.health += HEALTH_KIT_VALUE;
             if (player_sprite.health > PLAYER_MAX_HEALTH) {
               player_sprite.health = PLAYER_MAX_HEALTH;
             }
+          } else if (player_sprite.health > 25) {
+            player_sprite.health += 2*HEALTH_KIT_VALUE;
+          } else {
+            player_sprite.health += 4*HEALTH_KIT_VALUE;
           }
           health_changed = true;
+          point_score += POINTS_PER_PICKUP;
           play_health_sound();
           break;
         case SHIELD_ID:
@@ -216,13 +219,15 @@ bool handle_player_collisions(void) {
           shield_active = true;
           iframes_counter = SHIELD_DURATION;
           player_sprite_base_id += 10;
+          point_score += POINTS_PER_PICKUP;
           play_shield_sound();
           break;
         default:
           // The player hit a wall or a mine.
           player_sprite.health -= COLLISION_DAMAGE;
           health_changed = true;
-          iframes_counter = COLLISION_TIMEOUT;
+          iframes_counter = IFRAMES_DURATION;
+          damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
           if (collision_id <= PLAYER_COLLISION_DAMAGE) {
             // The wall or mine is destroyed.
             if (background_map[collision_idx] == MINE_TILE) {
@@ -275,40 +280,43 @@ bool handle_player_collisions(void) {
     // The player *is* in the invincibility frames state.
     --iframes_counter;
     if (!shield_active) {
-      if (damage_animation_state == HIDDEN) {
-        move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
-        damage_animation_state = SHOWN;
-      } else {
-        move_sprite(PLAYER_SPRITE_ID, 0, 0);
-        damage_animation_state = HIDDEN;
+      --damage_animation_counter;
+      if (damage_animation_counter == 0) {
+        // Toggle the animation state.
+        if (damage_animation_state == HIDDEN) {
+          move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
+          damage_animation_state = SHOWN;
+        } else {
+          move_sprite(PLAYER_SPRITE_ID, 0, 0);
+          damage_animation_state = HIDDEN;
+        }
+        damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
       }
       // Check for collision and only process pickups if the shield is not active.
       // This will allow the player to pick up items while in the iframes state.
       uint16_t collision_idx = check_player_collisions(true);
       if (collision_idx != UINT16_MAX) {
+        collision_map[collision_idx] = 0;
+        background_map[collision_idx] = 0;
+        point_score += POINTS_PER_PICKUP;
         if (collision_map[collision_idx] == HEALTH_KIT_ID) {
-          // Pick up health kit.
-          collision_map[collision_idx] = 0;
-          background_map[collision_idx] = 0;
-          // Update player health.
+          // Pick up health kit and update player health.
           // When updating this code, be wary that the max value of an int8_t is 127.
-          if (player_sprite.health < 20) {
-            player_sprite.health += 4*HEALTH_KIT_VALUE;
-          } else if (player_sprite.health < 50) {
-            player_sprite.health += 2*HEALTH_KIT_VALUE;
-          } else {
+          if (player_sprite.health > 50) {
             player_sprite.health += HEALTH_KIT_VALUE;
             if (player_sprite.health > PLAYER_MAX_HEALTH) {
               player_sprite.health = PLAYER_MAX_HEALTH;
             }
+          } else if (player_sprite.health > 25) {
+            player_sprite.health += 2*HEALTH_KIT_VALUE;
+          } else {
+            player_sprite.health += 4*HEALTH_KIT_VALUE;
           }
           health_changed = true;
           play_health_sound();
         }
         else {
           // Pick up shield.
-          collision_map[collision_idx] = 0;
-          background_map[collision_idx] = 0;
           shield_active = true;
           iframes_counter = SHIELD_DURATION;
           player_sprite_base_id += 10;
@@ -322,7 +330,6 @@ bool handle_player_collisions(void) {
     // Update health bar after a collision.
     update_health_bar_tiles(player_sprite.health);
     // Update the ship sprite based on the current health.
-    // TODO: Make these values consistent with the health pickup values above.
     if (player_sprite.health > 50) {
       player_sprite_base_id = 0;
     } else if (player_sprite.health > 25) {

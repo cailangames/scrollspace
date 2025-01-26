@@ -84,7 +84,8 @@
 #define HEALTH_KIT_ID 255
 #define HEALTH_KIT_VALUE 5
 #define COLLISION_DAMAGE 5
-#define COLLISION_TIMEOUT 60
+#define IFRAMES_DURATION 60
+#define IFRAMES_ANIMATION_CYCLE 5
 // A BOMB_RADIUS of N will create square bomb explosions of (2*N+1, 2*N+1) size in tiles. The +1 is
 // for the center row, which is centered on the ship.
 #define BOMB_RADIUS 3
@@ -115,6 +116,7 @@
 // Increase the difficulty after this many screens have been scrolled.
 #define DIFFICULTY_INCREASE_SCREEN_COUNT 10
 #define POINTS_PER_MINE 2
+#define POINTS_PER_PICKUP 2
 #define POINTS_PER_SCREEN_SCROLLED 5
 // IMPORTANT: If you update these thresholds, you must update the unlock messages in score.h too.
 #define HARD_MODE_UNLOCK_POINTS 500
