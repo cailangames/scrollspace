@@ -99,7 +99,9 @@
 #define PLAYER_START_Y 0x5000
 #define PLAYER_MAX_HEALTH 100
 #define PLAYER_COLLISION_DAMAGE 2
-#define PLAYER_COLLISION_KNOCKBACK 0x0800
+#define PLAYER_KNOCKBACK_SPEED 0x0400
+// Important: PLAYER_KNOCKBACK_DURATION should be less than IFRAMES_DURATION.
+#define PLAYER_KNOCKBACK_DURATION 2
 // The speeds are 16-bit fixed point numbers, where the high 8 bits are the pixels
 // (per frame) and the low 8 bits are the subpixels.
 #define PLAYER_SPEED_NORMAL    0x0100
@@ -195,6 +197,8 @@ enum GameMode {
 extern struct Sprite player_sprite;
 extern uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
 extern uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
+// How many pixels per frame to scroll the screen (high 8 bits: pixels, low 8 bits: subpixels)
+extern fixed scroll_speed;
 extern uint16_t point_score;
 extern enum GameMode game_mode;
 
