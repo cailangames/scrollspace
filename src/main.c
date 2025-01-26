@@ -179,17 +179,17 @@ static void show_title_screen(uint8_t restart_song) {
   }
   
   // Add Press Start text
-  background_map[11*SCREEN_TILE_WIDTH+6] = CHAR_P;
-  background_map[11*SCREEN_TILE_WIDTH+7] = CHAR_R;
-  background_map[11*SCREEN_TILE_WIDTH+8] = CHAR_E;
-  background_map[11*SCREEN_TILE_WIDTH+9] = CHAR_S;
-  background_map[11*SCREEN_TILE_WIDTH+10] = CHAR_S;
+  background_map[10*SCREEN_TILE_WIDTH+6] = CHAR_P;
+  background_map[10*SCREEN_TILE_WIDTH+7] = CHAR_R;
+  background_map[10*SCREEN_TILE_WIDTH+8] = CHAR_E;
+  background_map[10*SCREEN_TILE_WIDTH+9] = CHAR_S;
+  background_map[10*SCREEN_TILE_WIDTH+10] = CHAR_S;
 
-  background_map[12*SCREEN_TILE_WIDTH+8] = CHAR_S;
-  background_map[12*SCREEN_TILE_WIDTH+9] = CHAR_T;
-  background_map[12*SCREEN_TILE_WIDTH+10] = CHAR_A;
-  background_map[12*SCREEN_TILE_WIDTH+11] = CHAR_R;
-  background_map[12*SCREEN_TILE_WIDTH+12] = CHAR_T;
+  background_map[11*SCREEN_TILE_WIDTH+8] = CHAR_S;
+  background_map[11*SCREEN_TILE_WIDTH+9] = CHAR_T;
+  background_map[11*SCREEN_TILE_WIDTH+10] = CHAR_A;
+  background_map[11*SCREEN_TILE_WIDTH+11] = CHAR_R;
+  background_map[11*SCREEN_TILE_WIDTH+12] = CHAR_T;
 
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
 
@@ -218,31 +218,31 @@ static void show_title_screen(uint8_t restart_song) {
     ++counter;
     if (counter == 15){
       // Add Press Start text
-      background_map[11*SCREEN_TILE_WIDTH+6] = EMPTY_TILE;
-      background_map[11*SCREEN_TILE_WIDTH+7] = EMPTY_TILE;
+      background_map[10*SCREEN_TILE_WIDTH+6] = EMPTY_TILE;
+      background_map[10*SCREEN_TILE_WIDTH+7] = EMPTY_TILE;
+      background_map[10*SCREEN_TILE_WIDTH+8] = EMPTY_TILE;
+      background_map[10*SCREEN_TILE_WIDTH+9] = EMPTY_TILE;
+      background_map[10*SCREEN_TILE_WIDTH+10] = EMPTY_TILE;
+
       background_map[11*SCREEN_TILE_WIDTH+8] = EMPTY_TILE;
       background_map[11*SCREEN_TILE_WIDTH+9] = EMPTY_TILE;
       background_map[11*SCREEN_TILE_WIDTH+10] = EMPTY_TILE;
-
-      background_map[12*SCREEN_TILE_WIDTH+8] = EMPTY_TILE;
-      background_map[12*SCREEN_TILE_WIDTH+9] = EMPTY_TILE;
-      background_map[12*SCREEN_TILE_WIDTH+10] = EMPTY_TILE;
-      background_map[12*SCREEN_TILE_WIDTH+11] = EMPTY_TILE;
-      background_map[12*SCREEN_TILE_WIDTH+12] = EMPTY_TILE;
+      background_map[11*SCREEN_TILE_WIDTH+11] = EMPTY_TILE;
+      background_map[11*SCREEN_TILE_WIDTH+12] = EMPTY_TILE;
     }
     else if (counter == 30){
       // Add Press Start text
-      background_map[11*SCREEN_TILE_WIDTH+6] = CHAR_P;
-      background_map[11*SCREEN_TILE_WIDTH+7] = CHAR_R;
-      background_map[11*SCREEN_TILE_WIDTH+8] = CHAR_E;
-      background_map[11*SCREEN_TILE_WIDTH+9] = CHAR_S;
-      background_map[11*SCREEN_TILE_WIDTH+10] = CHAR_S;
+      background_map[10*SCREEN_TILE_WIDTH+6] = CHAR_P;
+      background_map[10*SCREEN_TILE_WIDTH+7] = CHAR_R;
+      background_map[10*SCREEN_TILE_WIDTH+8] = CHAR_E;
+      background_map[10*SCREEN_TILE_WIDTH+9] = CHAR_S;
+      background_map[10*SCREEN_TILE_WIDTH+10] = CHAR_S;
 
-      background_map[12*SCREEN_TILE_WIDTH+8] = CHAR_S;
-      background_map[12*SCREEN_TILE_WIDTH+9] = CHAR_T;
-      background_map[12*SCREEN_TILE_WIDTH+10] = CHAR_A;
-      background_map[12*SCREEN_TILE_WIDTH+11] = CHAR_R;
-      background_map[12*SCREEN_TILE_WIDTH+12] = CHAR_T;
+      background_map[11*SCREEN_TILE_WIDTH+8] = CHAR_S;
+      background_map[11*SCREEN_TILE_WIDTH+9] = CHAR_T;
+      background_map[11*SCREEN_TILE_WIDTH+10] = CHAR_A;
+      background_map[11*SCREEN_TILE_WIDTH+11] = CHAR_R;
+      background_map[11*SCREEN_TILE_WIDTH+12] = CHAR_T;
       counter = 0;
     }
     vsync();

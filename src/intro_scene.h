@@ -28,6 +28,7 @@ static void show_intro(void){
   // Load intro tiles and map into VRAM
   set_bkg_data(INTRO_SCENE_OFFSET, sizeof(intro_stars_tiles)/TILE_SIZE_BYTES, intro_stars_tiles);
   set_bkg_data(INTRO_SCENE_STARS_OFFSET, sizeof(intro_atmosphere_tiles)/TILE_SIZE_BYTES, intro_atmosphere_tiles);
+  set_bkg_data(TITLE_SCREEN_OFFSET, sizeof(title_screen_tiles)/TILE_SIZE_BYTES, title_screen_tiles);
   set_bkg_tiles(0, 0, 32, 18, intro_stars_map);
   set_bkg_tiles(0, 18, 32, 14, intro_atmosphere_map);
   
@@ -83,27 +84,72 @@ static void show_intro(void){
     vsync();
   }
 
-  set_bkg_submap(0, 0, 32, 4, intro_atmosphere_map+14*32, 32);
+  //set_bkg_submap(0, 0, 32, 4, intro_atmosphere_map+14*32, 32);
+  set_bkg_tiles(0,0,20,4,empty_screen_map);
+  set_bkg_tiles(20,0,12,4,empty_screen_map);
   while (SCY_REG != 112){
     scroll_bkg(1,1);
     vsync();
   }
 
-  set_bkg_submap(0, 4, 32, 4, intro_atmosphere_map+4*32, 32);
-  set_bkg_tiles(0,8,20,6, empty_screen_map);
-  set_bkg_tiles(20,8,12,6, empty_screen_map);
+  set_bkg_tiles(0,4,20,10,empty_screen_map);
+  set_bkg_tiles(20,4,12,10,empty_screen_map);
 
-  // Fully descend into  
-  while (SCY_REG != 224){
+  while (SCX_REG != 0){
     scroll_bkg(1,1);
     vsync();
   }
-  
-  set_bkg_tiles(0,14,20,12, empty_screen_map);
-  set_bkg_tiles(20,14,12,12, empty_screen_map);
 
-  while (SCY_REG != 0){
+  set_bkg_tiles(0,14,20,11,empty_screen_map);
+  set_bkg_tiles(20,14,12,11,empty_screen_map);
+
+  // Fully descend
+  while (SCY_REG != 240){
     scroll_bkg(1,1);
+    vsync();
+  }
+
+  while (SCX_REG != 40){
+    scroll_bkg(1,0);
+    vsync();
+  }
+  set_bkg_tiles(12,16,20,16,title_screen_map);
+  set_bkg_tiles(0,26,12,4,empty_screen_map);
+  move_bkg(0,24);
+
+  for (uint8_t i=0; i < 8; i++){
+    scroll_bkg(0,1);
+    vsync();
+  }  
+
+  uint8_t count = 0;
+  while (SCX_REG != 96){
+    scroll_bkg(1,1);
+    ++count;
+    if (count == 6){
+      scroll_sprite(0,1,0);
+      scroll_sprite(1,1,0);
+      scroll_sprite(2,1,0);
+      scroll_sprite(3,1,0);
+    }
+    else if (count == 12){
+      scroll_sprite(0,1,1);
+      scroll_sprite(1,1,1);
+      scroll_sprite(2,1,1);
+      scroll_sprite(3,1,1);
+      count = 0;
+    }
+    vsync();
+  }
+  set_bkg_tiles(12,30,20,2, title_screen_map+14*SCREEN_TILE_WIDTH);
+  set_bkg_tiles(12,0,20,2, title_screen_map+16*SCREEN_TILE_WIDTH);
+
+  // Fly off and spell PRESS START
+  for (uint8_t i = 0; i < 130/4; i++){
+    scroll_sprite(0,4,0);
+    scroll_sprite(1,4,0);
+    scroll_sprite(2,4,0);
+    scroll_sprite(3,4,0);
     vsync();
   }
 
