@@ -21,7 +21,8 @@ enum AnimationState {
 static uint8_t player_sprite_base_id = 0;
 static bool shield_active = false;
 // Used during the damage recovery to toggle between showing and hidding the player sprite.
-static enum AnimationState damage_animation_state = HIDDEN;
+static enum AnimationState damage_animation_state = SHOWN;
+static uint8_t damage_animation_counter = 0;
 // Invincibility frames counter, either from taking damage or picking up a shield.
 static uint8_t iframes_counter = 0;
 // Tile data for the health bar.
@@ -94,7 +95,8 @@ void init_player(void) {
 
   player_sprite_base_id = 0;
   shield_active = false;
-  damage_animation_state = HIDDEN;
+  damage_animation_state = SHOWN;
+  damage_animation_counter = 0;
   iframes_counter = 0;
 
   update_health_bar_tiles(PLAYER_MAX_HEALTH);
@@ -224,7 +226,8 @@ bool handle_player_collisions(void) {
           // The player hit a wall or a mine.
           player_sprite.health -= COLLISION_DAMAGE;
           health_changed = true;
-          iframes_counter = COLLISION_TIMEOUT;
+          iframes_counter = IFRAMES_DURATION;
+          damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
           if (collision_id <= PLAYER_COLLISION_DAMAGE) {
             // The wall or mine is destroyed.
             if (background_map[collision_idx] == MINE_TILE) {
@@ -277,12 +280,17 @@ bool handle_player_collisions(void) {
     // The player *is* in the invincibility frames state.
     --iframes_counter;
     if (!shield_active) {
-      if (damage_animation_state == HIDDEN) {
-        move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
-        damage_animation_state = SHOWN;
-      } else {
-        move_sprite(PLAYER_SPRITE_ID, 0, 0);
-        damage_animation_state = HIDDEN;
+      --damage_animation_counter;
+      if (damage_animation_counter == 0) {
+        // Toggle the animation state.
+        if (damage_animation_state == HIDDEN) {
+          move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
+          damage_animation_state = SHOWN;
+        } else {
+          move_sprite(PLAYER_SPRITE_ID, 0, 0);
+          damage_animation_state = HIDDEN;
+        }
+        damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
       }
       // Check for collision and only process pickups if the shield is not active.
       // This will allow the player to pick up items while in the iframes state.
