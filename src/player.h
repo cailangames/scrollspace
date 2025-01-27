@@ -167,7 +167,8 @@ void move_player(uint8_t input) {
       }
     } else if (KEY_PRESSED(input, J_LEFT)) {
       player_sprite.direction = LEFT;
-      player_sprite.x.w -= player_sprite.speed.w;
+      // When moving left, add some extra speed to account for the background scroll speed.
+      player_sprite.x.w -= (player_sprite.speed.w + (scroll_speed.w >> 1));
       if (player_sprite.x.h < SCREEN_L) {
         player_sprite.x.w = ((uint16_t)(SCREEN_L) << 8);
       }
@@ -305,10 +306,11 @@ bool handle_player_collisions(void) {
       // This will allow the player to pick up items while in the iframes state.
       uint16_t collision_idx = check_player_collisions(true);
       if (collision_idx != UINT16_MAX) {
+        uint8_t collision_id = collision_map[collision_idx];
         collision_map[collision_idx] = 0;
         background_map[collision_idx] = 0;
         point_score += POINTS_PER_PICKUP;
-        if (collision_map[collision_idx] == HEALTH_KIT_ID) {
+        if (collision_id == HEALTH_KIT_ID) {
           // Pick up health kit and update player health.
           // When updating this code, be wary that the max value of an int8_t is 127.
           if (player_sprite.health > 50) {
