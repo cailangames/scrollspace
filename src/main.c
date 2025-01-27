@@ -539,6 +539,8 @@ void main(void) {
   bool generated_column;  // Whether or not a column was generated this frame
   uint8_t generated_column_idx;  // The index of the generated column
   bool update_window_score;  // Whether or not the score in the window needs to be updated
+  uint8_t prev_timer_seconds;  // The `timer_seconds` of the previous frame. Used to determine whether or not to update the window score tiles.
+  uint16_t prev_point_score;  // The `point_score` of the previous frame. Used to determine whether or not to update the window score tiles.
 
   while (true) {
     /*
@@ -565,6 +567,8 @@ void main(void) {
     generated_column = false;
     generated_column_idx = 0;
     update_window_score = false;
+    prev_timer_seconds = UINT8_MAX;
+    prev_point_score = UINT16_MAX;
 
     /*
      * MODE SELECTION SCREEN
@@ -585,7 +589,7 @@ void main(void) {
       }
     }
     
-    // Add text tp tutorial screen
+    // Add text to tutorial screen
     background_map[5*ROW_WIDTH+7] = CHAR_A;
     background_map[5*ROW_WIDTH+10] = CHAR_S;
     background_map[5*ROW_WIDTH+11] = CHAR_H;
@@ -679,7 +683,9 @@ void main(void) {
 
       if (KEY_FIRST_PRESS(input, prev_input, J_SELECT)) {
         show_timer_score = !show_timer_score;
-        score_update_needed = true;
+        // Make sure that the score in the window is updated.
+        prev_timer_seconds = UINT8_MAX;
+        prev_point_score = point_score - 1;
       }
 
       // Update the player sprite and weapons based on the input.
@@ -723,14 +729,18 @@ void main(void) {
 
 #if ENABLE_SCORING
       // Update the score tiles, if necessary.
-      if (score_update_needed) {
-        if (show_timer_score) {
+      if (show_timer_score) {
+        if (timer_seconds != prev_timer_seconds) {
           update_timer_score_tiles();
-        } else {
-          update_point_score_tiles();
+          update_window_score = true;
         }
-        score_update_needed = false;
-        update_window_score = true;
+        prev_timer_seconds = timer_seconds;
+      } else {
+        if (point_score != prev_point_score) {
+          update_point_score_tiles();
+          update_window_score = true;
+        }
+        prev_point_score = point_score;
       }
 #endif
 

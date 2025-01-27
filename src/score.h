@@ -40,7 +40,6 @@ static uint8_t timer_frames = 0;
 static uint8_t timer_seconds = 0;
 static uint8_t timer_minutes = 0;
 static uint8_t timer_hours = 0;
-static bool score_update_needed = false;
 
 static uint8_t score_tiles[8];
 static uint8_t high_score_tiles[SCREEN_TILE_WIDTH];
@@ -156,7 +155,6 @@ void increment_timer_score(void) {
   if (timer_frames == 60) {
     ++timer_seconds;
     timer_frames = 0;
-    score_update_needed = true;
 
     if (timer_seconds == 60) {
       ++timer_minutes;
@@ -302,7 +300,6 @@ void reset_scores(void) {
   timer_seconds = 0;
   timer_minutes = 0;
   timer_hours = 0;
-  score_update_needed = true;
   update_point_score_tiles();
 }
 
