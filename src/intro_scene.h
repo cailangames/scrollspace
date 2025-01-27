@@ -9,14 +9,37 @@
 
 extern const hUGESong_t intro_song;
 
+/**
+ * Generated using  
+ * -(36*np.sin(2*np.pi/256*t)).astype(int) + 72
+ */
+const int8_t sin_lut[] = 
+  {72,  72,  71,  70,  69,  68,  67,  66,  65,  65,  64,  63,  62,
+   61,  60,  60,  59,  58,  57,  56,  56,  55,  54,  53,  52,  52,
+   51,  50,  50,  49,  48,  48,  47,  46,  46,  45,  45,  44,  44,
+   43,  43,  42,  42,  41,  41,  40,  40,  40,  39,  39,  39,  38,
+   38,  38,  38,  37,  37,  37,  37,  37,  37,  37,  37,  37,  36,
+   37,  37,  37,  37,  37,  37,  37,  37,  37,  38,  38,  38,  38,
+   39,  39,  39,  40,  40,  40,  41,  41,  42,  42,  43,  43,  44,
+   44,  45,  45,  46,  46,  47,  48,  48,  49,  50,  50,  51,  52,
+   52,  53,  54,  55,  56,  56,  57,  58,  59,  60,  60,  61,  62,
+   63,  64,  65,  65,  66,  67,  68,  69,  70,  71,  72,  72,  72,
+   73,  74,  75,  76,  77,  78,  79,  79,  80,  81,  82,  83,  84,
+   84,  85,  86,  87,  88,  88,  89,  90,  91,  92,  92,  93,  94,
+   94,  95,  96,  96,  97,  98,  98,  99,  99, 100, 100, 101, 101,
+   102, 102, 103, 103, 104, 104, 104, 105, 105, 105, 106, 106, 106,
+   106, 107, 107, 107, 107, 107, 107, 107, 107, 107, 108, 107, 107,
+   107, 107, 107, 107, 107, 107, 107, 106, 106, 106, 106, 105, 105,
+   105, 104, 104, 104, 103, 103, 102, 102, 101, 101, 100, 100,  99,
+   99,  98,  98,  97,  96,  96,  95,  94,  94,  93,  92,  92,  91,
+   90,  89,  88,  88,  87,  86,  85,  84,  84,  83,  82,  81,  80,
+   79,  79,  78,  77,  76,  75,  74,  73,  72};
+
 // Shows the intro
 static void show_intro(void){
-  uint8_t x, y, idx;
-  uint16_t t;
-  int8_t dy[] = {-1, -1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1,  0,  0,  0,  0,  0,  0, 0};
-  int8_t dx[] = { 1,  1,  1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
-  x = 40;
-  y = 80;
+  uint8_t x, y, idx, idx2;
+  x = 24;
+  y = 72;
 
 #if ENABLE_MUSIC
   hUGE_init(&intro_song);
@@ -49,103 +72,67 @@ static void show_intro(void){
   SHOW_BKG;
   SHOW_SPRITES;
 
-  t = 0;
-  idx = 0;
-  while(1){
-    y += dy[idx];
-    x += dx[idx];
-    ++t;
+  for (idx=0; idx < 255; idx++){
+    if (idx < 128){
+      x += 1;
+    }
+    else {
+      x -= 1;
+    }
+    y = sin_lut[idx];
     move_sprite(0, x, y);
     move_sprite(1, x+8, y);
     move_sprite(2, x, y+8);
     move_sprite(3, x+8, y+8);
     vsync();
-    if (idx < 12){
-      scroll_bkg(2, 0);
-    }
-    else {
-      // Slow down
-      scroll_bkg(1, 0);
-    }
-    if (t == 10){
-      ++idx;
-      t = 0;
-      if (idx == sizeof(dy)) {
-        // End of sprite animation
-        break;
-      }
-    }
-  }
+    scroll_bkg(2,0); 
+  }  
 
   /* Enter planet animation */
   // Align screen to the right
-  while (SCX_REG != 96){
+  while (SCY_REG < 112){
     scroll_bkg(1,1);
     vsync();
   }
 
-  //set_bkg_submap(0, 0, 32, 4, intro_atmosphere_map+14*32, 32);
-  set_bkg_tiles(0,0,20,4,empty_screen_map);
-  set_bkg_tiles(20,0,12,4,empty_screen_map);
-  while (SCY_REG != 112){
+  set_bkg_tiles(0,0,20,14,empty_screen_map);
+  set_bkg_tiles(20,0,12,14,empty_screen_map);
+
+  while (SCY_REG < 224){
     scroll_bkg(1,1);
     vsync();
   }
 
-  set_bkg_tiles(0,4,20,10,empty_screen_map);
-  set_bkg_tiles(20,4,12,10,empty_screen_map);
+  set_bkg_tiles(0,14,20,14,empty_screen_map);
+  set_bkg_tiles(20,14,12,14,empty_screen_map);
 
   while (SCX_REG != 0){
     scroll_bkg(1,1);
     vsync();
   }
 
-  set_bkg_tiles(0,14,20,11,empty_screen_map);
-  set_bkg_tiles(20,14,12,11,empty_screen_map);
+  set_bkg_tiles(0,28,20,2,empty_screen_map);
+  set_bkg_tiles(20,28,12,2,empty_screen_map);
 
-  // Fully descend
-  while (SCY_REG != 240){
-    scroll_bkg(1,1);
-    vsync();
-  }
+  // Load title screen
+  set_bkg_tiles(12,14,20,18,title_screen_map);
 
-  while (SCX_REG != 40){
-    scroll_bkg(1,0);
-    vsync();
-  }
-  set_bkg_tiles(12,16,20,16,title_screen_map);
-  set_bkg_tiles(0,26,12,4,empty_screen_map);
-  move_bkg(0,24);
-
-  for (uint8_t i=0; i < 8; i++){
-    scroll_bkg(0,1);
-    vsync();
-  }  
-
-  uint8_t count = 0;
   while (SCX_REG != 96){
     scroll_bkg(1,1);
-    ++count;
-    if (count == 6){
-      scroll_sprite(0,1,0);
-      scroll_sprite(1,1,0);
-      scroll_sprite(2,1,0);
-      scroll_sprite(3,1,0);
-    }
-    else if (count == 12){
-      scroll_sprite(0,1,1);
-      scroll_sprite(1,1,1);
-      scroll_sprite(2,1,1);
-      scroll_sprite(3,1,1);
-      count = 0;
-    }
     vsync();
   }
-  set_bkg_tiles(12,30,20,2, title_screen_map+14*SCREEN_TILE_WIDTH);
-  set_bkg_tiles(12,0,20,2, title_screen_map+16*SCREEN_TILE_WIDTH);
+
+  uint8_t count = 0;
+  for (count=0; count < 16; count++){
+    scroll_sprite(0,2,2);
+    scroll_sprite(1,2,2);
+    scroll_sprite(2,2,2);
+    scroll_sprite(3,2,2);
+    vsync();
+  }
 
   // Fly off and spell PRESS START
-  for (uint8_t i = 0; i < 130/4; i++){
+  for (uint8_t i = 0; i < 116/4; i++){
     scroll_sprite(0,4,0);
     scroll_sprite(1,4,0);
     scroll_sprite(2,4,0);
