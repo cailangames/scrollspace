@@ -105,25 +105,32 @@ static void show_intro(void){
 
   set_bkg_tiles(0,14,20,14,empty_screen_map);
   set_bkg_tiles(20,14,12,14,empty_screen_map);
+  while (SCY_REG < 240){
+    scroll_bkg(1,1);
+    vsync();
+  }
+  set_bkg_tiles(0,28,20,2,empty_screen_map);
+  set_bkg_tiles(20,28,12,2,empty_screen_map);
 
   while (SCX_REG != 0){
     scroll_bkg(1,1);
     vsync();
   }
-
-  set_bkg_tiles(0,28,20,2,empty_screen_map);
-  set_bkg_tiles(20,28,12,2,empty_screen_map);
-
   // Load title screen
-  set_bkg_tiles(12,14,20,18,title_screen_map);
+  set_bkg_tiles(12,13,20,18,title_screen_map);
 
-  while (SCX_REG != 96){
+  while (SCY_REG < 8){
+    scroll_bkg(0,1);
+    vsync();
+  }
+
+  while (SCX_REG < 96){
     scroll_bkg(1,1);
     vsync();
   }
 
   uint8_t count = 0;
-  for (count=0; count < 16; count++){
+  for (count=0; count < 12; count++){
     scroll_sprite(0,2,2);
     scroll_sprite(1,2,2);
     scroll_sprite(2,2,2);
