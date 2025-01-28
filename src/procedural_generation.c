@@ -125,7 +125,8 @@ static uint8_t biome_id = 0;  // The ID of the biome that's currently being gene
 static uint8_t biome_column_index = 0;  // The column index within the current biome being generated
 
 void reset_generation_state(void) BANKED {
-  biome_id = 0;
+  // Start at a random biome.
+  biome_id = MOD32(rand());  // TODO: Use MOD64() after procedural generation refresh?
   biome_column_index = 0;
 }
 
