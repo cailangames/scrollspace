@@ -42,6 +42,7 @@ uint16_t point_score = 0;
 static const uint8_t confirmation_prompt_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, CHAR_A, CHAR_R, CHAR_E, 0, CHAR_Y, CHAR_O, CHAR_U, 0, CHAR_S, CHAR_U, CHAR_R, CHAR_E, CHAR_QUESTION_MARK, 0, 0, 0};
 static const uint8_t yes_or_no_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, 0, CHAR_Y, CHAR_E, CHAR_S, 0, 0, 0, 0, CHAR_CURSOR, 0, CHAR_N, CHAR_O, 0, 0, 0, 0};
 
+static bool rand_initialized = false;
 static bool hard_mode_unlocked = false;
 static bool turbo_mode_unlocked = false;
 static bool game_paused = true;
@@ -495,6 +496,11 @@ void main(void) {
    */
   show_title_screen(0);
 
+  // Get the high byte of the random seed right after the user has pressed START to continue past
+  // the title screen.
+  uint16_t rand_seed = DIV_REG;
+  rand_seed <<= 8;
+
   fixed screen_pos_x;  // The x position of the screen (high 8 bits: pixels, low 8 bits: subpixels)
   uint8_t input;  // The joypad input of this frame
   uint8_t prev_input;  // The joypad input of the previous frame
@@ -511,16 +517,12 @@ void main(void) {
     /*
      * Set up for main game loop.
      */
-    initrand(DIV_REG);
 
     // Clear collision and background maps.
     for (uint16_t ii = 0; ii < COLUMN_HEIGHT*ROW_WIDTH; ++ii) {
       collision_map[ii] = 0;
       background_map[ii] = 0;
     }
-
-    // Reset the procedural generation state.
-    reset_generation_state();
 
     // Initialize other variables.
     screen_pos_x.w = 0x0000;
@@ -546,6 +548,19 @@ void main(void) {
     } else {
       scroll_speed.w = SCROLL_SPEED_TURBO;
     }
+
+    // initrand() needs to be called with a 16-bit random seed. We produce this seed by polling the
+    // 8-bit DIV_REG register at two different, non-deterministic times: Once after the title screen,
+    // and once after the mode selection screen. Both of these are non-deterministic because they
+    // require the user to press a button in order to continue.
+    if (!rand_initialized) {
+      rand_seed |= DIV_REG;
+      initrand(rand_seed);
+      rand_initialized = true;
+    }
+
+    // Reset the procedural generation state. (Needs to be called after initrand() has been called.)
+    reset_generation_state();
 
     // Copy tutorial screen tiles to the background.
     for (uint8_t i = 0; i < COLUMN_HEIGHT; ++i) {

@@ -8,6 +8,7 @@
 #include <gb/gb.h>
 
 // Resets the state of the procedural generation variables.
+// Note: This function needs to be called after `initrand()` has been called.
 extern void reset_generation_state(void) BANKED;
 
 // Generates the collision and background tile data for the given column and writes the output to
