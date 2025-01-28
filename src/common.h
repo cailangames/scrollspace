@@ -83,6 +83,9 @@
 #define SHIELD_DURATION (8*20)
 #define HEALTH_KIT_ID 255
 #define HEALTH_KIT_VALUE 5
+// When the player is damaged enough, health kits provide more health to the player.
+#define HEALTH_KIT_DAMAGED_VALUE (2*HEALTH_KIT_VALUE)
+#define HEALTH_KIT_CRITICALLY_DAMAGED_VALUE (4*HEALTH_KIT_VALUE)
 #define COLLISION_DAMAGE 5
 #define IFRAMES_DURATION 60
 #define IFRAMES_ANIMATION_CYCLE 5
@@ -98,6 +101,9 @@
 #define PLAYER_START_X 0x1400
 #define PLAYER_START_Y 0x5000
 #define PLAYER_MAX_HEALTH 100
+// The below damage thresholds affect health pickup effectiveness and the ship's sprite tile.
+#define PLAYER_DAMAGED_THRESHOLD 50
+#define PLAYER_CRITICALLY_DAMAGED_THRESHOLD 15
 #define PLAYER_COLLISION_DAMAGE 2
 #define PLAYER_KNOCKBACK_SPEED 0x0400
 // Important: PLAYER_KNOCKBACK_DURATION should be less than IFRAMES_DURATION.
@@ -121,8 +127,8 @@
 #define POINTS_PER_PICKUP 2
 #define POINTS_PER_SCREEN_SCROLLED 5
 // IMPORTANT: If you update these thresholds, you must update the unlock messages in score.h too.
-#define HARD_MODE_UNLOCK_POINTS 500
-#define TURBO_MODE_UNLOCK_POINTS 500
+#define HARD_MODE_UNLOCK_POINTS 2000
+#define TURBO_MODE_UNLOCK_POINTS 1000
 // The below probabilities are out of 65,535 (uint16_t max).
 #define HEALTH_PICKUP_PROBABILITY 100
 #define SHIELD_PICKUP_PROBABILITY 100

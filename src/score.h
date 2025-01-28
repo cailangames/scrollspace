@@ -32,8 +32,8 @@ static const uint8_t ram_signature[] = {CHAR_P, CHAR_G, CHAR_I, CHAR_S};
 #define RAM_SIGNATURE_LENGTH (sizeof(ram_signature) / sizeof(uint8_t))
 #define HIGH_SCORE_ADDRESS (RAM_BANK0_ADDRESS + RAM_SIGNATURE_LENGTH)
 
-static const uint8_t unlock_msg_hard[SCREEN_TILE_WIDTH] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, CHAR_COLON, 0, CHAR_5, CHAR_0, CHAR_0, 0, CHAR_N, CHAR_O, CHAR_R, CHAR_M, CHAR_A, CHAR_L, 0, 0};
-static const uint8_t unlock_msg_turbo[SCREEN_TILE_WIDTH] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, CHAR_COLON, 0, CHAR_5, CHAR_0, CHAR_0, 0, CHAR_H, CHAR_A, CHAR_R, CHAR_D, 0, 0, 0, 0};
+static const uint8_t unlock_msg_hard[SCREEN_TILE_WIDTH] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, CHAR_COLON, 0, CHAR_2, CHAR_0, CHAR_0, CHAR_0, 0, CHAR_N, CHAR_O, CHAR_R, CHAR_M, CHAR_A, CHAR_L, 0};
+static const uint8_t unlock_msg_turbo[SCREEN_TILE_WIDTH] = {CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, CHAR_COLON, 0, CHAR_1, CHAR_0, CHAR_0, CHAR_0, 0, CHAR_H, CHAR_A, CHAR_R, CHAR_D, 0, 0, 0};
 static const uint8_t clear_data_msg[SCREEN_TILE_WIDTH] = {CHAR_D, CHAR_E, CHAR_L, CHAR_E, CHAR_T, CHAR_E, CHAR_S, 0, CHAR_H, CHAR_I, CHAR_G, CHAR_H, 0, CHAR_S, CHAR_C, CHAR_O, CHAR_R, CHAR_E, CHAR_S, 0};
 
 static uint8_t timer_frames = 0;
