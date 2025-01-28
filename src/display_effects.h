@@ -3,8 +3,11 @@
 #ifndef _DISPLAY_EFFECTS_H_
 #define _DISPLAY_EFFECTS_H_
 
+#include <stdint.h>
+
 #include <gb/hardware.h>
-#include "common.h"
+
+#include "wait.h"
 
 static void fade_out(void) {
   for (uint8_t i = 0; i < 4; ++i) {

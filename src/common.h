@@ -202,6 +202,4 @@ extern fixed scroll_speed;
 extern uint16_t point_score;
 extern enum GameMode game_mode;
 
-extern void wait_frames(uint8_t n);
-
 #endif

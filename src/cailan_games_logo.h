@@ -8,6 +8,7 @@
 #include "sound_effects.h"
 #include "sprite_data.h"
 #include "tile_data.h"
+#include "wait.h"
 
 // Shows the logo screen.
 static void show_logo_screen(void) {

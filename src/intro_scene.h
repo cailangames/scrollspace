@@ -37,7 +37,7 @@ const int8_t sin_lut[] =
 
 // Shows the intro
 static void show_intro(void){
-  uint8_t x, y, idx, idx2;
+  uint8_t x, y, idx;
   x = 24;
   y = 72;
 

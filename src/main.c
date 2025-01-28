@@ -19,6 +19,7 @@
 #include "score.h"
 #include "sound_effects.h"
 #include "sprites.h"
+#include "wait.h"
 #include "weapons.h"
 
 // Sprite data
@@ -56,39 +57,6 @@ static void increment_timer_score_isr(void) {
   increment_timer_score();
 }
 #endif
-
-void wait_frames(uint8_t n) {
-  for (uint8_t i = 0; i < n; ++i) {
-    vsync();
-  }
-}
-
-void waitkeyup(void){
-  while (joypad() != 0){
-    vsync();
-  }
-  vsync();
-}
-
-void wait_for_keypress(uint8_t key){
-  waitkeyup();
-  while (1){
-    if (joypad() & key){
-      waitkeyup();
-      return;
-    }
-    vsync();
-  }
-}
-
-void wait_for_key_release(uint8_t keys) {
-  while (true) {
-    if (!(joypad() & keys)) {
-      return;
-    }
-    vsync();
-  }
-}
 
 // Loads sprite, tile, and font data.
 static void load_font(void){
@@ -133,7 +101,7 @@ static bool confirm_action(void) {
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, confirmation_prompt_msg);
   set_win_tiles(0, 1, SCREEN_TILE_WIDTH, 1, yes_or_no_msg);
   move_win(7, 128);  // Need 2 rows in the window for the confirmation prompt.
-  wait_for_key_release(J_START | J_A);
+  wait_for_keys_released(J_START | J_A);
 
   bool yes_highlighted = false;
   bool update_cursor = false;
@@ -207,11 +175,10 @@ static void show_title_screen(uint8_t restart_song) {
   /*
    * Blink PRESS START while waiting for user input
    */
-
   uint8_t counter = 0;
   while (1){
     if (joypad() & J_START){
-      waitkeyup();
+      wait_for_keys_released(J_START);
       return;
     }
     ++counter;
@@ -247,9 +214,6 @@ static void show_title_screen(uint8_t restart_song) {
     vsync();
     set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
   }
-
-  // // Wait for the player to press start before going to the next screen.
-  // wait_for_keypress(J_START);
 }
 
 // Shows the mode selection screen and stores the mode chosen by the player in `game_mode`.
@@ -423,7 +387,8 @@ static void show_gameover_screen(void) {
 
   SHOW_BKG;
   fade_in();
-  wait_for_keypress(J_START | J_A | J_B);
+  wait_for_keys_pressed(J_START | J_A | J_B);
+  wait_for_keys_released(J_START | J_A | J_B);
   fade_out();
   HIDE_BKG;
 }
@@ -673,7 +638,9 @@ void main(void) {
 #if ENABLE_MUSIC
         mute_all_channels();
 #endif
-        wait_for_keypress(J_START);
+        wait_for_keys_released(J_START);
+        wait_for_keys_pressed(J_START);
+        wait_for_keys_released(J_START);
 #if ENABLE_MUSIC
         play_all_channels();
 #endif
