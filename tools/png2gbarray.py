@@ -231,9 +231,10 @@ tilemap_offset = 0
 # fn_path = "../assets/player_large.png"
 #fn_path = "../assets/player_shield.png"
 #fn_path = "../assets/progressbar.png"
-fn_path = "../assets/font-extras.png" 
+# fn_path = "../assets/font-extras.png" 
 #fn_path = "../assets/lock.png"
 #fn_path = "../assets/logo-cursor.png"
+fn_path = "../assets/intro_player_heatshield_sprites.png" 
 
 # fn_path = "../assets/intro_stars.png"
 # tilemap_offset = 0x80
@@ -243,9 +244,9 @@ fn_path = "../assets/font-extras.png"
 # tilemap_offset = 0x80 + 0xC
 # image_type = "background"
 
-fn_path = "../assets/tutorial-screen.png" 
-tilemap_offset = 0x3E
-image_type = "background"
+# fn_path = "../assets/tutorial-screen.png" 
+# tilemap_offset = 0x3E
+# image_type = "background"
 
 # fn_path = "../assets/cailan-games-logo.png" 
 # tilemap_offset = 0# 68

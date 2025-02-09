@@ -10,5 +10,6 @@ extern const uint8_t player_large_sprites[64];
 extern const uint8_t player_shield_sprites[144];
 extern const uint8_t projectile_sprites[48];
 extern const uint8_t logo_cursor_sprites[16];
+extern const uint8_t intro_player_heatshield_sprites_data[432];
 
 #endif
