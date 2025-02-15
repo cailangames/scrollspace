@@ -368,6 +368,17 @@ static void show_mode_selection_screen(void) {
           wait_frames(2);
         }
       } else {
+        // Play health sound
+        NR12_REG = 0x00;
+        NR14_REG = 0x00;
+
+        // Play sound effect.
+        NR10_REG = 0x75;
+        NR11_REG = 0x86;
+        NR12_REG = 0x7F;
+        NR13_REG = 0x75;
+        NR14_REG = 0x86;
+        
         // Make sprite fly off the screen
         for (uint8_t i = 0; i < 144/8; i++){
           scroll_sprite(PLAYER_SPRITE_ID,8,0);

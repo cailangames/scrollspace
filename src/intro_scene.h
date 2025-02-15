@@ -69,20 +69,9 @@ static void show_intro(void){
     scroll_bkg(1,1);
     vsync();
   }
-
   
   set_bkg_tiles(0,0,20,14,empty_screen_map);
-  // for (col=0; col < 14*8; col++){
-    // for (row=0; row < 20*8; row++){
-      // set_bkg_tile_xy(col, row, 0x98);
-    // }
-  // }
   set_bkg_tiles(20,0,12,14,empty_screen_map);
-  // for (col=20*8; col < 20*8+12*8; col++){
-    // for (row=0; row < 14*8; row++){
-      // set_bkg_tile_xy(col, row, 0x98);
-    // }
-  // }
 
   // Switch to heat shield sprites
   move_sprite(0,0,0);
@@ -181,17 +170,7 @@ static void show_intro(void){
   OBP0_REG = 0xE4; // 0b1110 0100 - Black, Light gray, white, transparent
 
   set_bkg_tiles(0,14,20,14,empty_screen_map);
-  // for (col=0; col < 20*8; col++){
-    // for (row=14*8; row < 14*8+14*8; row++){
-      // set_bkg_tile_xy(col, row, 0x98);
-    // }
-  // }
   set_bkg_tiles(20,14,12,14,empty_screen_map);
-  // for (col=20*8; col < 20*8+12*8; col++){
-    // for (row=14*8; row < 14*8+14*8; row++){
-      // set_bkg_tile_xy(col, row, 0x98);
-    // }
-  // }
   
   while (SCY_REG < 240){
     scroll_bkg(1,1);
@@ -207,18 +186,7 @@ static void show_intro(void){
   move_sprite(0,x,y);
 
   set_bkg_tiles(0,28,20,2,empty_screen_map);
-  // for (col=0; col < 20*8; col++){
-    // for (row=28*8; row < 28*8+2*8; row++){
-      // set_bkg_tile_xy(col, row, 0x98);
-    // }
-  // }
-  
   set_bkg_tiles(20,28,12,2,empty_screen_map);
-  // for (col=20*8; col < 20*8+12*8; col++){
-    // for (row=28*8; row < 28*8+12*8; row++){
-      // set_bkg_tile_xy(col, row, 0x98);
-    // }
-  // }
 
   while (SCX_REG != 0){
     scroll_bkg(1,1);
@@ -226,6 +194,7 @@ static void show_intro(void){
   }
   // Load title screen
   set_bkg_tiles(12,13,20,18,title_screen_map);
+  // Load the bricks on the missing areas
   for (row=1; row<13; row++){
     for (col=20; col<=31; col++){
       set_bkg_tile_xy(col, row, 165);
