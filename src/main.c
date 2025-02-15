@@ -326,6 +326,7 @@ static void show_mode_selection_screen(void) {
         y = 88;
         move_sprite(PLAYER_SPRITE_ID, 32, y);
       }
+      play_mode_selection_sound();
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN)) {
       if (game_mode == NORMAL) {
@@ -341,6 +342,7 @@ static void show_mode_selection_screen(void) {
         y = 128;
         move_sprite(PLAYER_SPRITE_ID, 32, y);
       }
+      play_mode_selection_sound();
     }
     else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A)) {
       if (game_mode == CLEAR_DATA) {
@@ -368,17 +370,7 @@ static void show_mode_selection_screen(void) {
           wait_frames(2);
         }
       } else {
-        // Play health sound
-        NR12_REG = 0x00;
-        NR14_REG = 0x00;
-
-        // Play sound effect.
-        NR10_REG = 0x75;
-        NR11_REG = 0x86;
-        NR12_REG = 0x7F;
-        NR13_REG = 0x75;
-        NR14_REG = 0x86;
-        
+        play_flyaway_sound();
         // Make sprite fly off the screen
         for (uint8_t i = 0; i < 144/8; i++){
           scroll_sprite(PLAYER_SPRITE_ID,8,0);

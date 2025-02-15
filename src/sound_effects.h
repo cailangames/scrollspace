@@ -132,4 +132,29 @@ void play_gameover_sound(void) {
   hUGE_mute_channel(HT_CH1, HT_CH_PLAY);
 }
 
+void play_flyaway_sound(void){
+  NR12_REG = 0x00;
+  NR14_REG = 0x00;
+
+  // Play sound effect.
+  NR10_REG = 0x75;
+  NR11_REG = 0x86;
+  NR12_REG = 0x7F;
+  NR13_REG = 0x75;
+  NR14_REG = 0x86;
+}
+
+void play_mode_selection_sound(void){
+  hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
+  NR22_REG = 0x00;
+  NR24_REG = 0x00;
+
+  // Play sound effect.
+  NR21_REG = 0x81;
+  NR22_REG = 0xF1;
+  NR23_REG = 0xAA;
+  NR24_REG = 0x85;
+  hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
+}
+
 #endif
