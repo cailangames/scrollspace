@@ -265,7 +265,10 @@ static void show_mode_selection_screen(void) {
 
   // Note that the previous value of `game_mode` is used here. For convenience, we want to remember
   // which mode the player selected last and default the cursor to that mode.
-  uint8_t y = (game_mode == NORMAL) ? 40 : (game_mode == HARD) ? 64 : 88;
+  uint8_t y = ((game_mode == NORMAL) || (game_mode == TITLE_SCREEN)) ? 40 : (game_mode == HARD) ? 64 : 88;
+  if (game_mode == TITLE_SCREEN){
+    game_mode = NORMAL;
+  }
 
   vsync();
   set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
@@ -378,6 +381,10 @@ static void show_mode_selection_screen(void) {
         }
         break;
       }
+    }
+    else if (KEY_FIRST_PRESS(input, prev_input, J_B)) {
+      game_mode = TITLE_SCREEN;
+      break;
     }
 
     prev_input = input;
@@ -553,8 +560,12 @@ void main(void) {
       scroll_speed.w = SCROLL_SPEED_NORMAL;
     } else if (game_mode == HARD) {
       scroll_speed.w = SCROLL_SPEED_HARD;
-    } else {
+    } else if (game_mode == TURBO) {
       scroll_speed.w = SCROLL_SPEED_TURBO;
+    }
+    else {
+      show_title_screen(0);
+      continue;
     }
 
     // initrand() needs to be called with a 16-bit random seed. We produce this seed by polling the

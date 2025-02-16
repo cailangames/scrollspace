@@ -195,6 +195,7 @@ enum GameMode {
   HARD=1,
   TURBO=2,
   CLEAR_DATA=3,
+  TITLE_SCREEN=4,
 };
 
 /*
