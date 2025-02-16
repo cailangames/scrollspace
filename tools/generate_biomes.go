@@ -47,8 +47,11 @@ func nearestPowerOf2(n int) int {
 		return 16
 	case n <= 32:
 		return 32
-	default:
+	case n <= 64:
 		return 64
+	default:
+		log.Fatalf("Input to nearestPowerOf2() too large: %d", n)
+		return 0
 	}
 }
 
@@ -190,8 +193,18 @@ func findBiomeConnections(biomes [][]uint8) [][]int {
 		maxCount = max(maxCount, count)
 	}
 
-	fmt.Printf("Largest number of connections: %d\n", maxCount)
+	log.Printf("Largest number of connections found: %d", maxCount)
 	return balanceBiomeConnections(connections, maxCount)
+}
+
+// Prints the constants to stdout in the C code format.
+func printConstants(seed int64, biomes [][]uint8, connections [][]int) {
+	fmt.Printf("// Random seed used: %d\n", seed)
+	fmt.Println()
+	fmt.Printf("#define BIOME_COUNT %d\n", len(biomes))
+	fmt.Printf("#define BIOME_CONNECTION_COUNT %d\n", len(connections))
+	fmt.Printf("#define COLUMNS_PER_BIOME %d\n", columnsPerBiome)
+	fmt.Printf("#define MINIMUM_CAVE_WIDTH %d\n", minCaveWidth)
 }
 
 // Prints the biome data to stdout in the C code format.
@@ -215,7 +228,7 @@ func printBiomes(biomes [][]uint8) {
 
 // Prints the biome connections to stdout in the C code format.
 func printBiomeConnections(connections [][]int) {
-	fmt.Println("static const uint8_t next_possible_biomes[BIOME_COUNT][1] = {")
+	fmt.Println("static const uint8_t next_possible_biomes[BIOME_COUNT][BIOME_CONNECTION_COUNT] = {")
 	for _, biome := range connections {
 		fmt.Printf("  { ")
 		first := true
@@ -233,18 +246,22 @@ func printBiomeConnections(connections [][]int) {
 }
 
 func main() {
-	fmt.Println("Generating biomes...")
+	log.Print("Generating biomes...")
 	seed := randomSeed
 	if seed == 0 {
 		seed = time.Now().UnixNano()
 	}
 	rng = rand.New(rand.NewSource(seed))
-	fmt.Printf("Using random seed: %d\n", seed)
+	log.Printf("Using random seed: %d", seed)
 	biomes := generateBiomes()
-	fmt.Printf("Generated biome count: %d\n", len(biomes))
-	printBiomes(biomes)
-	fmt.Println("Finding biome connections")
+	log.Printf("Generated %d biomes", len(biomes))
+	log.Print("Finding biome connections")
 	connections := findBiomeConnections(biomes)
-	fmt.Printf("Created %d connections per biome\n", len(connections[0]))
+	log.Print("Printing biomes and connections")
+	printConstants(seed, biomes, connections)
+	fmt.Println()
+	printBiomes(biomes)
+	fmt.Println()
 	printBiomeConnections(connections)
+	fmt.Println()
 }
