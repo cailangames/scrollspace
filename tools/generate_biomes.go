@@ -12,13 +12,13 @@ import (
 	"time"
 )
 
-// Tunable constants
+// Parameters
 const (
 	// To use a specific seed for the RNG, set `randomSeed` to a non-zero value.
 	randomSeed int64 = 0
 )
 
-// Note: These constants should match the constant values in the C code.
+// Constants
 const (
 	biomeCount      = 64
 	columnsPerBiome = 20

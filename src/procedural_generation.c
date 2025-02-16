@@ -120,7 +120,7 @@ static const uint8_t next_possible_biomes[BIOME_COUNT][1] = {
   {47},
   {48},
   {49},
-  {0}
+  {0},
 };
 
 // Current generation state variables
