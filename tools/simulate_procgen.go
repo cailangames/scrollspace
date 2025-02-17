@@ -1,3 +1,8 @@
+// A program to simulate a procedurally generated map for ScrollSpace
+//
+// To run this program, simply run the following command:
+//
+//	go run simulate_procgen.go
 package main
 
 import (
@@ -7,17 +12,19 @@ import (
 	"image/png"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Parameters
 const (
 	// To use a specific seed for the RNG, set `randomSeed` to a non-zero value.
 	randomSeed int64 = 0
-	inputFile        = "../src/procedural_generation.c"
+	inputFile        = "biomes.c"
 	// If `outputFile` is empty, a text version of the generated map is written to stdout.
 	outputFile         = "simulation.png"
 	simulateBiomeCount = 20
@@ -30,6 +37,8 @@ const (
 	rowsPerColumn   = 17
 	minCaveWidth    = 3
 )
+
+var rng *rand.Rand
 
 type tileType int
 
@@ -152,16 +161,21 @@ func fillColumn(gameMap [][]tileType, column int, data columnData) {
 	}
 }
 
-func generateGameMap(biomes [][]columnData, connections [][]int) [][]tileType {
+func generateGameMap(biomes [][]columnData, connections [][]int) ([][]tileType, []int) {
 	gameMap := make([][]tileType, simulateBiomeCount*columnsPerBiome)
+	chosenBiomes := make([]int, 0, simulateBiomeCount)
 	startIdx := 0
-	for biome := 0; biome < simulateBiomeCount; biome++ {
+	biome := rng.Intn(len(biomes))
+	for i := 0; i < simulateBiomeCount; i++ {
+		chosenBiomes = append(chosenBiomes, biome)
 		for col := 0; col < columnsPerBiome; col++ {
 			fillColumn(gameMap, startIdx+col, biomes[biome][col])
 		}
 		startIdx += columnsPerBiome
+		conn := rng.Intn(len(connections[biome]))
+		biome = connections[biome][conn]
 	}
-	return gameMap
+	return gameMap, chosenBiomes
 }
 
 func printGameMap(gameMap [][]tileType) {
@@ -217,7 +231,15 @@ func fillCell(img *image.RGBA, c color.Color, row, column int) {
 	}
 }
 
-func outputImage(gameMap [][]tileType, file string) {
+func drawBiomeIndex(img *image.RGBA, column, index int) {
+	startX := column * pixelsPerTile
+	lightBlue := color.RGBA{173, 216, 230, 255}
+	for x := 0; x < index; x++ {
+		img.Set(startX+x, 0, lightBlue)
+	}
+}
+
+func outputImage(gameMap [][]tileType, chosenBiomes []int, file string) {
 	width := len(gameMap) * pixelsPerTile
 	height := rowsPerColumn * pixelsPerTile
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
@@ -240,9 +262,14 @@ func outputImage(gameMap [][]tileType, file string) {
 		}
 	}
 
+	// Draw biome indexes.
+	for i := 0; i < simulateBiomeCount; i++ {
+		drawBiomeIndex(img, i*columnsPerBiome, chosenBiomes[i])
+	}
+
 	// Draw grid lines.
 	lightGrey := color.RGBA{211, 211, 211, 255}
-	for x := 0; x < width; x += columnsPerBiome * pixelsPerTile {
+	for x := (columnsPerBiome * pixelsPerTile) - 1; x < width; x += columnsPerBiome * pixelsPerTile {
 		drawLine(img, lightGrey, x, 0, x, height)
 	}
 
@@ -260,6 +287,13 @@ func outputImage(gameMap [][]tileType, file string) {
 func main() {
 	log.Print("Simulating procedural generation...")
 
+	seed := randomSeed
+	if seed == 0 {
+		seed = time.Now().UnixNano()
+	}
+	rng = rand.New(rand.NewSource(seed))
+	log.Printf("Using random seed: %d", seed)
+
 	log.Printf("Reading from input file: %s", inputFile)
 	data, err := ioutil.ReadFile(inputFile)
 	if err != nil {
@@ -271,11 +305,11 @@ func main() {
 	log.Printf("Number of biomes found: %d", len(biomes))
 	connections := findBiomeConnections(lines)
 	log.Printf("Number of connections per biome found: %d", len(connections[0]))
-	gameMap := generateGameMap(biomes, connections)
+	gameMap, chosenBiomes := generateGameMap(biomes, connections)
 	if outputFile == "" {
 		printGameMap(gameMap)
 	} else {
 		log.Printf("Writing simulated game map to file: %s", outputFile)
-		outputImage(gameMap, outputFile)
+		outputImage(gameMap, chosenBiomes, outputFile)
 	}
 }
