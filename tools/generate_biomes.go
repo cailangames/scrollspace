@@ -57,6 +57,13 @@ func nearestPowerOf2(n int) int {
 
 // Packs the data for a column into one uint8.
 func packColumnData(topRow uint8, width uint8) uint8 {
+	if topRow > rowsPerColumn-minCaveWidth || width < minCaveWidth || width > maxCaveWidth {
+		// This should only happen if there's a bug in this code.
+		log.Fatalf("Invalid column! topRow=%d, width=%d", topRow, width)
+	}
+	// In order to allow for more width values in this 4-bit integer, we subtract minCaveWidth
+	// and later add it back when unpacking the column data.
+	width -= minCaveWidth
 	var col uint8 = topRow << 4
 	col |= width
 	return col
@@ -66,7 +73,7 @@ func packColumnData(topRow uint8, width uint8) uint8 {
 func unpackColumnData(data uint8) (uint8, uint8) {
 	var topRow uint8 = data >> 4
 	var width uint8 = data & 0x0F
-	return topRow, width
+	return topRow, width + minCaveWidth
 }
 
 func topRowDelta() int {
@@ -102,18 +109,10 @@ func generateBiomes() [][]uint8 {
 		for j := range biomes[i] {
 			topRow := max(prevTopRow+topRowDelta(), 0)
 			topRow = min(topRow, rowsPerColumn-minCaveWidth)
-			wDelta := widthDelta()
-			width := max(prevWidth+wDelta, minCaveWidth)
+			width := max(prevWidth+widthDelta(), minCaveWidth)
 			width = min(width, maxCaveWidth)
 			width = min(width, rowsPerColumn-topRow)
-			// In order to allow for more width values in this 4-bit integer, we subtract minCaveWidth
-			// and later add it back in the game code.
-			subWidth := width - minCaveWidth
-			if subWidth < 0 {
-				// This should only happen if there's a bug in this code.
-				log.Fatalf("Invalid width! width=%d, prevWidth=%d, delta=%d, topRow=%d", width, prevWidth, wDelta, topRow)
-			}
-			biomes[i][j] = packColumnData(uint8(topRow), uint8(subWidth))
+			biomes[i][j] = packColumnData(uint8(topRow), uint8(width))
 			prevTopRow = topRow
 			prevWidth = width
 		}
@@ -121,15 +120,32 @@ func generateBiomes() [][]uint8 {
 	return biomes
 }
 
+// Determines if the caves for two biomes overlap.
+func biomesOverlap(leftTop, leftBottom, rightTop, rightBottom uint8) bool {
+	// left is completely above right.
+	if leftBottom < rightTop {
+		return false
+	}
+	// left is completely below right.
+	if leftTop > rightBottom {
+		return false
+	}
+	// Otherwise, left and right must overlap.
+	return true
+}
+
 // Determines if two biomes connect, i.e. their caves overlap with at least the required minimum
 // width.
 func biomesConnect(leftTop, leftWidth, rightTop, rightWidth uint8) bool {
-	leftBot := leftTop + leftWidth - 1
-	rightBot := rightTop + rightWidth - 1
+	leftBottom := leftTop + leftWidth - 1
+	rightBottom := rightTop + rightWidth - 1
+	if !biomesOverlap(leftTop, leftBottom, rightTop, rightBottom) {
+		return false
+	}
 	// Calculate the actual overlap and see if it's >= the minimum cave width.
 	overlapStart := max(leftTop, rightTop)
-	overlapEnd := min(leftBot, rightBot)
-	actualOverlap := overlapEnd - overlapStart
+	overlapEnd := min(leftBottom, rightBottom)
+	actualOverlap := overlapEnd - overlapStart + 1
 	return actualOverlap >= minCaveWidth
 }
 
