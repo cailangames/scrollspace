@@ -12,6 +12,7 @@ import (
 	"image/png"
 	"io/ioutil"
 	"log"
+	"math"
 	"math/rand"
 	"os"
 	"regexp"
@@ -30,12 +31,16 @@ const (
 	simulateBiomeCount = 20
 )
 
-// Constants - These should match the constants in generate_biomes.go.
+// Constants - These should match the constants in generate_biomes.go and common.h.
 const (
 	pixelsPerTile   = 8
 	columnsPerBiome = 20
 	rowsPerColumn   = 17
 	minCaveWidth    = 3
+	// The below probabilities are out of 65,535 (uint16 max value).
+	mineProbability         = 2000
+	healthPickupProbability = 100
+	shieldPickupProbability = 100
 )
 
 var rng *rand.Rand
@@ -153,10 +158,20 @@ func findBiomeConnections(lines []string) [][]int {
 func fillColumn(gameMap [][]tileType, column int, data columnData) {
 	gameMap[column] = make([]tileType, rowsPerColumn)
 	for i := range gameMap[column] {
-		if i >= int(data.topRow) && i < int(data.topRow+data.width) {
-			gameMap[column][i] = emptyTile
-		} else {
+		if i < int(data.topRow) || i >= int(data.topRow+data.width) {
 			gameMap[column][i] = blockTile
+			continue
+		}
+		// Note: The below should match the mine and pickup generation code in procedural_generation.c.
+		n := rng.Intn(math.MaxUint16 + 1)
+		if n < math.MaxUint16-(mineProbability+shieldPickupProbability+healthPickupProbability) {
+			gameMap[column][i] = emptyTile
+		} else if n < math.MaxUint16-(shieldPickupProbability+healthPickupProbability) {
+			gameMap[column][i] = mineTile
+		} else if n < math.MaxUint16-healthPickupProbability {
+			gameMap[column][i] = shieldTile
+		} else {
+			gameMap[column][i] = healthTile
 		}
 	}
 }
@@ -254,10 +269,24 @@ func outputImage(gameMap [][]tileType, chosenBiomes []int, file string) {
 
 	// Fill in cells.
 	black := color.RGBA{0, 0, 0, 255}
+	grey := color.RGBA{128, 128, 128, 255}
+	raspberry := color.RGBA{227, 11, 92, 255}
+	cornflowerBlue := color.RGBA{100, 149, 237, 255}
 	for col := 0; col < len(gameMap); col++ {
 		for row := 0; row < len(gameMap[col]); row++ {
-			if gameMap[col][row] == blockTile {
+			switch gameMap[col][row] {
+			case emptyTile:
+				// No fill color.
+			case blockTile:
 				fillCell(img, black, row, col)
+			case mineTile:
+				fillCell(img, grey, row, col)
+			case healthTile:
+				fillCell(img, raspberry, row, col)
+			case shieldTile:
+				fillCell(img, cornflowerBlue, row, col)
+			default:
+				log.Fatalf("Unknown tile type: %d", gameMap[col][row])
 			}
 		}
 	}
