@@ -3,9 +3,19 @@
 // To run this program, simply run the following command:
 //
 //	go run simulate_procgen.go
+//
+// For a more complete example of how to use this and related programs, see the following commands:
+//
+//	go run generate_biomes.go > biomes.c
+//	go run simulate_procgen.go --input_file=biomes.c --output_file=simulation.png
+//
+// To see more details on how to use this program and its flags, run the following command:
+//
+//	go run simulate_procgen.go --help
 package main
 
 import (
+	"flag"
 	"fmt"
 	"image"
 	"image/color"
@@ -21,14 +31,12 @@ import (
 	"time"
 )
 
-// Parameters
-const (
-	// To use a specific seed for the RNG, set `randomSeed` to a non-zero value.
-	randomSeed int64 = 0
-	inputFile        = "biomes.c"
-	// If `outputFile` is empty, a text version of the generated map is written to stdout.
-	outputFile         = "simulation.png"
-	simulateBiomeCount = 20
+// Flags
+var (
+	randomSeed           = flag.Int64("random_seed", 0, "The random seed to use for RNG. To use a specific seed, set this flag to a non-zero value.")
+	inputFile            = flag.String("input_file", "biomes.c", "The input file containing the biome data")
+	outputFile           = flag.String("output_file", "simulation.png", "The output .png file to write the simulated game map to. If this flag is empty, a text version of the simulated game map is written to stdout.")
+	simulatedBiomesCount = flag.Int("simulated_biomes_count", 20, "How many biomes to simulate")
 )
 
 // Constants - These should match the constants in generate_biomes.go and common.h.
@@ -109,7 +117,7 @@ func findBiomeData(lines []string) [][]columnData {
 			}
 		}
 	}
-	log.Fatalf("Failed to find biome column data in input file %q", inputFile)
+	log.Fatalf("Failed to find biome column data in input file")
 	return nil
 }
 
@@ -151,7 +159,7 @@ func findBiomeConnections(lines []string) [][]int {
 			}
 		}
 	}
-	log.Fatalf("Failed to find biome connection data in input file %q", inputFile)
+	log.Fatalf("Failed to find biome connection data in input file")
 	return nil
 }
 
@@ -176,12 +184,12 @@ func fillColumn(gameMap [][]tileType, column int, data columnData) {
 	}
 }
 
-func generateGameMap(biomes [][]columnData, connections [][]int) ([][]tileType, []int) {
-	gameMap := make([][]tileType, simulateBiomeCount*columnsPerBiome)
-	chosenBiomes := make([]int, 0, simulateBiomeCount)
+func generateGameMap(biomes [][]columnData, connections [][]int, simulationCount int) ([][]tileType, []int) {
+	gameMap := make([][]tileType, simulationCount*columnsPerBiome)
+	chosenBiomes := make([]int, 0, simulationCount)
 	startIdx := 0
 	biome := rng.Intn(len(biomes))
-	for i := 0; i < simulateBiomeCount; i++ {
+	for i := 0; i < simulationCount; i++ {
 		chosenBiomes = append(chosenBiomes, biome)
 		for col := 0; col < columnsPerBiome; col++ {
 			fillColumn(gameMap, startIdx+col, biomes[biome][col])
@@ -292,7 +300,7 @@ func outputImage(gameMap [][]tileType, chosenBiomes []int, file string) {
 	}
 
 	// Draw biome indexes.
-	for i := 0; i < simulateBiomeCount; i++ {
+	for i := 0; i < len(chosenBiomes); i++ {
 		drawBiomeIndex(img, i*columnsPerBiome, chosenBiomes[i])
 	}
 
@@ -315,16 +323,17 @@ func outputImage(gameMap [][]tileType, chosenBiomes []int, file string) {
 
 func main() {
 	log.Print("Simulating procedural generation...")
+	flag.Parse()
 
-	seed := randomSeed
+	seed := *randomSeed
 	if seed == 0 {
 		seed = time.Now().UnixNano()
 	}
 	rng = rand.New(rand.NewSource(seed))
 	log.Printf("Using random seed: %d", seed)
 
-	log.Printf("Reading from input file: %s", inputFile)
-	data, err := ioutil.ReadFile(inputFile)
+	log.Printf("Reading from input file: %s", *inputFile)
+	data, err := ioutil.ReadFile(*inputFile)
 	if err != nil {
 		log.Fatalf("Failed to read input file: %v", err)
 	}
@@ -334,11 +343,11 @@ func main() {
 	log.Printf("Number of biomes found: %d", len(biomes))
 	connections := findBiomeConnections(lines)
 	log.Printf("Number of connections per biome found: %d", len(connections[0]))
-	gameMap, chosenBiomes := generateGameMap(biomes, connections)
-	if outputFile == "" {
+	gameMap, chosenBiomes := generateGameMap(biomes, connections, *simulatedBiomesCount)
+	if *outputFile == "" {
 		printGameMap(gameMap)
 	} else {
-		log.Printf("Writing simulated game map to file: %s", outputFile)
-		outputImage(gameMap, chosenBiomes, outputFile)
+		log.Printf("Writing simulated game map to file: %s", *outputFile)
+		outputImage(gameMap, chosenBiomes, *outputFile)
 	}
 }
