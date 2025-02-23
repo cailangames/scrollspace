@@ -51,27 +51,30 @@ static void drop_bomb(void) {
     row_count = row_count - (BOMB_RADIUS - row_top);
     row_top = 0;
   }
+  if (row_count > COLUMN_HEIGHT - row_top) {
+    // No need to calculate the part of the bomb explosion that's off the bottom of the screen.
+    row_count = COLUMN_HEIGHT - row_top;
+  }
+  uint16_t row_top_offset = MAP_INDEX_ROW_OFFSET(row_top);
+  uint8_t* coll_map_start = collision_map + row_top_offset;
+  uint8_t* bkg_map_start = background_map + row_top_offset;
   uint16_t x_left = player_sprite.x.h - SCREEN_L;
   uint16_t col_left = MOD32(((x_left + SCX_REG) >> 3) + 1);  // Add 1 to be in front of the player. MOD32 is for screen wrap-around.
   uint8_t incremental_score = 0;
   uint8_t height = 0;
-  for (uint8_t i = 0; i < row_count; ++i) {
-    uint16_t row = row_top + i;
-    if (row >= COLUMN_HEIGHT) {
-      // No need to calculate or draw the part of the bomb explosion that's off screen.
-      break;
-    }
-    uint16_t row_offset = MAP_INDEX_ROW_OFFSET(row);
-    for (uint8_t j = 0; j < BOMB_LENGTH; ++j) {
-      uint8_t col = MOD32(col_left + j);  // MOD32 is for screen wrap-around.
-
-      uint16_t idx = row_offset + col;
+  for (uint8_t i = 0; i < BOMB_LENGTH; ++i) {
+    uint8_t col = MOD32(col_left + i);  // MOD32 is for screen wrap-around.
+    uint8_t* coll_map = coll_map_start + col;
+    uint8_t* bkg_map = bkg_map_start + col;
+    for (uint8_t j = 0; j < row_count; ++j) {
       // If we are destroying a mine, add to the score.
-      if (background_map[idx] == MINE_TILE) {
+      if (*bkg_map == MINE_TILE) {
         incremental_score += POINTS_PER_MINE;
       }
-      collision_map[idx] = 0;
-      background_map[idx] = CRATER_TILE;
+      *bkg_map = CRATER_TILE;
+      bkg_map += ROW_WIDTH;
+      *coll_map = 0;
+      coll_map += ROW_WIDTH;
     }
     ++height;
   }

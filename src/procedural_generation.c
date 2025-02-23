@@ -142,34 +142,35 @@ void generate_column(uint8_t column_idx) BANKED {
   uint8_t cave_width = (col & 0x0F) + MINIMUM_CAVE_WIDTH - 1;
   uint8_t cave_bottom = cave_top + cave_width;
 
-  for (uint16_t row = 0; row < COLUMN_HEIGHT; ++row) {
+  for (uint8_t row = 0; row < COLUMN_HEIGHT; ++row) {
     // TODO: Add random variance.
-    uint16_t map_index = MAP_INDEX_ROW_OFFSET(row);
     if (row < cave_top || row > cave_bottom) {
       // Create a block.
-      coll_map[map_index] = BLOCK_HEALTH;
-      bkg_map[map_index] = WALL_BLOCK_TILE;
-      continue;
+      *coll_map = BLOCK_HEALTH;
+      *bkg_map = WALL_BLOCK_TILE;
+    } else {
+      uint16_t n = randw();
+      if (n < UINT16_MAX - (MINE_PROBABILITY + SHIELD_PICKUP_PROBABILITY + HEALTH_PICKUP_PROBABILITY)) {
+        // Create an empty tile.
+        *coll_map = 0;
+        *bkg_map = EMPTY_TILE;
+      } else if (n < UINT16_MAX - (SHIELD_PICKUP_PROBABILITY + HEALTH_PICKUP_PROBABILITY)) {
+        // Create a mine tile.
+        *coll_map = MINE_HEALTH;
+        *bkg_map = MINE_TILE;
+      } else if (n < UINT16_MAX - HEALTH_PICKUP_PROBABILITY) {
+        // Create a shield tile.
+        *coll_map = SHIELD_ID;
+        *bkg_map = SHIELD_TILE;
+      } else {
+        // Create a health tile.
+        *coll_map = HEALTH_KIT_ID;
+        *bkg_map = HEALTH_KIT_TILE;
+      }
     }
 
-    uint16_t n = randw();
-    if (n < UINT16_MAX - (MINE_PROBABILITY + SHIELD_PICKUP_PROBABILITY + HEALTH_PICKUP_PROBABILITY)) {
-      // Create an empty tile.
-      coll_map[map_index] = 0;
-      bkg_map[map_index] = EMPTY_TILE;
-    } else if (n < UINT16_MAX - (SHIELD_PICKUP_PROBABILITY + HEALTH_PICKUP_PROBABILITY)) {
-      // Create a mine tile.
-      coll_map[map_index] = MINE_HEALTH;
-      bkg_map[map_index] = MINE_TILE;
-    } else if (n < UINT16_MAX - HEALTH_PICKUP_PROBABILITY) {
-      // Create a shield tile.
-      coll_map[map_index] = SHIELD_ID;
-      bkg_map[map_index] = SHIELD_TILE;
-    } else {
-      // Create a health tile.
-      coll_map[map_index] = HEALTH_KIT_ID;
-      bkg_map[map_index] = HEALTH_KIT_TILE;
-    }
+    coll_map += ROW_WIDTH;
+    bkg_map += ROW_WIDTH;
   }
 
   // Update current generation state.

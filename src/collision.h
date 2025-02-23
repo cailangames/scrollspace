@@ -20,10 +20,9 @@ uint16_t check_bullet_collisions(struct Sprite* sprite) {
 
   // Top right corner
   uint16_t row_top = (sprite->cb.y - SCREEN_T) >> 3;
-  uint16_t row_top_offset = MAP_INDEX_ROW_OFFSET(row_top);
   uint16_t x_right = sprite->cb.x + sprite->cb.w - SCREEN_L;
   uint16_t col_right = MOD32((x_right + SCX_REG) >> 3);  // MOD32 is for screen wrap-around.
-  uint16_t idx_top_right = row_top_offset + col_right;
+  uint16_t idx_top_right = MAP_INDEX(row_top, col_right);
   if (collision_map[idx_top_right] > 0 && collision_map[idx_top_right] < POWERUP_RESERVED_IDS) {
     sprite->collided = true;
     sprite->collided_row = row_top;
@@ -33,8 +32,7 @@ uint16_t check_bullet_collisions(struct Sprite* sprite) {
 
   // Bottom right corner
   uint16_t row_bot = (sprite->cb.y + sprite->cb.h - SCREEN_T) >> 3;
-  uint16_t row_bot_offset = MAP_INDEX_ROW_OFFSET(row_bot);
-  uint16_t idx_bot_right = row_bot_offset + col_right;
+  uint16_t idx_bot_right = MAP_INDEX(row_bot, col_right);
   if (collision_map[idx_bot_right] > 0 && collision_map[idx_bot_right] < POWERUP_RESERVED_IDS) {
     sprite->collided = true;
     sprite->collided_row = row_bot;

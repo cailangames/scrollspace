@@ -227,41 +227,37 @@ static void show_mode_selection_screen(void) {
   }
 
   // Write "NORMAL".
-  row_offset = MAP_INDEX_ROW_OFFSET(3);
-  background_map[row_offset+7] = CHAR_N;
-  background_map[row_offset+8] = CHAR_O;
-  background_map[row_offset+9] = CHAR_R;
-  background_map[row_offset+10] = CHAR_M;
-  background_map[row_offset+11] = CHAR_A;
-  background_map[row_offset+12] = CHAR_L;
+  background_map[MAP_INDEX(3, 7)] = CHAR_N;
+  background_map[MAP_INDEX(3, 8)] = CHAR_O;
+  background_map[MAP_INDEX(3, 9)] = CHAR_R;
+  background_map[MAP_INDEX(3, 10)] = CHAR_M;
+  background_map[MAP_INDEX(3, 11)] = CHAR_A;
+  background_map[MAP_INDEX(3, 12)] = CHAR_L;
 
   // Write "HARD".
-  row_offset = MAP_INDEX_ROW_OFFSET(6);
-  background_map[row_offset+7] = CHAR_H;
-  background_map[row_offset+8] = CHAR_A;
-  background_map[row_offset+9] = CHAR_R;
-  background_map[row_offset+10] = CHAR_D;
+  background_map[MAP_INDEX(6, 7)] = CHAR_H;
+  background_map[MAP_INDEX(6, 8)] = CHAR_A;
+  background_map[MAP_INDEX(6, 9)] = CHAR_R;
+  background_map[MAP_INDEX(6, 10)] = CHAR_D;
 
   // Write "TURBO".
-  row_offset = MAP_INDEX_ROW_OFFSET(9);
-  background_map[row_offset+7] = CHAR_T;
-  background_map[row_offset+8] = CHAR_U;
-  background_map[row_offset+9] = CHAR_R;
-  background_map[row_offset+10] = CHAR_B;
-  background_map[row_offset+11] = CHAR_O;
+  background_map[MAP_INDEX(9, 7)] = CHAR_T;
+  background_map[MAP_INDEX(9, 8)] = CHAR_U;
+  background_map[MAP_INDEX(9, 9)] = CHAR_R;
+  background_map[MAP_INDEX(9, 10)] = CHAR_B;
+  background_map[MAP_INDEX(9, 11)] = CHAR_O;
 
   // Write "CLEAR DATA".
-  row_offset = MAP_INDEX_ROW_OFFSET(14);
-  background_map[row_offset+7] = CHAR_C;
-  background_map[row_offset+8] = CHAR_L;
-  background_map[row_offset+9] = CHAR_E;
-  background_map[row_offset+10] = CHAR_A;
-  background_map[row_offset+11] = CHAR_R;
-  background_map[row_offset+12] = 0;
-  background_map[row_offset+13] = CHAR_D;
-  background_map[row_offset+14] = CHAR_A;
-  background_map[row_offset+15] = CHAR_T;
-  background_map[row_offset+16] = CHAR_A;
+  background_map[MAP_INDEX(14, 7)] = CHAR_C;
+  background_map[MAP_INDEX(14, 8)] = CHAR_L;
+  background_map[MAP_INDEX(14, 9)] = CHAR_E;
+  background_map[MAP_INDEX(14, 10)] = CHAR_A;
+  background_map[MAP_INDEX(14, 11)] = CHAR_R;
+  background_map[MAP_INDEX(14, 12)] = 0;
+  background_map[MAP_INDEX(14, 13)] = CHAR_D;
+  background_map[MAP_INDEX(14, 14)] = CHAR_A;
+  background_map[MAP_INDEX(14, 15)] = CHAR_T;
+  background_map[MAP_INDEX(14, 16)] = CHAR_A;
 
   // Note that the previous value of `game_mode` is used here. For convenience, we want to remember
   // which mode the player selected last and default the cursor to that mode.
@@ -756,13 +752,13 @@ void main(void) {
 
       // Update tiles for background objects that sprites collided with.
       if (player_sprite.collided) {
-        set_bkg_tile_xy(player_sprite.collided_col, player_sprite.collided_row, background_map[MAP_INDEX_ROW_OFFSET(player_sprite.collided_row) + player_sprite.collided_col]);
+        set_bkg_tile_xy(player_sprite.collided_col, player_sprite.collided_row, background_map[MAP_INDEX(player_sprite.collided_row, player_sprite.collided_col)]);
         player_sprite.collided = false;
       }
       struct Sprite* b = bullet_sprites;
       for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
         if (b->collided) {
-          set_bkg_tile_xy(b->collided_col, b->collided_row, background_map[MAP_INDEX_ROW_OFFSET(b->collided_row) + b->collided_col]);
+          set_bkg_tile_xy(b->collided_col, b->collided_row, background_map[MAP_INDEX(b->collided_row, b->collided_col)]);
           b->collided = false;
         }
         ++b;
