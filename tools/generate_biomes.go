@@ -24,7 +24,6 @@ const (
 	columnsPerBiome = 20
 	rowsPerColumn   = 17
 	minCaveWidth    = 3
-	maxCaveWidth    = 10
 )
 
 var rng *rand.Rand
@@ -57,7 +56,7 @@ func nearestPowerOf2(n int) int {
 
 // Packs the data for a column into one uint8.
 func packColumnData(topRow uint8, width uint8) uint8 {
-	if topRow > rowsPerColumn-minCaveWidth || width < minCaveWidth || width > maxCaveWidth {
+	if topRow > rowsPerColumn-minCaveWidth || width < minCaveWidth || width > rowsPerColumn-topRow {
 		// This should only happen if there's a bug in this code.
 		log.Fatalf("Invalid column! topRow=%d, width=%d", topRow, width)
 	}
@@ -76,42 +75,197 @@ func unpackColumnData(data uint8) (uint8, uint8) {
 	return topRow, width + minCaveWidth
 }
 
-func topRowDelta() int {
-	n := rng.Intn(256)
-	if n < 24 {
-		return 0
-	}
-	if n < 140 {
-		return -2
-	}
-	return 2
+type Generator interface {
+	Generate() int
 }
 
-func widthDelta() int {
-	n := rng.Intn(256)
-	if n < 24 {
-		return -1
+type BiomeGenerator struct {
+	startingTopRow int
+	startingWidth  int
+	topRowDelta    Generator
+	widthDelta     Generator
+}
+
+func highTopRow() int {
+	return rng.Intn(5)
+}
+
+func middleTopRow() int {
+	return rng.Intn(5) + 5
+}
+
+func lowTopRow() int {
+	return rng.Intn(5) + 10
+}
+
+func narrowWidth() int {
+	n := rng.Intn(100) + 1
+	switch {
+	case n <= 50:
+		return 4
+	case n <= 75:
+		return 3
+	default:
+		return 5
 	}
-	if n < 140 {
+}
+
+func standardWidth() int {
+	n := rng.Intn(100) + 1
+	switch {
+	case n <= 35:
+		return 6
+	case n <= 70:
+		return 7
+	case n <= 85:
+		return 5
+	default:
+		return 8
+	}
+}
+
+func wideWidth() int {
+	n := rng.Intn(100) + 1
+	switch {
+	case n <= 50:
+		return 9
+	case n <= 75:
+		return 8
+	default:
+		return 10
+	}
+}
+
+func steadyDelta() int {
+	n := rng.Intn(100) + 1
+	switch {
+	case n <= 20:
+		return 0
+	case n <= 55:
+		return -1
+	case n <= 90:
+		return 1
+	case n <= 95:
+		return -2
+	default:
+		return 2
+	}
+}
+
+func volatileDelta() int {
+	n := rng.Intn(100) + 1
+	switch {
+	case n <= 10:
+		return 0
+	case n <= 50:
+		return -2
+	case n <= 90:
+		return 2
+	case n <= 95:
+		return -1
+	default:
 		return 1
 	}
-	return 0
+}
+
+func increasingDelta() int {
+	n := rng.Intn(100) + 1
+	switch {
+	case n <= 50:
+		return 1
+	case n <= 75:
+		return 2
+	case n <= 85:
+		return 0
+	case n <= 95:
+		return -1
+	default:
+		return -2
+	}
+}
+
+func decreasingDelta() int {
+	return increasingDelta() * -1
+}
+
+type steadyTopRowDelta struct{}
+
+func (d *steadyTopRowDelta) Generate() int {
+	return steadyDelta()
+}
+
+type volatileTopRowDelta struct{}
+
+func (d *volatileTopRowDelta) Generate() int {
+	return volatileDelta()
+}
+
+type risingTopRowDelta struct{}
+
+func (d *risingTopRowDelta) Generate() int {
+	return decreasingDelta()
+}
+
+type fallingTopRowDelta struct{}
+
+func (d *fallingTopRowDelta) Generate() int {
+	return increasingDelta()
+}
+
+type steadyWidthDelta struct{}
+
+func (d *steadyWidthDelta) Generate() int {
+	return steadyDelta()
+}
+
+type volatileWidthDelta struct{}
+
+func (d *volatileWidthDelta) Generate() int {
+	return volatileDelta()
+}
+
+type wideningWidthDelta struct{}
+
+func (d *wideningWidthDelta) Generate() int {
+	return increasingDelta()
+}
+
+type narrowingWidthDelta struct{}
+
+func (d *narrowingWidthDelta) Generate() int {
+	return decreasingDelta()
+}
+
+func newMiddleWideRisingWidening() *BiomeGenerator {
+	return &BiomeGenerator{
+		startingTopRow: middleTopRow(),
+		startingWidth:  wideWidth(),
+		topRowDelta:    &risingTopRowDelta{},
+		widthDelta:     &wideningWidthDelta{},
+	}
+}
+
+func clampColumnValues(topRow, width int) (int, int) {
+	tr := max(topRow, 0)
+	tr = min(tr, rowsPerColumn-minCaveWidth)
+	w := max(width, minCaveWidth)
+	w = min(w, rowsPerColumn-tr)
+	return tr, w
 }
 
 // Generates the biomes. The first dimension of the returned [][]uint8 is the biomes themselves.
 // The second dimension is the column data per biome.
 func generateBiomes() [][]uint8 {
 	biomes := make([][]uint8, biomeCount)
-	prevTopRow := 7
-	prevWidth := 5
 	for i := range biomes {
 		biomes[i] = make([]uint8, columnsPerBiome)
-		for j := range biomes[i] {
-			topRow := max(prevTopRow+topRowDelta(), 0)
-			topRow = min(topRow, rowsPerColumn-minCaveWidth)
-			width := max(prevWidth+widthDelta(), minCaveWidth)
-			width = min(width, maxCaveWidth)
-			width = min(width, rowsPerColumn-topRow)
+		gen := newMiddleWideRisingWidening()
+		startTop, startWidth := clampColumnValues(gen.startingTopRow, gen.startingWidth)
+		biomes[i][0] = packColumnData(uint8(startTop), uint8(startWidth))
+		prevTopRow := startTop
+		prevWidth := startWidth
+		for j := 1; j < len(biomes[i]); j++ {
+			topRow, width := clampColumnValues(prevTopRow+gen.topRowDelta.Generate(), prevWidth+gen.widthDelta.Generate())
 			biomes[i][j] = packColumnData(uint8(topRow), uint8(width))
 			prevTopRow = topRow
 			prevWidth = width
@@ -218,7 +372,7 @@ func printConstants(seed int64, biomes [][]uint8, connections [][]int) {
 	fmt.Printf("// Random seed used: %d\n", seed)
 	fmt.Println()
 	fmt.Printf("#define BIOME_COUNT %d\n", len(biomes))
-	fmt.Printf("#define BIOME_CONNECTION_COUNT %d\n", len(connections))
+	fmt.Printf("#define BIOME_CONNECTION_COUNT %d\n", len(connections[0]))
 	fmt.Printf("#define COLUMNS_PER_BIOME %d\n", columnsPerBiome)
 	fmt.Printf("#define MINIMUM_CAVE_WIDTH %d\n", minCaveWidth)
 }
@@ -226,8 +380,8 @@ func printConstants(seed int64, biomes [][]uint8, connections [][]int) {
 // Prints the biome data to stdout in the C code format.
 func printBiomes(biomes [][]uint8) {
 	fmt.Println("static const uint8_t biome_columns[BIOME_COUNT][COLUMNS_PER_BIOME] = {")
-	for _, biome := range biomes {
-		fmt.Printf("  { ")
+	for i, biome := range biomes {
+		fmt.Printf("  /* %02d */ { ", i)
 		first := true
 		for _, col := range biome {
 			if first {
@@ -245,8 +399,8 @@ func printBiomes(biomes [][]uint8) {
 // Prints the biome connections to stdout in the C code format.
 func printBiomeConnections(connections [][]int) {
 	fmt.Println("static const uint8_t next_possible_biomes[BIOME_COUNT][BIOME_CONNECTION_COUNT] = {")
-	for _, biome := range connections {
-		fmt.Printf("  { ")
+	for i, biome := range connections {
+		fmt.Printf("  /* %02d */ { ", i)
 		first := true
 		for _, conn := range biome {
 			if first {

@@ -79,15 +79,15 @@ func unpackColumnData(data uint8) columnData {
 }
 
 func parseBiomeData(lines []string) [][]columnData {
+	regex := regexp.MustCompile(`\{(.*)\}`)
 	biomes := [][]columnData{}
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		line = strings.ReplaceAll(line, "{", "")
-		line = strings.ReplaceAll(line, "},", "")
-		numStrs := strings.Split(line, ",")
-		if len(numStrs) <= 1 {
+		submatches := regex.FindStringSubmatch(line)
+		if len(submatches) != 2 {
 			continue
 		}
+		line = submatches[1]
+		numStrs := strings.Split(line, ",")
 		biomes = append(biomes, []columnData{})
 		for _, numStr := range numStrs {
 			numStr = strings.TrimSpace(numStr)
@@ -122,15 +122,15 @@ func findBiomeData(lines []string) [][]columnData {
 }
 
 func parseBiomeConnections(lines []string) [][]int {
+	regex := regexp.MustCompile(`\{(.*)\}`)
 	connections := [][]int{}
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		line = strings.ReplaceAll(line, "{", "")
-		line = strings.ReplaceAll(line, "},", "")
-		numStrs := strings.Split(line, ",")
-		if len(numStrs) <= 1 {
+		submatches := regex.FindStringSubmatch(line)
+		if len(submatches) != 2 {
 			continue
 		}
+		line = submatches[1]
+		numStrs := strings.Split(line, ",")
 		connections = append(connections, []int{})
 		for _, numStr := range numStrs {
 			numStr = strings.TrimSpace(numStr)
