@@ -58,6 +58,11 @@ var rng *rand.Rand
 // Simulation
 //
 
+type Column struct {
+	TopRow uint8
+	Width  uint8
+}
+
 type TileType int
 
 const (
@@ -73,12 +78,7 @@ type GameMap struct {
 	ChosenBiomes []int
 }
 
-type ColumnData struct {
-	TopRow uint8
-	Width  uint8
-}
-
-func (gm *GameMap) fillColumn(column int, data ColumnData) {
+func (gm *GameMap) fillColumn(column int, data Column) {
 	gm.Tiles[column] = make([]TileType, rowsPerColumn)
 	for i := range gm.Tiles[column] {
 		if i < int(data.TopRow) || i >= int(data.TopRow+data.Width) {
@@ -123,7 +123,7 @@ func (gm *GameMap) String() string {
 	return sb.String()
 }
 
-func GenerateGameMap(biomes [][]ColumnData, connections [][]int, simulationCount int) *GameMap {
+func GenerateGameMap(biomes [][]Column, connections [][]int, simulationCount int) *GameMap {
 	gameMap := &GameMap{
 		Tiles:        make([][]TileType, simulationCount*columnsPerBiome),
 		ChosenBiomes: make([]int, 0, simulationCount),
@@ -147,18 +147,18 @@ func GenerateGameMap(biomes [][]ColumnData, connections [][]int, simulationCount
 //
 
 // Unpacks the data for a column and returns the top row and width of the cave.
-func unpackColumnData(data uint8) ColumnData {
+func unpackColumnData(data uint8) Column {
 	var topRow uint8 = data >> 4
 	var width uint8 = data & 0x0F
-	return ColumnData{
+	return Column{
 		TopRow: topRow,
 		Width:  width + minCaveWidth,
 	}
 }
 
-func parseBiomeData(lines []string) [][]ColumnData {
+func parseBiomeData(lines []string) [][]Column {
 	regex := regexp.MustCompile(`\{(.*)\}`)
-	biomes := [][]ColumnData{}
+	biomes := [][]Column{}
 	for _, line := range lines {
 		submatches := regex.FindStringSubmatch(line)
 		if len(submatches) != 2 {
@@ -166,7 +166,7 @@ func parseBiomeData(lines []string) [][]ColumnData {
 		}
 		line = submatches[1]
 		numStrs := strings.Split(line, ",")
-		biomes = append(biomes, []ColumnData{})
+		biomes = append(biomes, []Column{})
 		for _, numStr := range numStrs {
 			numStr = strings.TrimSpace(numStr)
 			if len(numStr) == 0 {
@@ -176,14 +176,14 @@ func parseBiomeData(lines []string) [][]ColumnData {
 			if err != nil {
 				log.Fatalf("Failed to convert string to integer: %v", err)
 			}
-			data := unpackColumnData(uint8(num))
-			biomes[len(biomes)-1] = append(biomes[len(biomes)-1], data)
+			col := unpackColumnData(uint8(num))
+			biomes[len(biomes)-1] = append(biomes[len(biomes)-1], col)
 		}
 	}
 	return biomes
 }
 
-func findBiomeData(lines []string) [][]ColumnData {
+func findBiomeData(lines []string) [][]Column {
 	regex := regexp.MustCompile(`biome_columns\[.*\].*=`)
 	for i, line := range lines {
 		if !regex.MatchString(line) {

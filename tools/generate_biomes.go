@@ -54,36 +54,61 @@ func nearestPowerOf2(n int) int {
 	}
 }
 
-// Packs the data for a column into one uint8.
-func packColumnData(topRow uint8, width uint8) uint8 {
-	if topRow > rowsPerColumn-minCaveWidth || width < minCaveWidth || width > rowsPerColumn-topRow {
-		// This should only happen if there's a bug in this code.
-		log.Fatalf("Invalid column! topRow=%d, width=%d", topRow, width)
+// Holds the data for a column within a biome.
+type Column struct {
+	TopRow int
+	Width  int
+}
+
+// Returns a new Column with the values in the given Column clamped to min and max values.
+func (c Column) ClampValues() Column {
+	tr := max(c.TopRow, 0)
+	tr = min(tr, rowsPerColumn-minCaveWidth)
+	w := max(c.Width, minCaveWidth)
+	w = min(w, rowsPerColumn-tr)
+	return Column{
+		TopRow: tr,
+		Width:  w,
 	}
+}
+
+// Packs the data for the Column into one uint8.
+func (c Column) PackData() uint8 {
+	if c.TopRow > rowsPerColumn-minCaveWidth || c.Width < minCaveWidth || c.Width > rowsPerColumn-c.TopRow {
+		// This should only happen if there's a bug in this code.
+		log.Fatalf("Invalid column! %s", c)
+	}
+	var topRow uint8 = uint8(c.TopRow)
 	// In order to allow for more width values in this 4-bit integer, we subtract minCaveWidth
 	// and later add it back when unpacking the column data.
-	width -= minCaveWidth
-	var col uint8 = topRow << 4
-	col |= width
-	return col
+	var width uint8 = uint8(c.Width - minCaveWidth)
+	var packed uint8 = topRow << 4
+	packed |= width
+	return packed
 }
 
-// Unpacks the data for a column and returns the top row and width of the cave.
-func unpackColumnData(data uint8) (uint8, uint8) {
-	var topRow uint8 = data >> 4
-	var width uint8 = data & 0x0F
-	return topRow, width + minCaveWidth
+func (c Column) String() string {
+	return fmt.Sprintf("{TopRow=%d,Width=%d}", c.TopRow, c.Width)
 }
 
+// A biome is one unit of the procedural generation output. It's made up of a bunch of columns that
+// specify where the blocks (obstacles) are in the biome. Biomes are strung together randomly to
+// create a randomly generated game map.
+type Biome struct {
+	Columns []Column
+}
+
+// A Generator is an interface for generating values.
 type Generator interface {
 	Generate() int
 }
 
+// A BiomeGenerator can generate new biomes.
 type BiomeGenerator struct {
-	startingTopRow int
-	startingWidth  int
-	topRowDelta    Generator
-	widthDelta     Generator
+	StartingTopRow int
+	StartingWidth  int
+	TopRowDelta    Generator
+	WidthDelta     Generator
 }
 
 func highTopRow() int {
@@ -236,46 +261,44 @@ func (d *narrowingWidthDelta) Generate() int {
 	return decreasingDelta()
 }
 
-func newMiddleWideRisingWidening() *BiomeGenerator {
+func NewMiddleWideRisingWidening() *BiomeGenerator {
 	return &BiomeGenerator{
-		startingTopRow: middleTopRow(),
-		startingWidth:  wideWidth(),
-		topRowDelta:    &risingTopRowDelta{},
-		widthDelta:     &wideningWidthDelta{},
+		StartingTopRow: middleTopRow(),
+		StartingWidth:  wideWidth(),
+		TopRowDelta:    &risingTopRowDelta{},
+		WidthDelta:     &wideningWidthDelta{},
 	}
 }
 
-func clampColumnValues(topRow, width int) (int, int) {
-	tr := max(topRow, 0)
-	tr = min(tr, rowsPerColumn-minCaveWidth)
-	w := max(width, minCaveWidth)
-	w = min(w, rowsPerColumn-tr)
-	return tr, w
-}
-
-// Generates the biomes. The first dimension of the returned [][]uint8 is the biomes themselves.
-// The second dimension is the column data per biome.
-func generateBiomes() [][]uint8 {
-	biomes := make([][]uint8, biomeCount)
+// Generates the biomes.
+func GenerateBiomes() []*Biome {
+	biomes := make([]*Biome, biomeCount)
 	for i := range biomes {
-		biomes[i] = make([]uint8, columnsPerBiome)
-		gen := newMiddleWideRisingWidening()
-		startTop, startWidth := clampColumnValues(gen.startingTopRow, gen.startingWidth)
-		biomes[i][0] = packColumnData(uint8(startTop), uint8(startWidth))
-		prevTopRow := startTop
-		prevWidth := startWidth
-		for j := 1; j < len(biomes[i]); j++ {
-			topRow, width := clampColumnValues(prevTopRow+gen.topRowDelta.Generate(), prevWidth+gen.widthDelta.Generate())
-			biomes[i][j] = packColumnData(uint8(topRow), uint8(width))
-			prevTopRow = topRow
-			prevWidth = width
+		columns := make([]Column, columnsPerBiome)
+		gen := NewMiddleWideRisingWidening()
+		startingCol := Column{
+			TopRow: gen.StartingTopRow,
+			Width:  gen.StartingWidth,
+		}.ClampValues()
+		columns[0] = startingCol
+		prevTopRow := startingCol.TopRow
+		prevWidth := startingCol.Width
+		for i := 1; i < len(columns); i++ {
+			c := Column{
+				TopRow: prevTopRow + gen.TopRowDelta.Generate(),
+				Width:  prevWidth + gen.WidthDelta.Generate(),
+			}.ClampValues()
+			columns[i] = c
+			prevTopRow = c.TopRow
+			prevWidth = c.Width
 		}
+		biomes[i] = &Biome{Columns: columns}
 	}
 	return biomes
 }
 
-// Determines if the caves for two biomes overlap.
-func biomesOverlap(leftTop, leftBottom, rightTop, rightBottom uint8) bool {
+// Determines if the caves for two columns overlap.
+func cavesOverlap(leftTop, leftBottom, rightTop, rightBottom int) bool {
 	// left is completely above right.
 	if leftBottom < rightTop {
 		return false
@@ -288,12 +311,14 @@ func biomesOverlap(leftTop, leftBottom, rightTop, rightBottom uint8) bool {
 	return true
 }
 
-// Determines if two biomes connect, i.e. their caves overlap with at least the required minimum
+// Determines if two columns connect, i.e. their caves overlap with at least the required minimum
 // width.
-func biomesConnect(leftTop, leftWidth, rightTop, rightWidth uint8) bool {
-	leftBottom := leftTop + leftWidth - 1
-	rightBottom := rightTop + rightWidth - 1
-	if !biomesOverlap(leftTop, leftBottom, rightTop, rightBottom) {
+func columnsConnect(leftCol Column, rightCol Column) bool {
+	leftTop := leftCol.TopRow
+	rightTop := rightCol.TopRow
+	leftBottom := leftTop + leftCol.Width - 1
+	rightBottom := rightTop + rightCol.Width - 1
+	if !cavesOverlap(leftTop, leftBottom, rightTop, rightBottom) {
 		return false
 	}
 	// Calculate the actual overlap and see if it's >= the minimum cave width.
@@ -340,25 +365,25 @@ func balanceBiomeConnections(connections [][]int, maxCount int) [][]int {
 
 // Finds and returns all biomes that connect. Biomes connect when their caves overlap with at least
 // the required minimum width.
-func findBiomeConnections(biomes [][]uint8) [][]int {
+func FindBiomeConnections(biomes []*Biome) [][]int {
 	connections := make([][]int, len(biomes))
 	maxCount := 0
-	for leftIdx := range biomes {
+	for leftIdx, leftBiome := range biomes {
 		connections[leftIdx] = []int{}
 		count := 0
-		leftTop, leftWidth := unpackColumnData(biomes[leftIdx][len(biomes[leftIdx])-1])
-		for rightIdx := range biomes {
+		leftCol := leftBiome.Columns[len(leftBiome.Columns)-1]
+		for rightIdx, rightBiome := range biomes {
 			if rightIdx == leftIdx {
 				continue
 			}
-			rightTop, rightWidth := unpackColumnData(biomes[rightIdx][0])
-			if biomesConnect(leftTop, leftWidth, rightTop, rightWidth) {
+			rightCol := rightBiome.Columns[0]
+			if columnsConnect(leftCol, rightCol) {
 				connections[leftIdx] = append(connections[leftIdx], rightIdx)
 				count++
 			}
 		}
 		if count == 0 {
-			log.Fatalf("Biome %d (topRow=%d, width=%d) doesn't connect with any other biome", leftIdx, leftTop, leftWidth)
+			log.Fatalf("Biome %d (%s) doesn't connect with any other biome", leftIdx, leftCol)
 		}
 		maxCount = max(maxCount, count)
 	}
@@ -368,7 +393,7 @@ func findBiomeConnections(biomes [][]uint8) [][]int {
 }
 
 // Prints the constants to stdout in the C code format.
-func printConstants(seed int64, biomes [][]uint8, connections [][]int) {
+func PrintConstants(seed int64, biomes []*Biome, connections [][]int) {
 	fmt.Printf("// Random seed used: %d\n", seed)
 	fmt.Println()
 	fmt.Printf("#define BIOME_COUNT %d\n", len(biomes))
@@ -378,18 +403,18 @@ func printConstants(seed int64, biomes [][]uint8, connections [][]int) {
 }
 
 // Prints the biome data to stdout in the C code format.
-func printBiomes(biomes [][]uint8) {
+func PrintBiomes(biomes []*Biome) {
 	fmt.Println("static const uint8_t biome_columns[BIOME_COUNT][COLUMNS_PER_BIOME] = {")
 	for i, biome := range biomes {
 		fmt.Printf("  /* %02d */ { ", i)
 		first := true
-		for _, col := range biome {
+		for _, col := range biome.Columns {
 			if first {
-				fmt.Printf("0x%02X", col)
+				fmt.Printf("0x%02X", col.PackData())
 				first = false
 				continue
 			}
-			fmt.Printf(", 0x%02X", col)
+			fmt.Printf(", 0x%02X", col.PackData())
 		}
 		fmt.Println(" },")
 	}
@@ -397,7 +422,7 @@ func printBiomes(biomes [][]uint8) {
 }
 
 // Prints the biome connections to stdout in the C code format.
-func printBiomeConnections(connections [][]int) {
+func PrintBiomeConnections(connections [][]int) {
 	fmt.Println("static const uint8_t next_possible_biomes[BIOME_COUNT][BIOME_CONNECTION_COUNT] = {")
 	for i, biome := range connections {
 		fmt.Printf("  /* %02d */ { ", i)
@@ -423,15 +448,15 @@ func main() {
 	}
 	rng = rand.New(rand.NewSource(seed))
 	log.Printf("Using random seed: %d", seed)
-	biomes := generateBiomes()
+	biomes := GenerateBiomes()
 	log.Printf("Generated %d biomes", len(biomes))
 	log.Print("Finding biome connections")
-	connections := findBiomeConnections(biomes)
+	connections := FindBiomeConnections(biomes)
 	log.Print("Printing biomes and connections")
-	printConstants(seed, biomes, connections)
+	PrintConstants(seed, biomes, connections)
 	fmt.Println()
-	printBiomes(biomes)
+	PrintBiomes(biomes)
 	fmt.Println()
-	printBiomeConnections(connections)
+	PrintBiomeConnections(connections)
 	fmt.Println()
 }
