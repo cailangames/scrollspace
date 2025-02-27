@@ -53,34 +53,102 @@ const (
 
 var rng *rand.Rand
 
-type tileType int
+//
+// Simulation
+//
+
+type TileType int
 
 const (
-	emptyTile tileType = iota
-	blockTile
-	mineTile
-	healthTile
-	shieldTile
+	EmptyTile TileType = iota
+	BlockTile
+	MineTile
+	HealthTile
+	ShieldTile
 )
 
-type columnData struct {
-	topRow uint8
-	width  uint8
+type GameMap struct {
+	Tiles        [][]TileType
+	ChosenBiomes []int
 }
 
-// Unpacks the data for a column and returns the top row and width of the cave.
-func unpackColumnData(data uint8) columnData {
-	var topRow uint8 = data >> 4
-	var width uint8 = data & 0x0F
-	return columnData{
-		topRow: topRow,
-		width:  width + minCaveWidth,
+type ColumnData struct {
+	TopRow uint8
+	Width  uint8
+}
+
+func (gm *GameMap) fillColumn(column int, data ColumnData) {
+	gm.Tiles[column] = make([]TileType, rowsPerColumn)
+	for i := range gm.Tiles[column] {
+		if i < int(data.TopRow) || i >= int(data.TopRow+data.Width) {
+			gm.Tiles[column][i] = BlockTile
+			continue
+		}
+		// Note: The below should match the mine and pickup generation code in procedural_generation.c.
+		n := rng.Intn(math.MaxUint16 + 1)
+		if n < math.MaxUint16-(mineProbability+shieldPickupProbability+healthPickupProbability) {
+			gm.Tiles[column][i] = EmptyTile
+		} else if n < math.MaxUint16-(shieldPickupProbability+healthPickupProbability) {
+			gm.Tiles[column][i] = MineTile
+		} else if n < math.MaxUint16-healthPickupProbability {
+			gm.Tiles[column][i] = ShieldTile
+		} else {
+			gm.Tiles[column][i] = HealthTile
+		}
 	}
 }
 
-func parseBiomeData(lines []string) [][]columnData {
+func (gm *GameMap) String() string {
+	var sb strings.Builder
+	for row := 0; row < rowsPerColumn; row++ {
+		for col := 0; col < len(gm.Tiles); col++ {
+			if gm.Tiles[col][row] == BlockTile {
+				sb.WriteRune('X')
+			} else {
+				sb.WriteRune(' ')
+			}
+		}
+		sb.WriteRune('\n')
+	}
+	return sb.String()
+}
+
+func GenerateGameMap(biomes [][]ColumnData, connections [][]int, simulationCount int) *GameMap {
+	gameMap := &GameMap{
+		Tiles:        make([][]TileType, simulationCount*columnsPerBiome),
+		ChosenBiomes: make([]int, 0, simulationCount),
+	}
+	startIdx := 0
+	biome := rng.Intn(len(biomes))
+	for i := 0; i < simulationCount; i++ {
+		gameMap.ChosenBiomes = append(gameMap.ChosenBiomes, biome)
+		for col := 0; col < columnsPerBiome; col++ {
+			gameMap.fillColumn(startIdx+col, biomes[biome][col])
+		}
+		startIdx += columnsPerBiome
+		conn := rng.Intn(len(connections[biome]))
+		biome = connections[biome][conn]
+	}
+	return gameMap
+}
+
+//
+// I/O
+//
+
+// Unpacks the data for a column and returns the top row and width of the cave.
+func unpackColumnData(data uint8) ColumnData {
+	var topRow uint8 = data >> 4
+	var width uint8 = data & 0x0F
+	return ColumnData{
+		TopRow: topRow,
+		Width:  width + minCaveWidth,
+	}
+}
+
+func parseBiomeData(lines []string) [][]ColumnData {
 	regex := regexp.MustCompile(`\{(.*)\}`)
-	biomes := [][]columnData{}
+	biomes := [][]ColumnData{}
 	for _, line := range lines {
 		submatches := regex.FindStringSubmatch(line)
 		if len(submatches) != 2 {
@@ -88,7 +156,7 @@ func parseBiomeData(lines []string) [][]columnData {
 		}
 		line = submatches[1]
 		numStrs := strings.Split(line, ",")
-		biomes = append(biomes, []columnData{})
+		biomes = append(biomes, []ColumnData{})
 		for _, numStr := range numStrs {
 			numStr = strings.TrimSpace(numStr)
 			if len(numStr) == 0 {
@@ -105,7 +173,7 @@ func parseBiomeData(lines []string) [][]columnData {
 	return biomes
 }
 
-func findBiomeData(lines []string) [][]columnData {
+func findBiomeData(lines []string) [][]ColumnData {
 	regex := regexp.MustCompile(`biome_columns\[.*\].*=`)
 	for i, line := range lines {
 		if !regex.MatchString(line) {
@@ -163,57 +231,8 @@ func findBiomeConnections(lines []string) [][]int {
 	return nil
 }
 
-func fillColumn(gameMap [][]tileType, column int, data columnData) {
-	gameMap[column] = make([]tileType, rowsPerColumn)
-	for i := range gameMap[column] {
-		if i < int(data.topRow) || i >= int(data.topRow+data.width) {
-			gameMap[column][i] = blockTile
-			continue
-		}
-		// Note: The below should match the mine and pickup generation code in procedural_generation.c.
-		n := rng.Intn(math.MaxUint16 + 1)
-		if n < math.MaxUint16-(mineProbability+shieldPickupProbability+healthPickupProbability) {
-			gameMap[column][i] = emptyTile
-		} else if n < math.MaxUint16-(shieldPickupProbability+healthPickupProbability) {
-			gameMap[column][i] = mineTile
-		} else if n < math.MaxUint16-healthPickupProbability {
-			gameMap[column][i] = shieldTile
-		} else {
-			gameMap[column][i] = healthTile
-		}
-	}
-}
-
-func generateGameMap(biomes [][]columnData, connections [][]int, simulationCount int) ([][]tileType, []int) {
-	gameMap := make([][]tileType, simulationCount*columnsPerBiome)
-	chosenBiomes := make([]int, 0, simulationCount)
-	startIdx := 0
-	biome := rng.Intn(len(biomes))
-	for i := 0; i < simulationCount; i++ {
-		chosenBiomes = append(chosenBiomes, biome)
-		for col := 0; col < columnsPerBiome; col++ {
-			fillColumn(gameMap, startIdx+col, biomes[biome][col])
-		}
-		startIdx += columnsPerBiome
-		conn := rng.Intn(len(connections[biome]))
-		biome = connections[biome][conn]
-	}
-	return gameMap, chosenBiomes
-}
-
-func printGameMap(gameMap [][]tileType) {
-	for row := 0; row < rowsPerColumn; row++ {
-		for col := 0; col < len(gameMap); col++ {
-			var s string
-			if gameMap[col][row] == blockTile {
-				s = "X"
-			} else {
-				s = " "
-			}
-			fmt.Print(s)
-		}
-		fmt.Println()
-	}
+func printGameMap(gameMap *GameMap) {
+	fmt.Print(gameMap.String())
 }
 
 // Draws a line on the given image.
@@ -262,9 +281,48 @@ func drawBiomeIndex(img *image.RGBA, column, index int) {
 	}
 }
 
-func outputImage(gameMap [][]tileType, chosenBiomes []int, file string) {
-	width := len(gameMap) * pixelsPerTile
-	height := rowsPerColumn * pixelsPerTile
+func drawGameMap(img *image.RGBA, gameMap *GameMap) {
+	// Fill in cells.
+	black := color.RGBA{0, 0, 0, 255}
+	grey := color.RGBA{128, 128, 128, 255}
+	raspberry := color.RGBA{227, 11, 92, 255}
+	cornflowerBlue := color.RGBA{100, 149, 237, 255}
+	for col := 0; col < len(gameMap.Tiles); col++ {
+		for row := 0; row < len(gameMap.Tiles[col]); row++ {
+			switch gameMap.Tiles[col][row] {
+			case EmptyTile:
+				// No fill color.
+			case BlockTile:
+				fillCell(img, black, row, col)
+			case MineTile:
+				fillCell(img, grey, row, col)
+			case HealthTile:
+				fillCell(img, raspberry, row, col)
+			case ShieldTile:
+				fillCell(img, cornflowerBlue, row, col)
+			default:
+				log.Fatalf("Unknown tile type: %d", gameMap.Tiles[col][row])
+			}
+		}
+	}
+
+	// Draw biome indexes.
+	for i, biome := range gameMap.ChosenBiomes {
+		drawBiomeIndex(img, i*columnsPerBiome, biome)
+	}
+
+	// Draw bottom border.
+	lightGrey := color.RGBA{211, 211, 211, 255}
+	for y := rowsPerColumn * pixelsPerTile; y < (rowsPerColumn+1)*pixelsPerTile; y++ {
+		for x := 0; x < len(gameMap.Tiles)*pixelsPerTile; x++ {
+			img.Set(x, y, lightGrey)
+		}
+	}
+}
+
+func outputImage(gameMap *GameMap, file string) {
+	width := len(gameMap.Tiles) * pixelsPerTile
+	height := (rowsPerColumn + 1) * pixelsPerTile
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 
 	// Fill the background with white.
@@ -275,34 +333,8 @@ func outputImage(gameMap [][]tileType, chosenBiomes []int, file string) {
 		}
 	}
 
-	// Fill in cells.
-	black := color.RGBA{0, 0, 0, 255}
-	grey := color.RGBA{128, 128, 128, 255}
-	raspberry := color.RGBA{227, 11, 92, 255}
-	cornflowerBlue := color.RGBA{100, 149, 237, 255}
-	for col := 0; col < len(gameMap); col++ {
-		for row := 0; row < len(gameMap[col]); row++ {
-			switch gameMap[col][row] {
-			case emptyTile:
-				// No fill color.
-			case blockTile:
-				fillCell(img, black, row, col)
-			case mineTile:
-				fillCell(img, grey, row, col)
-			case healthTile:
-				fillCell(img, raspberry, row, col)
-			case shieldTile:
-				fillCell(img, cornflowerBlue, row, col)
-			default:
-				log.Fatalf("Unknown tile type: %d", gameMap[col][row])
-			}
-		}
-	}
-
-	// Draw biome indexes.
-	for i := 0; i < len(chosenBiomes); i++ {
-		drawBiomeIndex(img, i*columnsPerBiome, chosenBiomes[i])
-	}
+	// Draw game map.
+	drawGameMap(img, gameMap)
 
 	// Draw grid lines.
 	lightGrey := color.RGBA{211, 211, 211, 255}
@@ -320,6 +352,10 @@ func outputImage(gameMap [][]tileType, chosenBiomes []int, file string) {
 		log.Fatalf("Failed to write .png file: %v", err)
 	}
 }
+
+//
+// Main
+//
 
 func main() {
 	log.Print("Simulating procedural generation...")
@@ -343,11 +379,11 @@ func main() {
 	log.Printf("Number of biomes found: %d", len(biomes))
 	connections := findBiomeConnections(lines)
 	log.Printf("Number of connections per biome found: %d", len(connections[0]))
-	gameMap, chosenBiomes := generateGameMap(biomes, connections, *simulatedBiomesCount)
+	gameMap := GenerateGameMap(biomes, connections, *simulatedBiomesCount)
 	if *outputFile == "" {
 		printGameMap(gameMap)
 	} else {
 		log.Printf("Writing simulated game map to file: %s", *outputFile)
-		outputImage(gameMap, chosenBiomes, *outputFile)
+		outputImage(gameMap, *outputFile)
 	}
 }
