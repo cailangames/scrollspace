@@ -36,7 +36,8 @@ var (
 	randomSeed           = flag.Int64("random_seed", 0, "The random seed to use for RNG. To use a specific seed, set this flag to a non-zero value.")
 	inputFile            = flag.String("input_file", "biomes.c", "The input file containing the biome data")
 	outputFile           = flag.String("output_file", "simulation.png", "The output .png file to write the simulated game map to. If this flag is empty, a text version of the simulated game map is written to stdout.")
-	simulatedBiomesCount = flag.Int("simulated_biomes_count", 20, "How many biomes to simulate")
+	simulatedBiomesCount = flag.Int("simulated_biomes_count", 10, "How many biomes to simulate per run")
+	simulationRuns       = flag.Int("simulation_runs", 4, "How many simulation runs the program should do. Each simulation run is stack on top of each other in the output.")
 )
 
 // Constants - These should match the constants in generate_biomes.go and common.h.
@@ -102,10 +103,19 @@ func (gm *GameMap) String() string {
 	var sb strings.Builder
 	for row := 0; row < rowsPerColumn; row++ {
 		for col := 0; col < len(gm.Tiles); col++ {
-			if gm.Tiles[col][row] == BlockTile {
-				sb.WriteRune('X')
-			} else {
+			switch gm.Tiles[col][row] {
+			case EmptyTile:
 				sb.WriteRune(' ')
+			case BlockTile:
+				sb.WriteRune('X')
+			case MineTile:
+				sb.WriteRune('M')
+			case HealthTile:
+				sb.WriteRune('H')
+			case ShieldTile:
+				sb.WriteRune('S')
+			default:
+				log.Fatalf("Unknown tile type: %d", gm.Tiles[col][row])
 			}
 		}
 		sb.WriteRune('\n')
@@ -231,8 +241,10 @@ func findBiomeConnections(lines []string) [][]int {
 	return nil
 }
 
-func printGameMap(gameMap *GameMap) {
-	fmt.Print(gameMap.String())
+func printGameMaps(gameMaps []*GameMap) {
+	for _, gm := range gameMaps {
+		fmt.Println(gm.String())
+	}
 }
 
 // Draws a line on the given image.
@@ -263,9 +275,9 @@ func drawLine(img *image.RGBA, c color.Color, x1, y1, x2, y2 int) {
 	}
 }
 
-func fillCell(img *image.RGBA, c color.Color, row, column int) {
+func fillCell(img *image.RGBA, c color.Color, row, column, yOffset int) {
 	startX := column * pixelsPerTile
-	startY := row * pixelsPerTile
+	startY := (row * pixelsPerTile) + yOffset
 	for x := 0; x < pixelsPerTile; x++ {
 		for y := 0; y < pixelsPerTile; y++ {
 			img.Set(startX+x, startY+y, c)
@@ -273,15 +285,15 @@ func fillCell(img *image.RGBA, c color.Color, row, column int) {
 	}
 }
 
-func drawBiomeIndex(img *image.RGBA, column, index int) {
+func drawBiomeIndex(img *image.RGBA, index, column, yOffset int) {
 	startX := column * pixelsPerTile
 	lightBlue := color.RGBA{173, 216, 230, 255}
 	for x := 0; x < index; x++ {
-		img.Set(startX+x, 0, lightBlue)
+		img.Set(startX+x, yOffset, lightBlue)
 	}
 }
 
-func drawGameMap(img *image.RGBA, gameMap *GameMap) {
+func drawGameMap(img *image.RGBA, gameMap *GameMap, yOffset int) {
 	// Fill in cells.
 	black := color.RGBA{0, 0, 0, 255}
 	grey := color.RGBA{128, 128, 128, 255}
@@ -293,13 +305,13 @@ func drawGameMap(img *image.RGBA, gameMap *GameMap) {
 			case EmptyTile:
 				// No fill color.
 			case BlockTile:
-				fillCell(img, black, row, col)
+				fillCell(img, black, row, col, yOffset)
 			case MineTile:
-				fillCell(img, grey, row, col)
+				fillCell(img, grey, row, col, yOffset)
 			case HealthTile:
-				fillCell(img, raspberry, row, col)
+				fillCell(img, raspberry, row, col, yOffset)
 			case ShieldTile:
-				fillCell(img, cornflowerBlue, row, col)
+				fillCell(img, cornflowerBlue, row, col, yOffset)
 			default:
 				log.Fatalf("Unknown tile type: %d", gameMap.Tiles[col][row])
 			}
@@ -308,21 +320,21 @@ func drawGameMap(img *image.RGBA, gameMap *GameMap) {
 
 	// Draw biome indexes.
 	for i, biome := range gameMap.ChosenBiomes {
-		drawBiomeIndex(img, i*columnsPerBiome, biome)
+		drawBiomeIndex(img, biome, i*columnsPerBiome, yOffset)
 	}
 
 	// Draw bottom border.
 	lightGrey := color.RGBA{211, 211, 211, 255}
-	for y := rowsPerColumn * pixelsPerTile; y < (rowsPerColumn+1)*pixelsPerTile; y++ {
+	for y := (rowsPerColumn * pixelsPerTile) + yOffset; y < ((rowsPerColumn+1)*pixelsPerTile)+yOffset; y++ {
 		for x := 0; x < len(gameMap.Tiles)*pixelsPerTile; x++ {
 			img.Set(x, y, lightGrey)
 		}
 	}
 }
 
-func outputImage(gameMap *GameMap, file string) {
-	width := len(gameMap.Tiles) * pixelsPerTile
-	height := (rowsPerColumn + 1) * pixelsPerTile
+func outputImage(gameMaps []*GameMap, file string) {
+	width := len(gameMaps[0].Tiles) * pixelsPerTile
+	height := len(gameMaps) * (rowsPerColumn + 1) * pixelsPerTile // +1 is for the border row.
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 
 	// Fill the background with white.
@@ -333,8 +345,10 @@ func outputImage(gameMap *GameMap, file string) {
 		}
 	}
 
-	// Draw game map.
-	drawGameMap(img, gameMap)
+	// Draw game maps.
+	for i, gm := range gameMaps {
+		drawGameMap(img, gm, i*(rowsPerColumn+1)*pixelsPerTile)
+	}
 
 	// Draw grid lines.
 	lightGrey := color.RGBA{211, 211, 211, 255}
@@ -379,11 +393,17 @@ func main() {
 	log.Printf("Number of biomes found: %d", len(biomes))
 	connections := findBiomeConnections(lines)
 	log.Printf("Number of connections per biome found: %d", len(connections[0]))
-	gameMap := GenerateGameMap(biomes, connections, *simulatedBiomesCount)
+
+	log.Printf("Simulating %d game maps with %d biomes per map", *simulationRuns, *simulatedBiomesCount)
+	gameMaps := make([]*GameMap, *simulationRuns)
+	for i := range gameMaps {
+		gameMaps[i] = GenerateGameMap(biomes, connections, *simulatedBiomesCount)
+	}
 	if *outputFile == "" {
-		printGameMap(gameMap)
+		log.Print("Writing simulated game maps to stdout")
+		printGameMaps(gameMaps)
 	} else {
-		log.Printf("Writing simulated game map to file: %s", *outputFile)
-		outputImage(gameMap, *outputFile)
+		log.Printf("Writing simulated game maps to file: %s", *outputFile)
+		outputImage(gameMaps, *outputFile)
 	}
 }
