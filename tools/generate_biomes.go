@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"slices"
+	"sort"
 	"time"
 )
 
@@ -16,11 +18,16 @@ import (
 const (
 	// To use a specific seed for the RNG, set `randomSeed` to a non-zero value.
 	randomSeed int64 = 0
+	// How many connections will each biome have. If set to zero, then this value will be
+	// algorithmically decided based on how many biome connections exist.
+	biomeConnectionCount = 32
+	// Biome generator counts
+	middleWideRisingWideningCount = 64
+	biomeCount                    = middleWideRisingWideningCount
 )
 
 // Constants
 const (
-	biomeCount      = 64
 	columnsPerBiome = 20
 	rowsPerColumn   = 17
 	minCaveWidth    = 3
@@ -270,12 +277,22 @@ func NewMiddleWideRisingWidening() *BiomeGenerator {
 	}
 }
 
+// Creates the biome generators based on the program's parameters.
+func createBiomeGenerators() []*BiomeGenerator {
+	gens := make([]*BiomeGenerator, biomeCount)
+	for i := 0; i < middleWideRisingWideningCount; i++ {
+		gens[i] = NewMiddleWideRisingWidening()
+	}
+	return gens
+}
+
 // Generates the biomes.
 func GenerateBiomes() []*Biome {
 	biomes := make([]*Biome, biomeCount)
+	gens := createBiomeGenerators()
 	for i := range biomes {
 		columns := make([]Column, columnsPerBiome)
-		gen := NewMiddleWideRisingWidening()
+		gen := gens[i]
 		startingCol := Column{
 			TopRow: gen.StartingTopRow,
 			Width:  gen.StartingWidth,
@@ -328,12 +345,23 @@ func columnsConnect(leftCol Column, rightCol Column) bool {
 	return actualOverlap >= minCaveWidth
 }
 
+// Shrinks the size of the given []int by randomly picking `n` elements from it.
+func shrinkElements(elements []int, n int) []int {
+	result := make([]int, n)
+	for i := 0; i < len(result); i++ {
+		r := rng.Intn(len(elements))
+		result[i] = elements[r]
+		elements = slices.Delete(elements, r, r+1)
+	}
+	sort.Ints(result)
+	return result
+}
+
 // Evenly distributes the given elements in a list of size `n`.
 func distributeElements(elements []int, n int) []int {
 	if len(elements) > n {
-		log.Fatalf("Can't fit %d elements into a list of size %d", len(elements), n)
+		elements = shrinkElements(elements, n)
 	}
-
 	result := make([]int, n)
 	base := n / len(elements)      // Integer division to get the base distribution
 	remainder := n % len(elements) // Remaining elements to distribute
@@ -356,10 +384,18 @@ func distributeElements(elements []int, n int) []int {
 // Balances the biome connections, i.e. makes every biome's connection list the same size.
 func balanceBiomeConnections(connections [][]int, maxCount int) [][]int {
 	result := make([][]int, len(connections))
-	size := nearestPowerOf2(maxCount)
+	size := biomeConnectionCount
+	if size <= 0 {
+		size = nearestPowerOf2(maxCount)
+	}
+	resizeCount := 0
 	for i := range connections {
+		if len(connections[i]) > size {
+			resizeCount++
+		}
 		result[i] = distributeElements(connections[i], size)
 	}
+	log.Printf("Resized connections list of %d biomes", resizeCount)
 	return result
 }
 
@@ -429,11 +465,11 @@ func PrintBiomeConnections(connections [][]int) {
 		first := true
 		for _, conn := range biome {
 			if first {
-				fmt.Printf("%d", conn)
+				fmt.Printf("%2d", conn)
 				first = false
 				continue
 			}
-			fmt.Printf(", %d", conn)
+			fmt.Printf(", %2d", conn)
 		}
 		fmt.Println(" },")
 	}
