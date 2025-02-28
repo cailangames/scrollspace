@@ -22,15 +22,23 @@ const (
 	// algorithmically decided based on how many biome connections exist.
 	biomeConnectionCount = 32
 	// Biome generator counts
-	middleWideRisingWideningCount = 64
-	biomeCount                    = middleWideRisingWideningCount
+	// The total number of biomes generated is the sum of these counts.
+	middleStandardSteadyVolatileCount   = 20
+	highWideSteadySteadyCount           = 10
+	middleStandardRisingWideningCount   = 7
+	highWideFallingNarrowingCount       = 2
+	lowStandardSteadySteadyCount        = 7
+	middleStandardVolatileVolatileCount = 10
+	lowStandardRisingWideningCount      = 5
+	highWideRisingWideningCount         = 3
+	highNarrowFallingSteadyCount        = 0
 )
 
 // Constants
 const (
 	columnsPerBiome = 20
 	rowsPerColumn   = 17
-	minCaveWidth    = 3
+	minCaveWidth    = 4
 )
 
 var rng *rand.Rand
@@ -127,18 +135,18 @@ func middleTopRow() int {
 }
 
 func lowTopRow() int {
-	return rng.Intn(5) + 10
+	return rng.Intn(5) + 9
 }
 
 func narrowWidth() int {
 	n := rng.Intn(100) + 1
 	switch {
 	case n <= 50:
-		return 4
-	case n <= 75:
-		return 3
-	default:
 		return 5
+	case n <= 75:
+		return 4
+	default:
+		return 6
 	}
 }
 
@@ -146,13 +154,13 @@ func standardWidth() int {
 	n := rng.Intn(100) + 1
 	switch {
 	case n <= 35:
-		return 6
-	case n <= 70:
 		return 7
-	case n <= 85:
-		return 5
-	default:
+	case n <= 70:
 		return 8
+	case n <= 85:
+		return 6
+	default:
+		return 9
 	}
 }
 
@@ -160,11 +168,11 @@ func wideWidth() int {
 	n := rng.Intn(100) + 1
 	switch {
 	case n <= 50:
-		return 9
-	case n <= 75:
-		return 8
-	default:
 		return 10
+	case n <= 75:
+		return 9
+	default:
+		return 11
 	}
 }
 
@@ -268,28 +276,126 @@ func (d *narrowingWidthDelta) Generate() int {
 	return decreasingDelta()
 }
 
-func NewMiddleWideRisingWidening() *BiomeGenerator {
+func NewMiddleStandardSteadyVolatile() *BiomeGenerator {
 	return &BiomeGenerator{
 		StartingTopRow: middleTopRow(),
+		StartingWidth:  standardWidth(),
+		TopRowDelta:    &steadyTopRowDelta{},
+		WidthDelta:     &volatileWidthDelta{},
+	}
+}
+
+func NewHighWideSteadySteady() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: highTopRow(),
+		StartingWidth:  wideWidth(),
+		TopRowDelta:    &steadyTopRowDelta{},
+		WidthDelta:     &steadyWidthDelta{},
+	}
+}
+
+func NewMiddleStandardRisingWidening() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: middleTopRow(),
+		StartingWidth:  standardWidth(),
+		TopRowDelta:    &risingTopRowDelta{},
+		WidthDelta:     &wideningWidthDelta{},
+	}
+}
+
+func NewHighWideFallingNarrowing() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: highTopRow(),
+		StartingWidth:  wideWidth(),
+		TopRowDelta:    &fallingTopRowDelta{},
+		WidthDelta:     &narrowingWidthDelta{},
+	}
+}
+
+func NewLowStandardSteadySteady() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: lowTopRow(),
+		StartingWidth:  standardWidth(),
+		TopRowDelta:    &steadyTopRowDelta{},
+		WidthDelta:     &steadyWidthDelta{},
+	}
+}
+
+func NewMiddleStandardVolatileVolatile() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: middleTopRow(),
+		StartingWidth:  standardWidth(),
+		TopRowDelta:    &volatileTopRowDelta{},
+		WidthDelta:     &volatileWidthDelta{},
+	}
+}
+
+func NewLowStandardRisingWidening() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: lowTopRow(),
+		StartingWidth:  standardWidth(),
+		TopRowDelta:    &risingTopRowDelta{},
+		WidthDelta:     &wideningWidthDelta{},
+	}
+}
+
+func NewHighWideRisingWidening() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: highTopRow(),
 		StartingWidth:  wideWidth(),
 		TopRowDelta:    &risingTopRowDelta{},
 		WidthDelta:     &wideningWidthDelta{},
 	}
 }
 
+func NewHighNarrowFallingSteady() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: highTopRow(),
+		StartingWidth:  narrowWidth(),
+		TopRowDelta:    &fallingTopRowDelta{},
+		WidthDelta:     &steadyWidthDelta{},
+	}
+}
+
 // Creates the biome generators based on the program's parameters.
 func createBiomeGenerators() []*BiomeGenerator {
-	gens := make([]*BiomeGenerator, biomeCount)
-	for i := 0; i < middleWideRisingWideningCount; i++ {
-		gens[i] = NewMiddleWideRisingWidening()
+	// Note: Due to the way the biome connection code works, biomes that are created with lower
+	// indices are more likely to appear. Thus, the ordering of these biome generators matters.
+	gens := []*BiomeGenerator{}
+	for i := 0; i < middleStandardSteadyVolatileCount; i++ {
+		gens = append(gens, NewMiddleStandardSteadyVolatile())
+	}
+	for i := 0; i < highWideSteadySteadyCount; i++ {
+		gens = append(gens, NewHighWideSteadySteady())
+	}
+	for i := 0; i < middleStandardRisingWideningCount; i++ {
+		gens = append(gens, NewMiddleStandardRisingWidening())
+	}
+	for i := 0; i < highWideFallingNarrowingCount; i++ {
+		gens = append(gens, NewHighWideFallingNarrowing())
+	}
+	for i := 0; i < lowStandardSteadySteadyCount; i++ {
+		gens = append(gens, NewLowStandardSteadySteady())
+	}
+	for i := 0; i < middleStandardVolatileVolatileCount; i++ {
+		gens = append(gens, NewMiddleStandardVolatileVolatile())
+	}
+	for i := 0; i < lowStandardRisingWideningCount; i++ {
+		gens = append(gens, NewLowStandardRisingWidening())
+	}
+	for i := 0; i < highWideRisingWideningCount; i++ {
+		gens = append(gens, NewHighWideRisingWidening())
+	}
+	for i := 0; i < highNarrowFallingSteadyCount; i++ {
+		gens = append(gens, NewHighNarrowFallingSteady())
 	}
 	return gens
 }
 
 // Generates the biomes.
 func GenerateBiomes() []*Biome {
-	biomes := make([]*Biome, biomeCount)
 	gens := createBiomeGenerators()
+	biomes := make([]*Biome, len(gens))
 	for i := range biomes {
 		columns := make([]Column, columnsPerBiome)
 		gen := gens[i]
@@ -406,7 +512,6 @@ func FindBiomeConnections(biomes []*Biome) [][]int {
 	maxCount := 0
 	for leftIdx, leftBiome := range biomes {
 		connections[leftIdx] = []int{}
-		count := 0
 		leftCol := leftBiome.Columns[len(leftBiome.Columns)-1]
 		for rightIdx, rightBiome := range biomes {
 			if rightIdx == leftIdx {
@@ -415,13 +520,13 @@ func FindBiomeConnections(biomes []*Biome) [][]int {
 			rightCol := rightBiome.Columns[0]
 			if columnsConnect(leftCol, rightCol) {
 				connections[leftIdx] = append(connections[leftIdx], rightIdx)
-				count++
 			}
 		}
-		if count == 0 {
-			log.Fatalf("Biome %d (%s) doesn't connect with any other biome", leftIdx, leftCol)
+		if len(connections[leftIdx]) == 0 {
+			log.Printf("Biome %d (%s) doesn't connect with any other biome", leftIdx, leftCol)
+			connections[leftIdx] = append(connections[leftIdx], 0)
 		}
-		maxCount = max(maxCount, count)
+		maxCount = max(maxCount, len(connections[leftIdx]))
 	}
 
 	log.Printf("Largest number of connections found: %d", maxCount)

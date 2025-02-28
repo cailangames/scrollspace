@@ -37,7 +37,7 @@ var (
 	inputFile            = flag.String("input_file", "biomes.c", "The input file containing the biome data")
 	outputFile           = flag.String("output_file", "simulation.png", "The output .png file to write the simulated game map to. If this flag is empty, a text version of the simulated game map is written to stdout.")
 	simulatedBiomesCount = flag.Int("simulated_biomes_count", 10, "How many biomes to simulate per run")
-	simulationRuns       = flag.Int("simulation_runs", 4, "How many simulation runs the program should do. Each simulation run is stack on top of each other in the output.")
+	simulationRuns       = flag.Int("simulation_runs", 5, "How many simulation runs the program should do. Each simulation run is stack on top of each other in the output.")
 )
 
 // Constants - These should match the constants in generate_biomes.go and common.h.
@@ -45,7 +45,7 @@ const (
 	pixelsPerTile   = 8
 	columnsPerBiome = 20
 	rowsPerColumn   = 17
-	minCaveWidth    = 3
+	minCaveWidth    = 4
 	// The below probabilities are out of 65,535 (uint16 max value).
 	mineProbability         = 2000
 	healthPickupProbability = 100
