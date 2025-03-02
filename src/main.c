@@ -45,6 +45,7 @@ static const uint8_t yes_or_no_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, 0, CHAR_Y, 
 static bool rand_initialized = false;
 static bool hard_mode_unlocked = false;
 static bool turbo_mode_unlocked = false;
+static bool upgrade_sprite_unlocked = false;
 static bool game_paused = true;
 // Whether or not to show the timer-based score. If false, the points-based score is shown instead.
 // Note: The value of this variable is kept between runs of the game.
@@ -306,6 +307,7 @@ static void show_mode_selection_screen(void) {
         // Unlock hard and turbo modes.
         hard_mode_unlocked = true;
         turbo_mode_unlocked = true;
+        upgrade_sprite_unlocked = true;
         update_locks = true;
         prev_y = 0;  // Updates the window.
         play_bomb_sound();
@@ -348,8 +350,11 @@ static void show_mode_selection_screen(void) {
         if (confirm_action()) {
           play_bomb_sound();
           clear_score_data();
+          set_sprite_data(0, 10, player_sprites);
+          set_sprite_data(10, 9, player_shield_sprites);
           hard_mode_unlocked = false;
           turbo_mode_unlocked = false;
+          upgrade_sprite_unlocked = false;
           update_locks = true;
         }
         prev_y = 0;  // Updates the window.
@@ -395,7 +400,7 @@ static void show_gameover_screen(void) {
   move_bkg(0, 0);
 
   display_gameover_scores();
-  update_modes_unlocked(&hard_mode_unlocked, &turbo_mode_unlocked);
+  update_modes_unlocked(&hard_mode_unlocked, &turbo_mode_unlocked, &upgrade_sprite_unlocked);
 
   SHOW_BKG;
   fade_in();
@@ -493,7 +498,7 @@ void main(void) {
   move_win(7, 136);
   // Initialize high scores.
   init_highscores();
-  update_modes_unlocked(&hard_mode_unlocked, &turbo_mode_unlocked);
+  update_modes_unlocked(&hard_mode_unlocked, &turbo_mode_unlocked, &upgrade_sprite_unlocked);
   // Make sure ROM bank 1 is loaded (in addition to the always-loaded ROM bank 0).
   SWITCH_ROM(1);
 
@@ -653,6 +658,11 @@ void main(void) {
     // Unpausing the game turns on the timer, so this should be done as close as possible to the
     // main game loop.
     game_paused = false;
+
+    if (upgrade_sprite_unlocked){
+      set_sprite_data(0, 10, player_upgrade_sprites);
+      set_sprite_data(10, 9, player_upgrade_shield_sprites);
+    }
 
     /*
      * MAIN GAME LOOP

@@ -234,7 +234,9 @@ tilemap_offset = 0
 # fn_path = "../assets/font-extras.png" 
 #fn_path = "../assets/lock.png"
 #fn_path = "../assets/logo-cursor.png"
-fn_path = "../assets/intro_player_heatshield_sprites.png" 
+#fn_path = "../assets/intro_player_heatshield_sprites.png" 
+fn_path = "../assets/player_upgrade.png"
+fn_path = "../assets/player_upgrade_shield.png"
 
 # fn_path = "../assets/intro_stars.png"
 # tilemap_offset = 0x80

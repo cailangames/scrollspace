@@ -112,7 +112,7 @@ void clear_score_data(void) {
 
 // Checks if the high scores meet the thresholds for unlocking the harder game modes, and sets the
 // output bool pointers accordingly.
-void update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked) {
+void update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked, bool* upgrade_sprite_unlocked) {
   const struct HighScore* highscore = (const struct HighScore*)HIGH_SCORE_ADDRESS;
   if (highscore->points >= HARD_MODE_UNLOCK_POINTS) {
     *hard_mode_unlocked = true;
@@ -120,6 +120,10 @@ void update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked) 
   ++highscore;
   if (highscore->points >= TURBO_MODE_UNLOCK_POINTS) {
     *turbo_mode_unlocked = true;
+  }
+  ++highscore;
+  if (highscore->points >= UPGRADE_SPRITE_UNLOCK_POINTS) {
+    *upgrade_sprite_unlocked = true;
   }
 }
 

@@ -129,6 +129,7 @@
 // IMPORTANT: If you update these thresholds, you must update the unlock messages in score.h too.
 #define HARD_MODE_UNLOCK_POINTS 2000
 #define TURBO_MODE_UNLOCK_POINTS 1000
+#define UPGRADE_SPRITE_UNLOCK_POINTS 500
 // The below probabilities are out of 65,535 (uint16_t max).
 #define HEALTH_PICKUP_PROBABILITY 100
 #define SHIELD_PICKUP_PROBABILITY 100

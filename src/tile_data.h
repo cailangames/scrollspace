@@ -19,7 +19,6 @@ extern const uint8_t intro_atmosphere_map[576];
 extern const uint8_t title_screen_tiles[752];
 extern const uint8_t title_screen_map[360];
 extern const uint8_t gameover_screen_map[360];
-extern const uint8_t empty_screen_map[576];
 extern const uint8_t tutorial_screen_tiles[128];
 extern const uint8_t tutorial_screen_map[340];
 

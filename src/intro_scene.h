@@ -8,11 +8,20 @@
 #include "tile_data.h"
 
 extern const hUGESong_t intro_song;
+extern uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
 
 // Shows the intro
 static void show_intro(void){
   uint8_t x, y, idx;
-  uint16_t row, col;
+  uint8_t row, col;
+  
+  // Fill the background map with empty tiles
+  for (row=0; row < SCREEN_TILE_HEIGHT; ++row){
+    for (col=0; col < ROW_WIDTH; ++col){
+      background_map[row*ROW_WIDTH+col] = 0x98;
+    }
+  }
+
   x = 24;
   y = 72;
 
@@ -70,8 +79,10 @@ static void show_intro(void){
     vsync();
   }
   
-  set_bkg_tiles(0,0,20,14,empty_screen_map);
-  set_bkg_tiles(20,0,12,14,empty_screen_map);
+  // set_bkg_tiles(0,0,20,14,empty_screen_map);
+  // set_bkg_tiles(20,0,12,14,empty_screen_map);
+  set_bkg_tiles(0,0,20,14,background_map);
+  set_bkg_tiles(20,0,12,14,background_map);
 
   // Switch to heat shield sprites
   move_sprite(0,0,0);
@@ -169,8 +180,10 @@ static void show_intro(void){
   }
   OBP0_REG = 0xE4; // 0b1110 0100 - Black, Light gray, white, transparent
 
-  set_bkg_tiles(0,14,20,14,empty_screen_map);
-  set_bkg_tiles(20,14,12,14,empty_screen_map);
+  // set_bkg_tiles(0,14,20,14,empty_screen_map);
+  // set_bkg_tiles(20,14,12,14,empty_screen_map);
+  set_bkg_tiles(0,14,20,14,background_map);
+  set_bkg_tiles(20,14,12,14,background_map);
   
   while (SCY_REG < 240){
     scroll_bkg(1,1);
@@ -185,8 +198,10 @@ static void show_intro(void){
   } 
   move_sprite(0,x,y);
 
-  set_bkg_tiles(0,28,20,2,empty_screen_map);
-  set_bkg_tiles(20,28,12,2,empty_screen_map);
+  // set_bkg_tiles(0,28,20,2,empty_screen_map);
+  // set_bkg_tiles(20,28,12,2,empty_screen_map);
+  set_bkg_tiles(0,28,20,2,background_map);
+  set_bkg_tiles(20,28,12,2,background_map);
 
   while (SCX_REG != 0){
     scroll_bkg(1,1);
