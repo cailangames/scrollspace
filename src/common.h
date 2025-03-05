@@ -184,9 +184,12 @@
 /*
  * Math
  */
+#define MOD2(n) ((n) & 0x1)
 #define MOD4(n) ((n) & 0x3)
 #define MOD8(n) ((n) & 0x7)
+#define MOD16(n) ((n) & 0xF)
 #define MOD32(n) ((n) & 0x1F)
+#define MOD64(n) ((n) & 0x3F)
 
 /*
  * Game Modes 
