@@ -56,9 +56,9 @@
 #define HEALTH_BAR_START  0x33
 #define LOCK_TILE         0x46
 
-#define INTRO_SCENE_OFFSET 0x80
-#define INTRO_SCENE_STARS_OFFSET 0x8C
-#define TITLE_SCREEN_OFFSET 0XA4
+#define INTRO_SCENE_OFFSET        0x80
+#define INTRO_SCENE_STARS_OFFSET  0x8C
+#define TITLE_SCREEN_OFFSET       0xA4
 
 /*
  * Sprites

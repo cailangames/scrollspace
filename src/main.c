@@ -9,14 +9,15 @@
 #include <hUGEDriver.h>
 #include <rand.h>
 
-#include "cailan_games_logo.h"
 #include "collision.h"
 #include "common.h"
 #include "display_effects.h"
 #include "intro_scene.h"
+#include "logo_screen.h"
 #include "player.h"
 #include "procedural_generation.h"
 #include "score.h"
+#include "songs.h"
 #include "sound_effects.h"
 #include "sprites.h"
 #include "wait.h"
@@ -28,10 +29,6 @@
 // Tile data
 #include "tile_data.h"
 
-extern const hUGESong_t intro_song;
-extern const hUGESong_t main_song;
-extern const hUGESong_t main_song_fast;
-
 enum GameMode game_mode = NORMAL;
 struct Sprite player_sprite;
 uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
@@ -39,6 +36,7 @@ uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
 fixed scroll_speed;
 uint16_t point_score = 0;
 
+// TODO: Move these to the text_data .h/.c files.
 static const uint8_t confirmation_prompt_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, CHAR_A, CHAR_R, CHAR_E, 0, CHAR_Y, CHAR_O, CHAR_U, 0, CHAR_S, CHAR_U, CHAR_R, CHAR_E, CHAR_QUESTION_MARK, 0, 0, 0};
 static const uint8_t yes_or_no_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, 0, CHAR_Y, CHAR_E, CHAR_S, 0, 0, 0, 0, CHAR_CURSOR, 0, CHAR_N, CHAR_O, 0, 0, 0, 0};
 
@@ -52,6 +50,7 @@ static bool game_paused = true;
 static bool show_timer_score = false;
 
 #if ENABLE_SCORING
+// Increments the timer score. To be called during an ISR (interrupt service routine).
 static void increment_timer_score_isr(void) {
   if (game_paused) {
     return;
@@ -60,27 +59,28 @@ static void increment_timer_score_isr(void) {
 }
 #endif
 
-// Loads sprite, tile, and font data.
-static void load_font(void){
+// Loads the title screen tiles.
+static void load_title_screen(void) {
+  set_bkg_data(TITLE_SCREEN_OFFSET, sizeof(title_screen_tiles)/TILE_SIZE_BYTES, title_screen_tiles);
+}
+
+// Loads font data.
+static void load_font(void) {
   // Load font tiles to background map.
   font_init();
   font_t min_font = font_load(font_min);
   font_set(min_font);
 }
 
-static void load_sprite_data(void){
-  // Load sprite data.
+// Loads sprite data.
+static void load_sprite_data(void) {
   set_sprite_data(0, 10, player_sprites);
   set_sprite_data(10, 9, player_shield_sprites);
   set_sprite_data(19, 3, projectile_sprites);
 }
 
-static void load_title_screen(void){
-  set_bkg_data(TITLE_SCREEN_OFFSET, sizeof(title_screen_tiles)/TILE_SIZE_BYTES, title_screen_tiles);
-}
-
-static void load_data(void) {
-  // Load background tiles.
+// Loads background tile data.
+static void load_tile_data(void) {
   uint8_t tile_index = WALL_BLOCK_TILE;
   set_bkg_data(tile_index, sizeof(block_tiles)/TILE_SIZE_BYTES, block_tiles);
   tile_index += sizeof(block_tiles)/TILE_SIZE_BYTES;
@@ -137,7 +137,7 @@ static bool confirm_action(void) {
 }
 
 // Shows the title screen.
-static void show_title_screen(uint8_t restart_song) {
+static void show_title_screen(bool restart_song) {
   HIDE_WIN;
   clear_window();
   // Copy title screen to background_map
@@ -394,6 +394,7 @@ static void show_mode_selection_screen(void) {
 }
 
 #if ENABLE_COLLISIONS
+// Shows the game over screen.
 static void show_gameover_screen(void) {
   clear_window();
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, gameover_screen_map);
@@ -410,6 +411,7 @@ static void show_gameover_screen(void) {
   HIDE_BKG;
 }
 
+// Handles a game over, including transitioning to the game over screen.
 static void handle_gameover(void) {
   game_paused = true;
   mute_all_channels();
@@ -429,7 +431,7 @@ static void handle_gameover(void) {
 
   // Show gameover screen, then transition to the title screen.
   show_gameover_screen();
-  show_title_screen(1);
+  show_title_screen(true);
 }
 #endif
 
@@ -463,44 +465,42 @@ static void increase_difficulty(void) {
 
 void main(void) {
 #if ENABLE_MUSIC
-  // Load music.
   // Enable sound playback.
   NR52_REG = 0x80;
   NR51_REG = 0xFF;
   NR50_REG = 0x33;
-
   // Mute all channels.
   mute_all_channels();
-
 #endif
 
 #if ENABLE_INTRO
-  /* 
-   * Display Logo 
+  /*
+   * LOGO SCREEN
    */
+  // The logo screen code is in ROM bank 2.
+  SWITCH_ROM(2);
   show_logo_screen();
-  
-  /** 
-   * Display intro scene
-   */
-  show_intro();
 
+  /*
+   * INTRO SCENE
+   */
+  // From here on, we only use ROM banks 0 and 1.
+  SWITCH_ROM(1);
+  show_intro_scene();
 #endif
-  
+
   /*
    * SETUP GAME ASSETS
    */
   load_font();
   load_sprite_data();
-  load_data();
+  load_tile_data();
   load_title_screen();
   // Load Window.
   move_win(7, 136);
   // Initialize high scores.
   init_highscores();
   update_modes_unlocked(&hard_mode_unlocked, &turbo_mode_unlocked, &upgrade_sprite_unlocked);
-  // Make sure ROM bank 1 is loaded (in addition to the always-loaded ROM bank 0).
-  SWITCH_ROM(1);
 
 #if ENABLE_SCORING
   // Add timer score incrementer to VBL interrupt handler.
@@ -508,9 +508,9 @@ void main(void) {
 #endif
 
   /*
-   * LOGO AND TITLE SCREENS
+   * TITLE SCREEN
    */
-  show_title_screen(0);
+  show_title_screen(false);
 
   // Get the high byte of the random seed right after the user has pressed START to continue past
   // the title screen.
@@ -563,9 +563,8 @@ void main(void) {
       scroll_speed.w = SCROLL_SPEED_HARD;
     } else if (game_mode == TURBO) {
       scroll_speed.w = SCROLL_SPEED_TURBO;
-    }
-    else {
-      show_title_screen(0);
+    } else {
+      show_title_screen(false);
       continue;
     }
 
