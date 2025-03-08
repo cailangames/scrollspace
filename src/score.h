@@ -38,7 +38,7 @@ static uint8_t timer_seconds = 0;
 static uint8_t timer_minutes = 0;
 static uint8_t timer_hours = 0;
 
-static uint8_t score_tiles[8];
+static uint8_t score_tiles[11] = {0x0};
 static uint8_t high_score_tiles[SCREEN_TILE_WIDTH];
 
 static void highscores2tiles(void) {
@@ -56,7 +56,7 @@ static void highscores2tiles(void) {
   high_score_tiles[1] = CHAR_E;
   high_score_tiles[2] = CHAR_S;
   high_score_tiles[3] = CHAR_T;
-  high_score_tiles[4] = 0;
+  high_score_tiles[4] = CHAR_SPACE;
 
   // Seconds
   uint8_t tenths = highscore->seconds/10;
@@ -251,47 +251,70 @@ void display_gameover_scores(void) {
   uint8_t last_minutes= highscore->minutes;
   uint8_t last_seconds = highscore->seconds;
 
-  // Display current timer-based score.
-  update_timer_score_tiles();
-  set_bkg_tiles(6, 5, 8, 1, score_tiles);
-
   // Get last high score and see if the current high score is better than it.
   uint16_t last_total_seconds = last_hours*3600 + last_minutes*60 + last_seconds;
   uint16_t current_total_seconds = timer_hours*3600 + timer_minutes*60 + timer_seconds;
+  bool new_record=false;
+
+  // Display current timer-based score.
+  update_timer_score_tiles();
+  set_bkg_tiles(10, 5, 8, 1, score_tiles);
+
+  // Display current point-based score.
+  update_point_score_tiles();
+  set_bkg_tiles(10, 6, 8, 1, score_tiles);
 
   if (current_total_seconds > last_total_seconds) {
-    // Write the current score as the new high score.
-    set_bkg_tiles(6, 10, 8, 1, score_tiles);
-
     // Persist the high score by updating it in external RAM.
     highscore->hours = timer_hours;
     highscore->minutes = timer_minutes;
     highscore->seconds = timer_seconds;
-  } else {
-    // Display the last high score.
-    timer_hours = last_hours;
-    timer_minutes = last_minutes;
-    timer_seconds = last_seconds;
-    update_timer_score_tiles();
-    set_bkg_tiles(6, 10, 8, 1, score_tiles);
+    new_record = true;
   }
-
-  // Display current point-based score.
-  update_point_score_tiles();
-  set_bkg_tiles(6, 6, 8, 1, score_tiles);
 
   if (point_score > last_points) {
-    // Write the current score as the new high score.
-    set_bkg_tiles(6, 11, 8, 1, score_tiles);
-
     // Persist the high score by updating it in external RAM.
     highscore->points = point_score;
-  } else {
-    // Display the last high score.
-    point_score = last_points;
-    update_point_score_tiles();
-    set_bkg_tiles(6, 11, 8, 1, score_tiles);
+    new_record = true;
+  } 
+
+  if (new_record){
+    score_tiles[0] = CHAR_N;
+    score_tiles[1] = CHAR_E;
+    score_tiles[2] = CHAR_W;
+    score_tiles[3] = CHAR_SPACE;
+    score_tiles[4] = CHAR_R;
+    score_tiles[5] = CHAR_E;
+    score_tiles[6] = CHAR_C;
+    score_tiles[7] = CHAR_O;
+    score_tiles[8] = CHAR_R;
+    score_tiles[9] = CHAR_D;
+    score_tiles[10] = CHAR_EXCLAMATION_MARK;
+    set_bkg_tiles(4, 11, 11, 1, score_tiles);
+
+    score_tiles[8] = CHAR_SPACE;
+    score_tiles[9] = CHAR_SPACE;
+    score_tiles[10] = CHAR_SPACE;
   }
+
+  /** 
+   * These have to be done at the end because we use the global values 
+   *    timer_hours, timer_minutes, times_seconds, and point_score
+   * for updating the score_tiles. Doing this earlier overwrites them 
+   * and we lose the scores stored in RAM
+   */
+  // Display the last timer-based high score.
+  timer_hours = last_hours;
+  timer_minutes = last_minutes;
+  timer_seconds = last_seconds;
+  update_timer_score_tiles();
+  set_bkg_tiles(10, 8, 8, 1, score_tiles);
+
+  // Display the last point-based high score.
+  point_score = last_points;
+  update_point_score_tiles();
+  set_bkg_tiles(10, 9, 8, 1, score_tiles);
+
 }
 
 // Resets all scores.

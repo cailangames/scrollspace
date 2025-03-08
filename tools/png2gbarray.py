@@ -222,7 +222,7 @@ def get_background_data_and_map(im, name, gb_code, offset=37, debug=False):
 
     return tile_data_array, tilemap_array
 
-image_type = None
+image_type = "background"
 tilemap_offset = 0
 #fn_path = "../assets/block.png"
 #fn_path = "../assets/projectiles.png"
@@ -231,12 +231,12 @@ tilemap_offset = 0
 # fn_path = "../assets/player_large.png"
 #fn_path = "../assets/player_shield.png"
 #fn_path = "../assets/progressbar.png"
-# fn_path = "../assets/font-extras.png" 
+fn_path = "../assets/font-extras.png" 
 #fn_path = "../assets/lock.png"
 #fn_path = "../assets/logo-cursor.png"
 #fn_path = "../assets/intro_player_heatshield_sprites.png" 
-fn_path = "../assets/player_upgrade.png"
-fn_path = "../assets/player_upgrade_shield.png"
+# fn_path = "../assets/player_upgrade.png"
+# fn_path = "../assets/player_upgrade_shield.png"
 
 # fn_path = "../assets/intro_stars.png"
 # tilemap_offset = 0x80

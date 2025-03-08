@@ -177,7 +177,7 @@
 #define CHAR_Z 0x24
 #define CHAR_COLON 0x39
 #define CHAR_CURSOR 0x3A
-#define CHAR_PERIOD 0x3B
+#define CHAR_EXCLAMATION_MARK 0x3B
 #define CHAR_COMMA 0x3C
 #define CHAR_QUESTION_MARK 0x3D
 

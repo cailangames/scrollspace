@@ -396,8 +396,91 @@ static void show_mode_selection_screen(void) {
 #if ENABLE_COLLISIONS
 // Shows the game over screen.
 static void show_gameover_screen(void) {
+  HIDE_WIN;
   clear_window();
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, gameover_screen_map);
+  for (uint8_t row=0; row<SCREEN_TILE_HEIGHT; ++row){
+    for (uint8_t col=0; col<SCREEN_TILE_WIDTH; ++col){
+      if ((row == 0) || (row == 17)){
+        // Top and bottom block border
+        background_map[row*SCREEN_TILE_WIDTH+col] = 0x25;
+      }
+      else{
+        background_map[row*SCREEN_TILE_WIDTH+col] = 0x0;
+      }
+    }
+  }
+  // Write GAME OVER
+  uint16_t start_idx = 3*SCREEN_TILE_WIDTH+5;
+  background_map[start_idx++] = CHAR_G;
+  background_map[start_idx++] = CHAR_A;
+  background_map[start_idx++] = CHAR_M;
+  background_map[start_idx++] = CHAR_E;
+  background_map[start_idx++] = CHAR_SPACE;
+  background_map[start_idx++] = CHAR_O;
+  background_map[start_idx++] = CHAR_V;
+  background_map[start_idx++] = CHAR_E;
+  background_map[start_idx++] = CHAR_R;
+
+  // Write SCORE
+  start_idx = 5*SCREEN_TILE_WIDTH+2;
+  background_map[start_idx++] = CHAR_S;
+  background_map[start_idx++] = CHAR_C;
+  background_map[start_idx++] = CHAR_O;
+  background_map[start_idx++] = CHAR_R;
+  background_map[start_idx++] = CHAR_E;
+
+  // Write BEST
+  start_idx = 8*SCREEN_TILE_WIDTH+3;
+  background_map[start_idx++] = CHAR_B;
+  background_map[start_idx++] = CHAR_E;
+  background_map[start_idx++] = CHAR_S;
+  background_map[start_idx++] = CHAR_T;
+
+  // WRITE TIP
+  start_idx = 13*SCREEN_TILE_WIDTH+2;
+  background_map[start_idx++] = CHAR_T;
+  background_map[start_idx++] = CHAR_I;
+  background_map[start_idx++] = CHAR_P;
+  background_map[start_idx++] = CHAR_COLON;
+
+  // Write the tip message
+  start_idx = 14*SCREEN_TILE_WIDTH+2;
+  background_map[start_idx++] = CHAR_B;
+  background_map[start_idx++] = CHAR_L;
+  background_map[start_idx++] = CHAR_A;
+  background_map[start_idx++] = CHAR_H;
+  background_map[start_idx++] = CHAR_SPACE;
+  background_map[start_idx++] = CHAR_B;
+  background_map[start_idx++] = CHAR_L;
+  background_map[start_idx++] = CHAR_A;
+  background_map[start_idx++] = CHAR_H;
+  background_map[start_idx++] = CHAR_SPACE;
+  background_map[start_idx++] = CHAR_B;
+  background_map[start_idx++] = CHAR_L;
+  background_map[start_idx++] = CHAR_A;
+  background_map[start_idx++] = CHAR_H;
+  background_map[start_idx++] = CHAR_EXCLAMATION_MARK;
+  background_map[start_idx++] = CHAR_EXCLAMATION_MARK;
+
+  start_idx = 15*SCREEN_TILE_WIDTH+2;
+  background_map[start_idx++] = CHAR_B;
+  background_map[start_idx++] = CHAR_L;
+  background_map[start_idx++] = CHAR_A;
+  background_map[start_idx++] = CHAR_H;
+  background_map[start_idx++] = CHAR_SPACE;
+  background_map[start_idx++] = CHAR_B;
+  background_map[start_idx++] = CHAR_L;
+  background_map[start_idx++] = CHAR_A;
+  background_map[start_idx++] = CHAR_H;
+  background_map[start_idx++] = CHAR_SPACE;
+  background_map[start_idx++] = CHAR_B;
+  background_map[start_idx++] = CHAR_L;
+  background_map[start_idx++] = CHAR_A;
+  background_map[start_idx++] = CHAR_H;
+  background_map[start_idx++] = CHAR_EXCLAMATION_MARK;
+  background_map[start_idx++] = CHAR_EXCLAMATION_MARK;
+
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
   move_bkg(0, 0);
 
   display_gameover_scores();
@@ -409,6 +492,7 @@ static void show_gameover_screen(void) {
   wait_for_keys_released(J_START | J_A | J_B);
   fade_out();
   HIDE_BKG;
+  SHOW_WIN;
 }
 
 // Handles a game over, including transitioning to the game over screen.
@@ -568,6 +652,7 @@ void main(void) {
       continue;
     }
 
+    fade_out();
     // initrand() needs to be called with a 16-bit random seed. We produce this seed by polling the
     // 8-bit DIV_REG register at two different, non-deterministic times: Once after the title screen,
     // and once after the mode selection screen. Both of these are non-deterministic because they
@@ -638,8 +723,6 @@ void main(void) {
     play_all_channels();
 #endif
 
-    SHOW_SPRITES;
-    SHOW_WIN;
 
     generated_column_idx = SCREEN_TILE_WIDTH - 1;
     for (uint8_t i = 0; i < ROW_WIDTH - SCREEN_TILE_WIDTH; ++i) {
@@ -662,6 +745,10 @@ void main(void) {
       set_sprite_data(0, 10, player_upgrade_sprites);
       set_sprite_data(10, 9, player_upgrade_shield_sprites);
     }
+
+    SHOW_SPRITES;
+    SHOW_WIN;
+    fade_in();
 
     /*
      * MAIN GAME LOOP
