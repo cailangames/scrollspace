@@ -106,11 +106,36 @@ func (c Column) String() string {
 	return fmt.Sprintf("{TopRow=%d,Width=%d}", c.TopRow, c.Width)
 }
 
+// A BiomeType specifies the type of the biome: Narrow, Wide Open, or a Transition biome
+// between Narrow and Wide Open.
+type BiomeType int
+
+const (
+	NarrowBiome BiomeType = iota
+	WideOpenBiome
+	TransitionBiome
+)
+
+func (b BiomeType) String() string {
+	switch b {
+	case NarrowBiome:
+		return "N"
+	case WideOpenBiome:
+		return "W"
+	case TransitionBiome:
+		return "T"
+	default:
+		log.Fatalf("Unknown biome type: %d", b)
+		return ""
+	}
+}
+
 // A biome is one unit of the procedural generation output. It's made up of a bunch of columns that
 // specify where the blocks (obstacles) are in the biome. Biomes are strung together randomly to
 // create a randomly generated game map.
 type Biome struct {
 	Columns []Column
+	Type    BiomeType
 }
 
 // A Generator is an interface for generating values.
@@ -124,6 +149,7 @@ type BiomeGenerator struct {
 	StartingWidth  int
 	TopRowDelta    Generator
 	WidthDelta     Generator
+	Type           BiomeType
 }
 
 func highTopRow() int {
@@ -282,6 +308,7 @@ func NewMiddleStandardSteadyVolatile() *BiomeGenerator {
 		StartingWidth:  standardWidth(),
 		TopRowDelta:    &steadyTopRowDelta{},
 		WidthDelta:     &volatileWidthDelta{},
+		Type:           NarrowBiome,
 	}
 }
 
@@ -291,6 +318,7 @@ func NewHighWideSteadySteady() *BiomeGenerator {
 		StartingWidth:  wideWidth(),
 		TopRowDelta:    &steadyTopRowDelta{},
 		WidthDelta:     &steadyWidthDelta{},
+		Type:           WideOpenBiome,
 	}
 }
 
@@ -300,6 +328,7 @@ func NewMiddleStandardRisingWidening() *BiomeGenerator {
 		StartingWidth:  standardWidth(),
 		TopRowDelta:    &risingTopRowDelta{},
 		WidthDelta:     &wideningWidthDelta{},
+		Type:           TransitionBiome,
 	}
 }
 
@@ -309,6 +338,7 @@ func NewHighWideFallingNarrowing() *BiomeGenerator {
 		StartingWidth:  wideWidth(),
 		TopRowDelta:    &fallingTopRowDelta{},
 		WidthDelta:     &narrowingWidthDelta{},
+		Type:           TransitionBiome,
 	}
 }
 
@@ -318,6 +348,7 @@ func NewLowStandardSteadySteady() *BiomeGenerator {
 		StartingWidth:  standardWidth(),
 		TopRowDelta:    &steadyTopRowDelta{},
 		WidthDelta:     &steadyWidthDelta{},
+		Type:           NarrowBiome,
 	}
 }
 
@@ -327,6 +358,7 @@ func NewMiddleStandardVolatileVolatile() *BiomeGenerator {
 		StartingWidth:  standardWidth(),
 		TopRowDelta:    &volatileTopRowDelta{},
 		WidthDelta:     &volatileWidthDelta{},
+		Type:           NarrowBiome,
 	}
 }
 
@@ -336,6 +368,7 @@ func NewLowStandardRisingWidening() *BiomeGenerator {
 		StartingWidth:  standardWidth(),
 		TopRowDelta:    &risingTopRowDelta{},
 		WidthDelta:     &wideningWidthDelta{},
+		Type:           TransitionBiome,
 	}
 }
 
@@ -345,6 +378,7 @@ func NewHighWideRisingWidening() *BiomeGenerator {
 		StartingWidth:  wideWidth(),
 		TopRowDelta:    &risingTopRowDelta{},
 		WidthDelta:     &wideningWidthDelta{},
+		Type:           WideOpenBiome,
 	}
 }
 
@@ -354,69 +388,72 @@ func NewHighNarrowFallingSteady() *BiomeGenerator {
 		StartingWidth:  narrowWidth(),
 		TopRowDelta:    &fallingTopRowDelta{},
 		WidthDelta:     &steadyWidthDelta{},
+		Type:           NarrowBiome,
 	}
 }
 
-// Creates the biome generators based on the program's parameters.
-func createBiomeGenerators() []*BiomeGenerator {
-	// Note: Due to the way the biome connection code works, biomes that are created with lower
-	// indices are more likely to appear. Thus, the ordering of these biome generators matters.
-	gens := []*BiomeGenerator{}
-	for i := 0; i < middleStandardSteadyVolatileCount; i++ {
-		gens = append(gens, NewMiddleStandardSteadyVolatile())
+// Creates the biome generators per biome type based on the program's parameters.
+func createBiomeGenerators() (narrowGens []*BiomeGenerator, wideOpenGens []*BiomeGenerator, transitionGens []*BiomeGenerator) {
+	narrowGens = []*BiomeGenerator{}
+	wideOpenGens = []*BiomeGenerator{}
+	transitionGens = []*BiomeGenerator{}
+	addGens := func(count int, createGen func() *BiomeGenerator) {
+		for i := 0; i < count; i++ {
+			gen := createGen()
+			switch gen.Type {
+			case NarrowBiome:
+				narrowGens = append(narrowGens, gen)
+			case WideOpenBiome:
+				wideOpenGens = append(wideOpenGens, gen)
+			case TransitionBiome:
+				transitionGens = append(transitionGens, gen)
+			}
+		}
 	}
-	for i := 0; i < highWideSteadySteadyCount; i++ {
-		gens = append(gens, NewHighWideSteadySteady())
-	}
-	for i := 0; i < middleStandardRisingWideningCount; i++ {
-		gens = append(gens, NewMiddleStandardRisingWidening())
-	}
-	for i := 0; i < highWideFallingNarrowingCount; i++ {
-		gens = append(gens, NewHighWideFallingNarrowing())
-	}
-	for i := 0; i < lowStandardSteadySteadyCount; i++ {
-		gens = append(gens, NewLowStandardSteadySteady())
-	}
-	for i := 0; i < middleStandardVolatileVolatileCount; i++ {
-		gens = append(gens, NewMiddleStandardVolatileVolatile())
-	}
-	for i := 0; i < lowStandardRisingWideningCount; i++ {
-		gens = append(gens, NewLowStandardRisingWidening())
-	}
-	for i := 0; i < highWideRisingWideningCount; i++ {
-		gens = append(gens, NewHighWideRisingWidening())
-	}
-	for i := 0; i < highNarrowFallingSteadyCount; i++ {
-		gens = append(gens, NewHighNarrowFallingSteady())
-	}
-	return gens
+
+	addGens(middleStandardSteadyVolatileCount, NewMiddleStandardSteadyVolatile)
+	addGens(highWideSteadySteadyCount, NewHighWideSteadySteady)
+	addGens(middleStandardRisingWideningCount, NewMiddleStandardRisingWidening)
+	addGens(highWideFallingNarrowingCount, NewHighWideFallingNarrowing)
+	addGens(lowStandardSteadySteadyCount, NewLowStandardSteadySteady)
+	addGens(middleStandardVolatileVolatileCount, NewMiddleStandardVolatileVolatile)
+	addGens(lowStandardRisingWideningCount, NewLowStandardRisingWidening)
+	addGens(highWideRisingWideningCount, NewHighWideRisingWidening)
+	addGens(highNarrowFallingSteadyCount, NewHighNarrowFallingSteady)
+	return
 }
 
 // Generates the biomes.
 func GenerateBiomes() []*Biome {
-	gens := createBiomeGenerators()
-	biomes := make([]*Biome, len(gens))
-	for i := range biomes {
-		columns := make([]Column, columnsPerBiome)
-		gen := gens[i]
-		startingCol := Column{
-			TopRow: gen.StartingTopRow,
-			Width:  gen.StartingWidth,
-		}.ClampValues()
-		columns[0] = startingCol
-		prevTopRow := startingCol.TopRow
-		prevWidth := startingCol.Width
-		for i := 1; i < len(columns); i++ {
-			c := Column{
-				TopRow: prevTopRow + gen.TopRowDelta.Generate(),
-				Width:  prevWidth + gen.WidthDelta.Generate(),
+	createBiomes := func(gens []*BiomeGenerator) []*Biome {
+		biomes := make([]*Biome, len(gens))
+		for i, gen := range gens {
+			columns := make([]Column, columnsPerBiome)
+			startingCol := Column{
+				TopRow: gen.StartingTopRow,
+				Width:  gen.StartingWidth,
 			}.ClampValues()
-			columns[i] = c
-			prevTopRow = c.TopRow
-			prevWidth = c.Width
+			columns[0] = startingCol
+			prevTopRow := startingCol.TopRow
+			prevWidth := startingCol.Width
+			for j := 1; j < len(columns); j++ {
+				c := Column{
+					TopRow: prevTopRow + gen.TopRowDelta.Generate(),
+					Width:  prevWidth + gen.WidthDelta.Generate(),
+				}.ClampValues()
+				columns[j] = c
+				prevTopRow = c.TopRow
+				prevWidth = c.Width
+			}
+			biomes[i] = &Biome{Columns: columns, Type: gen.Type}
 		}
-		biomes[i] = &Biome{Columns: columns}
+		return biomes
 	}
+
+	narrowGens, wideOpenGens, transitionGens := createBiomeGenerators()
+	biomes := createBiomes(narrowGens)
+	biomes = append(biomes, createBiomes(transitionGens)...)
+	biomes = append(biomes, createBiomes(wideOpenGens)...)
 	return biomes
 }
 
@@ -535,19 +572,29 @@ func FindBiomeConnections(biomes []*Biome) [][]int {
 
 // Prints the constants to stdout in the C code format.
 func PrintConstants(seed int64, biomes []*Biome, connections [][]int) {
+	wideBiomeStart := 0
+	for i, biome := range biomes {
+		if biome.Type == WideOpenBiome {
+			wideBiomeStart = i
+			break
+		}
+	}
+
 	fmt.Printf("// Random seed used: %d\n", seed)
 	fmt.Println()
 	fmt.Printf("#define BIOME_COUNT %d\n", len(biomes))
 	fmt.Printf("#define BIOME_CONNECTION_COUNT %d\n", len(connections[0]))
 	fmt.Printf("#define COLUMNS_PER_BIOME %d\n", columnsPerBiome)
 	fmt.Printf("#define MINIMUM_CAVE_WIDTH %d\n", minCaveWidth)
+	fmt.Printf("#define WIDE_OPEN_BIOMES_START %d\n", wideBiomeStart)
 }
 
 // Prints the biome data to stdout in the C code format.
 func PrintBiomes(biomes []*Biome) {
+	fmt.Println("// Biome type legend: N = Narrow, T = Transition, W = Wide Open")
 	fmt.Println("static const uint8_t biome_columns[BIOME_COUNT][COLUMNS_PER_BIOME] = {")
 	for i, biome := range biomes {
-		fmt.Printf("  /* %02d */ { ", i)
+		fmt.Printf("  /* %02d %s */ { ", i, biome.Type)
 		first := true
 		for _, col := range biome.Columns {
 			if first {
