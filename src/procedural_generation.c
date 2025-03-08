@@ -174,6 +174,7 @@ void generate_column(uint8_t column_idx) BANKED {
   uint8_t cave_top = col >> 4;
   uint8_t cave_width = (col & 0x0F) + MINIMUM_CAVE_WIDTH - 1;
   uint8_t cave_bottom = cave_top + cave_width;
+  uint16_t mine_probability = (biome_id >= WIDE_OPEN_BIOMES_START) ? MINE_PROBABILITY_WIDE_OPEN : MINE_PROBABILITY_NARROW;
 
   for (uint8_t row = 0; row < COLUMN_HEIGHT; ++row) {
     if (row < cave_top || row > cave_bottom) {
@@ -182,7 +183,7 @@ void generate_column(uint8_t column_idx) BANKED {
       *bkg_map = WALL_BLOCK_TILE;
     } else {
       uint16_t n = randw();
-      if (n < UINT16_MAX - (MINE_PROBABILITY + SHIELD_PICKUP_PROBABILITY + HEALTH_PICKUP_PROBABILITY)) {
+      if (n < UINT16_MAX - (mine_probability + SHIELD_PICKUP_PROBABILITY + HEALTH_PICKUP_PROBABILITY)) {
         // Create an empty tile.
         *coll_map = 0;
         *bkg_map = EMPTY_TILE;
