@@ -8,5 +8,6 @@
 extern const uint8_t unlock_hard_mode_text[20];
 extern const uint8_t unlock_turbo_mode_text[20];
 extern const uint8_t clear_data_text[20];
+extern const uint8_t tips[200];
 
 #endif
