@@ -81,7 +81,7 @@
 #define MINE_HEALTH 1
 #define POWERUP_RESERVED_IDS 235
 #define SHIELD_ID 254
-#define SHIELD_DURATION (8*20)
+#define SHIELD_DURATION 160
 #define HEALTH_KIT_ID 255
 #define HEALTH_KIT_VALUE 5
 // When the player is damaged enough, health kits provide more health to the player.
