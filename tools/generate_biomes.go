@@ -23,15 +23,25 @@ const (
 	biomeConnectionCount = 32
 	// Biome generator counts
 	// The total number of biomes generated is the sum of these counts.
-	middleStandardSteadyVolatileCount   = 20
-	highWideSteadySteadyCount           = 10
-	middleStandardRisingWideningCount   = 7
-	highWideFallingNarrowingCount       = 2
-	lowStandardSteadySteadyCount        = 7
-	middleStandardVolatileVolatileCount = 10
-	lowStandardRisingWideningCount      = 5
-	highWideRisingWideningCount         = 3
-	highNarrowFallingSteadyCount        = 0
+	// Narrow biome generators
+	middleStandardSteadyVolatileCount   = 15
+	lowStandardSteadySteadyCount        = 5
+	highStandardSteadySteadyCount       = 5
+	middleStandardVolatileVolatileCount = 5
+	highStandardFallingSteadyCount      = 3
+	lowStandardRisingSteadyCount        = 3
+	// Wide open biome generators
+	highWideSteadySteadyCount   = 5
+	highWideSteadyVolatileCount = 5
+	highWideRisingWideningCount = 4
+	// Narrow to wide open transition biome generators
+	middleStandardRisingWideningCount = 3
+	lowStandardRisingWideningCount    = 2
+	highStandardSteadyWideningCount   = 2
+	// Wide open to narrow transition biome generators
+	highWideFallingNarrowingCount = 3
+	highWideSteadyNarrowingCount  = 2
+	highWideFallingSteadyCount    = 2
 )
 
 // Constants
@@ -136,6 +146,7 @@ func (b BiomeType) String() string {
 type Biome struct {
 	Columns []Column
 	Type    BiomeType
+	Name    string
 }
 
 // A Generator is an interface for generating values.
@@ -150,6 +161,7 @@ type BiomeGenerator struct {
 	TopRowDelta    Generator
 	WidthDelta     Generator
 	Type           BiomeType
+	Name           string
 }
 
 func highTopRow() int {
@@ -240,9 +252,9 @@ func increasingDelta() int {
 	case n <= 50:
 		return 1
 	case n <= 75:
-		return 2
-	case n <= 85:
 		return 0
+	case n <= 85:
+		return 2
 	case n <= 95:
 		return -1
 	default:
@@ -309,6 +321,7 @@ func NewMiddleStandardSteadyVolatile() *BiomeGenerator {
 		TopRowDelta:    &steadyTopRowDelta{},
 		WidthDelta:     &volatileWidthDelta{},
 		Type:           NarrowBiome,
+		Name:           "MSSV",
 	}
 }
 
@@ -319,6 +332,7 @@ func NewHighWideSteadySteady() *BiomeGenerator {
 		TopRowDelta:    &steadyTopRowDelta{},
 		WidthDelta:     &steadyWidthDelta{},
 		Type:           WideOpenBiome,
+		Name:           "HWSS",
 	}
 }
 
@@ -329,6 +343,7 @@ func NewMiddleStandardRisingWidening() *BiomeGenerator {
 		TopRowDelta:    &risingTopRowDelta{},
 		WidthDelta:     &wideningWidthDelta{},
 		Type:           TransitionBiome,
+		Name:           "MSRW",
 	}
 }
 
@@ -339,6 +354,7 @@ func NewHighWideFallingNarrowing() *BiomeGenerator {
 		TopRowDelta:    &fallingTopRowDelta{},
 		WidthDelta:     &narrowingWidthDelta{},
 		Type:           TransitionBiome,
+		Name:           "HWFN",
 	}
 }
 
@@ -349,6 +365,7 @@ func NewLowStandardSteadySteady() *BiomeGenerator {
 		TopRowDelta:    &steadyTopRowDelta{},
 		WidthDelta:     &steadyWidthDelta{},
 		Type:           NarrowBiome,
+		Name:           "LSSS",
 	}
 }
 
@@ -359,6 +376,7 @@ func NewMiddleStandardVolatileVolatile() *BiomeGenerator {
 		TopRowDelta:    &volatileTopRowDelta{},
 		WidthDelta:     &volatileWidthDelta{},
 		Type:           NarrowBiome,
+		Name:           "MSVV",
 	}
 }
 
@@ -369,6 +387,7 @@ func NewLowStandardRisingWidening() *BiomeGenerator {
 		TopRowDelta:    &risingTopRowDelta{},
 		WidthDelta:     &wideningWidthDelta{},
 		Type:           TransitionBiome,
+		Name:           "LSRW",
 	}
 }
 
@@ -379,16 +398,84 @@ func NewHighWideRisingWidening() *BiomeGenerator {
 		TopRowDelta:    &risingTopRowDelta{},
 		WidthDelta:     &wideningWidthDelta{},
 		Type:           WideOpenBiome,
+		Name:           "HWRW",
 	}
 }
 
-func NewHighNarrowFallingSteady() *BiomeGenerator {
+func NewHighStandardSteadyWidening() *BiomeGenerator {
 	return &BiomeGenerator{
 		StartingTopRow: highTopRow(),
-		StartingWidth:  narrowWidth(),
+		StartingWidth:  standardWidth(),
+		TopRowDelta:    &steadyTopRowDelta{},
+		WidthDelta:     &wideningWidthDelta{},
+		Type:           TransitionBiome,
+		Name:           "HSSW",
+	}
+}
+
+func NewHighStandardSteadySteady() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: highTopRow(),
+		StartingWidth:  standardWidth(),
+		TopRowDelta:    &steadyTopRowDelta{},
+		WidthDelta:     &steadyWidthDelta{},
+		Type:           NarrowBiome,
+		Name:           "HSSS",
+	}
+}
+
+func NewHighStandardFallingSteady() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: highTopRow(),
+		StartingWidth:  standardWidth(),
 		TopRowDelta:    &fallingTopRowDelta{},
 		WidthDelta:     &steadyWidthDelta{},
 		Type:           NarrowBiome,
+		Name:           "HSFS",
+	}
+}
+
+func NewLowStandardRisingSteady() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: lowTopRow(),
+		StartingWidth:  standardWidth(),
+		TopRowDelta:    &risingTopRowDelta{},
+		WidthDelta:     &steadyWidthDelta{},
+		Type:           NarrowBiome,
+		Name:           "LSRS",
+	}
+}
+
+func NewHighWideSteadyVolatile() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: highTopRow(),
+		StartingWidth:  wideWidth(),
+		TopRowDelta:    &steadyTopRowDelta{},
+		WidthDelta:     &volatileWidthDelta{},
+		Type:           WideOpenBiome,
+		Name:           "HWSV",
+	}
+}
+
+func NewHighWideSteadyNarrowing() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: highTopRow(),
+		StartingWidth:  wideWidth(),
+		TopRowDelta:    &steadyTopRowDelta{},
+		WidthDelta:     &narrowingWidthDelta{},
+		Type:           TransitionBiome,
+		Name:           "HWSN",
+	}
+}
+
+func NewHighWideFallingSteady() *BiomeGenerator {
+	return &BiomeGenerator{
+		StartingTopRow: highTopRow(),
+		StartingWidth:  wideWidth(),
+		TopRowDelta:    &fallingTopRowDelta{},
+		WidthDelta:     &steadyWidthDelta{},
+		Type:           TransitionBiome,
+		Name:           "HWFS",
 	}
 }
 
@@ -411,15 +498,24 @@ func createBiomeGenerators() (narrowGens []*BiomeGenerator, wideOpenGens []*Biom
 		}
 	}
 
+	// Narrow generators
 	addGens(middleStandardSteadyVolatileCount, NewMiddleStandardSteadyVolatile)
-	addGens(highWideSteadySteadyCount, NewHighWideSteadySteady)
-	addGens(middleStandardRisingWideningCount, NewMiddleStandardRisingWidening)
-	addGens(highWideFallingNarrowingCount, NewHighWideFallingNarrowing)
 	addGens(lowStandardSteadySteadyCount, NewLowStandardSteadySteady)
+	addGens(highStandardSteadySteadyCount, NewHighStandardSteadySteady)
 	addGens(middleStandardVolatileVolatileCount, NewMiddleStandardVolatileVolatile)
-	addGens(lowStandardRisingWideningCount, NewLowStandardRisingWidening)
+	addGens(highStandardFallingSteadyCount, NewHighStandardFallingSteady)
+	addGens(lowStandardRisingSteadyCount, NewLowStandardRisingSteady)
+	// Wide open generators
+	addGens(highWideSteadySteadyCount, NewHighWideSteadySteady)
+	addGens(highWideSteadyVolatileCount, NewHighWideSteadyVolatile)
 	addGens(highWideRisingWideningCount, NewHighWideRisingWidening)
-	addGens(highNarrowFallingSteadyCount, NewHighNarrowFallingSteady)
+	// Transition generators
+	addGens(middleStandardRisingWideningCount, NewMiddleStandardRisingWidening)
+	addGens(lowStandardRisingWideningCount, NewLowStandardRisingWidening)
+	addGens(highStandardSteadyWideningCount, NewHighStandardSteadyWidening)
+	addGens(highWideFallingNarrowingCount, NewHighWideFallingNarrowing)
+	addGens(highWideSteadyNarrowingCount, NewHighWideSteadyNarrowing)
+	addGens(highWideFallingSteadyCount, NewHighWideFallingSteady)
 	return
 }
 
@@ -445,7 +541,11 @@ func GenerateBiomes() []*Biome {
 				prevTopRow = c.TopRow
 				prevWidth = c.Width
 			}
-			biomes[i] = &Biome{Columns: columns, Type: gen.Type}
+			biomes[i] = &Biome{
+				Columns: columns,
+				Type:    gen.Type,
+				Name:    gen.Name,
+			}
 		}
 		return biomes
 	}
@@ -594,7 +694,7 @@ func PrintBiomes(biomes []*Biome) {
 	fmt.Println("// Biome type legend: N = Narrow, T = Transition, W = Wide Open")
 	fmt.Println("static const uint8_t biome_columns[BIOME_COUNT][COLUMNS_PER_BIOME] = {")
 	for i, biome := range biomes {
-		fmt.Printf("  /* %02d %s */ { ", i, biome.Type)
+		fmt.Printf("  /* %02d %s */ { ", i, biome.Name)
 		first := true
 		for _, col := range biome.Columns {
 			if first {
