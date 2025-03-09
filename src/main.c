@@ -22,6 +22,7 @@
 #include "sprites.h"
 #include "wait.h"
 #include "weapons.h"
+#include "title_screen.h"
 
 // Sprite data
 #include "sprite_data.h"
@@ -36,10 +37,6 @@ uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
 fixed scroll_speed;
 uint16_t point_score = 0;
 
-// TODO: Move these to the text_data .h/.c files.
-static const uint8_t confirmation_prompt_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, CHAR_A, CHAR_R, CHAR_E, 0, CHAR_Y, CHAR_O, CHAR_U, 0, CHAR_S, CHAR_U, CHAR_R, CHAR_E, CHAR_QUESTION_MARK, 0, 0, 0};
-static const uint8_t yes_or_no_msg[SCREEN_TILE_WIDTH] = {0, 0, 0, 0, 0, CHAR_Y, CHAR_E, CHAR_S, 0, 0, 0, 0, CHAR_CURSOR, 0, CHAR_N, CHAR_O, 0, 0, 0, 0};
-
 static bool rand_initialized = false;
 static bool hard_mode_unlocked = false;
 static bool turbo_mode_unlocked = false;
@@ -48,6 +45,7 @@ static bool game_paused = true;
 // Whether or not to show the timer-based score. If false, the points-based score is shown instead.
 // Note: The value of this variable is kept between runs of the game.
 static bool show_timer_score = false;
+static bool timer_score_changed = false;
 
 #if ENABLE_SCORING
 // Increments the timer score. To be called during an ISR (interrupt service routine).
@@ -55,7 +53,8 @@ static void increment_timer_score_isr(void) {
   if (game_paused) {
     return;
   }
-  increment_timer_score();
+  timer_score_changed = increment_timer_score();
+  
 }
 #endif
 
@@ -136,92 +135,15 @@ static bool confirm_action(void) {
   }
 }
 
-// Shows the title screen.
-static void show_title_screen(bool restart_song) {
-  HIDE_WIN;
-  clear_window();
-  // Copy title screen to background_map
-  for (uint8_t i = 0; i < SCREEN_TILE_HEIGHT; ++i) {
-    for (uint8_t j = 0; j < SCREEN_TILE_WIDTH; ++j) {
-      background_map[i*SCREEN_TILE_WIDTH+j] = title_screen_map[i*SCREEN_TILE_WIDTH+j];
-    }
-  }
-  
-  // Add Press Start text
-  background_map[10*SCREEN_TILE_WIDTH+6] = CHAR_P;
-  background_map[10*SCREEN_TILE_WIDTH+7] = CHAR_R;
-  background_map[10*SCREEN_TILE_WIDTH+8] = CHAR_E;
-  background_map[10*SCREEN_TILE_WIDTH+9] = CHAR_S;
-  background_map[10*SCREEN_TILE_WIDTH+10] = CHAR_S;
-
-  background_map[11*SCREEN_TILE_WIDTH+8] = CHAR_S;
-  background_map[11*SCREEN_TILE_WIDTH+9] = CHAR_T;
-  background_map[11*SCREEN_TILE_WIDTH+10] = CHAR_A;
-  background_map[11*SCREEN_TILE_WIDTH+11] = CHAR_R;
-  background_map[11*SCREEN_TILE_WIDTH+12] = CHAR_T;
-
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
-
-  if (restart_song){
-    fade_in();
-    SHOW_BKG;
-  }
-#if ENABLE_MUSIC
-  if (restart_song){
-    hUGE_init(&intro_song);
-    play_all_channels();
-    add_VBL(hUGE_dosound);
-  }
-#endif
-  
-  /*
-   * Blink PRESS START while waiting for user input
-   */
-  uint8_t counter = 0;
-  while (1){
-    if (joypad() & J_START){
-      wait_for_keys_released(J_START);
-      return;
-    }
-    ++counter;
-    if (counter == 15){
-      // Add Press Start text
-      background_map[10*SCREEN_TILE_WIDTH+6] = EMPTY_TILE;
-      background_map[10*SCREEN_TILE_WIDTH+7] = EMPTY_TILE;
-      background_map[10*SCREEN_TILE_WIDTH+8] = EMPTY_TILE;
-      background_map[10*SCREEN_TILE_WIDTH+9] = EMPTY_TILE;
-      background_map[10*SCREEN_TILE_WIDTH+10] = EMPTY_TILE;
-
-      background_map[11*SCREEN_TILE_WIDTH+8] = EMPTY_TILE;
-      background_map[11*SCREEN_TILE_WIDTH+9] = EMPTY_TILE;
-      background_map[11*SCREEN_TILE_WIDTH+10] = EMPTY_TILE;
-      background_map[11*SCREEN_TILE_WIDTH+11] = EMPTY_TILE;
-      background_map[11*SCREEN_TILE_WIDTH+12] = EMPTY_TILE;
-    }
-    else if (counter == 30){
-      // Add Press Start text
-      background_map[10*SCREEN_TILE_WIDTH+6] = CHAR_P;
-      background_map[10*SCREEN_TILE_WIDTH+7] = CHAR_R;
-      background_map[10*SCREEN_TILE_WIDTH+8] = CHAR_E;
-      background_map[10*SCREEN_TILE_WIDTH+9] = CHAR_S;
-      background_map[10*SCREEN_TILE_WIDTH+10] = CHAR_S;
-
-      background_map[11*SCREEN_TILE_WIDTH+8] = CHAR_S;
-      background_map[11*SCREEN_TILE_WIDTH+9] = CHAR_T;
-      background_map[11*SCREEN_TILE_WIDTH+10] = CHAR_A;
-      background_map[11*SCREEN_TILE_WIDTH+11] = CHAR_R;
-      background_map[11*SCREEN_TILE_WIDTH+12] = CHAR_T;
-      counter = 0;
-    }
-    vsync();
-    set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
-  }
-}
-
 // Shows the mode selection screen and stores the mode chosen by the player in `game_mode`.
 static void show_mode_selection_screen(void) {
   // Add walls at the top and bottom of the screen.
   uint16_t row_offset = MAP_INDEX_ROW_OFFSET(COLUMN_HEIGHT-1);
+  if (upgrade_sprite_unlocked){
+    set_sprite_data(0, 10, player_upgrade_sprites);
+    set_sprite_data(10, 9, player_upgrade_shield_sprites);
+  }
+
   for (uint8_t i = 0; i < SCREEN_TILE_WIDTH; ++i) {
     background_map[i] = WALL_BLOCK_TILE;
     background_map[row_offset+i] = WALL_BLOCK_TILE;
@@ -307,7 +229,6 @@ static void show_mode_selection_screen(void) {
         // Unlock hard and turbo modes.
         hard_mode_unlocked = true;
         turbo_mode_unlocked = true;
-        upgrade_sprite_unlocked = true;
         update_locks = true;
         prev_y = 0;  // Updates the window.
         play_bomb_sound();
@@ -479,12 +400,18 @@ static void show_gameover_screen(void) {
   move_bkg(0, 0);
 
   display_gameover_scores();
-  update_modes_unlocked(&hard_mode_unlocked, &turbo_mode_unlocked, &upgrade_sprite_unlocked);
 
   SHOW_BKG;
   fade_in();
   wait_for_keys_pressed(J_START | J_A | J_B);
   wait_for_keys_released(J_START | J_A | J_B);
+  
+  bool ret = update_modes_unlocked(&hard_mode_unlocked, &turbo_mode_unlocked, &upgrade_sprite_unlocked);
+   
+  if (ret) {
+    show_reward_screen();
+  }
+
   fade_out();
   HIDE_BKG;
   SHOW_WIN;
@@ -736,11 +663,6 @@ void main(void) {
     // main game loop.
     game_paused = false;
 
-    if (upgrade_sprite_unlocked){
-      set_sprite_data(0, 10, player_upgrade_sprites);
-      set_sprite_data(10, 9, player_upgrade_shield_sprites);
-    }
-
     SHOW_SPRITES;
     SHOW_WIN;
     fade_in();
@@ -818,11 +740,11 @@ void main(void) {
 #if ENABLE_SCORING
       // Update the score tiles, if necessary.
       if (show_timer_score) {
-        if (timer_seconds != prev_timer_seconds) {
+        if (timer_score_changed){
           update_timer_score_tiles();
           update_window_score = true;
+          timer_score_changed = false;
         }
-        prev_timer_seconds = timer_seconds;
       } else {
         if (point_score != prev_point_score) {
           update_point_score_tiles();

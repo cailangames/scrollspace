@@ -42,6 +42,7 @@
  * Tiles
  */
 #define TILE_SIZE_BYTES 16
+#define TILE_SIZE_PIXELS 8
 // Bit-shift by 5 is equivalent to multiply by 32, which is the ROW_WIDTH.
 #define MAP_INDEX(row, column) ((((uint16_t)(row)) << 5) + (column))
 #define MAP_INDEX_ROW_OFFSET(row) (((uint16_t)(row)) << 5)
