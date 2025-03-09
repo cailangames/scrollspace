@@ -1,5 +1,8 @@
 #pragma bank 1
 
+// The below data is generated with a specific format and thus shouldn't be auto-formatted.
+// clang-format off
+
 #include <hUGEDriver.h>
 
 static const unsigned char order_cnt = 28;

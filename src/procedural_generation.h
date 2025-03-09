@@ -3,9 +3,8 @@
 #ifndef _PROCEDURAL_GENERATION_H_
 #define _PROCEDURAL_GENERATION_H_
 
-#include <stdint.h>
-
 #include <gb/gb.h>
+#include <stdint.h>
 
 // Resets the state of the procedural generation variables.
 // Note: This function needs to be called after `initrand()` has been called.

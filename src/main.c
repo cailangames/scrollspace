@@ -1,13 +1,12 @@
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <gb/gb.h>
 #include <gbdk/bcd.h>
 #include <gbdk/font.h>
 #include <hUGEDriver.h>
 #include <rand.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "collision.h"
 #include "common.h"
@@ -19,23 +18,19 @@
 #include "score.h"
 #include "songs.h"
 #include "sound_effects.h"
+#include "sprite_data.h"
 #include "sprites.h"
+#include "tile_data.h"
+#include "title_screen.h"
 #include "wait.h"
 #include "weapons.h"
-#include "title_screen.h"
-
-// Sprite data
-#include "sprite_data.h"
-
-// Tile data
-#include "tile_data.h"
 
 const uint8_t confirmation_prompt_msg[] = {0, 0, 0, 0, CHAR_A, CHAR_R, CHAR_E, 0, CHAR_Y, CHAR_O, CHAR_U, 0, CHAR_S, CHAR_U, CHAR_R, CHAR_E, CHAR_QUESTION_MARK, 0, 0, 0};
 const uint8_t yes_or_no_msg[] = {0, 0, 0, 0, 0, CHAR_Y, CHAR_E, CHAR_S, 0, 0, 0, 0, CHAR_CURSOR, 0, CHAR_N, CHAR_O, 0, 0, 0, 0};
 enum GameMode game_mode = NORMAL;
 struct Sprite player_sprite;
-uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
-uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
+uint8_t collision_map[COLUMN_HEIGHT * ROW_WIDTH];
+uint8_t background_map[COLUMN_HEIGHT * ROW_WIDTH];
 fixed scroll_speed;
 uint16_t point_score = 0;
 
@@ -56,13 +51,12 @@ static void increment_timer_score_isr(void) {
     return;
   }
   timer_score_changed = increment_timer_score();
-  
 }
 #endif
 
 // Loads the title screen tiles.
 static void load_title_screen(void) {
-  set_bkg_data(TITLE_SCREEN_OFFSET, sizeof(title_screen_tiles)/TILE_SIZE_BYTES, title_screen_tiles);
+  set_bkg_data(TITLE_SCREEN_OFFSET, sizeof(title_screen_tiles) / TILE_SIZE_BYTES, title_screen_tiles);
 }
 
 // Loads font data.
@@ -83,18 +77,18 @@ static void load_sprite_data(void) {
 // Loads background tile data.
 static void load_tile_data(void) {
   uint8_t tile_index = WALL_BLOCK_TILE;
-  set_bkg_data(tile_index, sizeof(block_tiles)/TILE_SIZE_BYTES, block_tiles);
-  tile_index += sizeof(block_tiles)/TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(powerup_tiles)/TILE_SIZE_BYTES, powerup_tiles);
-  tile_index += sizeof(powerup_tiles)/TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(health_bar_tiles)/TILE_SIZE_BYTES, health_bar_tiles);
-  tile_index += sizeof(health_bar_tiles)/TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(font_extras_tiles)/TILE_SIZE_BYTES, font_extras_tiles);
-  tile_index += sizeof(font_extras_tiles)/TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(tutorial_screen_tiles)/TILE_SIZE_BYTES, tutorial_screen_tiles);
-  tile_index += sizeof(tutorial_screen_tiles)/TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(lock_tiles)/TILE_SIZE_BYTES, lock_tiles);
-  tile_index += sizeof(lock_tiles)/TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(block_tiles) / TILE_SIZE_BYTES, block_tiles);
+  tile_index += sizeof(block_tiles) / TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(powerup_tiles) / TILE_SIZE_BYTES, powerup_tiles);
+  tile_index += sizeof(powerup_tiles) / TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(health_bar_tiles) / TILE_SIZE_BYTES, health_bar_tiles);
+  tile_index += sizeof(health_bar_tiles) / TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(font_extras_tiles) / TILE_SIZE_BYTES, font_extras_tiles);
+  tile_index += sizeof(font_extras_tiles) / TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(tutorial_screen_tiles) / TILE_SIZE_BYTES, tutorial_screen_tiles);
+  tile_index += sizeof(tutorial_screen_tiles) / TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, sizeof(lock_tiles) / TILE_SIZE_BYTES, lock_tiles);
+  tile_index += sizeof(lock_tiles) / TILE_SIZE_BYTES;
 }
 
 // Displays a confirmation prompt to the player to confirm whether or not they want to perform an
@@ -140,15 +134,15 @@ static bool confirm_action(void) {
 // Shows the mode selection screen and stores the mode chosen by the player in `game_mode`.
 static void show_mode_selection_screen(void) {
   // Add walls at the top and bottom of the screen.
-  uint16_t row_offset = MAP_INDEX_ROW_OFFSET(COLUMN_HEIGHT-1);
-  if (upgrade_sprite_unlocked){
+  uint16_t row_offset = MAP_INDEX_ROW_OFFSET(COLUMN_HEIGHT - 1);
+  if (upgrade_sprite_unlocked) {
     set_sprite_data(0, 10, player_upgrade_sprites);
     set_sprite_data(10, 9, player_upgrade_shield_sprites);
   }
 
   for (uint8_t i = 0; i < SCREEN_TILE_WIDTH; ++i) {
     background_map[i] = WALL_BLOCK_TILE;
-    background_map[row_offset+i] = WALL_BLOCK_TILE;
+    background_map[row_offset + i] = WALL_BLOCK_TILE;
   }
 
   // Write "NORMAL".
@@ -184,12 +178,13 @@ static void show_mode_selection_screen(void) {
   background_map[MAP_INDEX(14, 15)] = CHAR_T;
   background_map[MAP_INDEX(14, 16)] = CHAR_A;
 
-  // Note that the previous value of `game_mode` is used here. For convenience, we want to remember
-  // which mode the player selected last and default the cursor to that mode.
-  uint8_t y = ((game_mode == NORMAL) || (game_mode == TITLE_SCREEN)) ? 40 : (game_mode == HARD) ? 64 : 88;
-  if (game_mode == TITLE_SCREEN){
+  if (game_mode == TITLE_SCREEN) {
     game_mode = NORMAL;
   }
+  // Note that the previous value of `game_mode` is used here. For convenience, we want to remember
+  // which mode the player selected last and default the cursor to that mode.
+  uint8_t y = (game_mode == NORMAL) ? 40 : (game_mode == HARD) ? 64
+                                                               : 88;
 
   vsync();
   set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
@@ -235,8 +230,7 @@ static void show_mode_selection_screen(void) {
         prev_y = 0;  // Updates the window.
         play_bomb_sound();
       }
-    }
-    else if (KEY_FIRST_PRESS(input, prev_input, J_UP)) {
+    } else if (KEY_FIRST_PRESS(input, prev_input, J_UP)) {
       if (game_mode == HARD) {
         game_mode = NORMAL;
         y = 40;
@@ -251,8 +245,7 @@ static void show_mode_selection_screen(void) {
         move_sprite(PLAYER_SPRITE_ID, 32, y);
       }
       play_mode_selection_sound();
-    }
-    else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN)) {
+    } else if (KEY_FIRST_PRESS(input, prev_input, J_DOWN)) {
       if (game_mode == NORMAL) {
         game_mode = HARD;
         y = 64;
@@ -267,8 +260,7 @@ static void show_mode_selection_screen(void) {
         move_sprite(PLAYER_SPRITE_ID, 32, y);
       }
       play_mode_selection_sound();
-    }
-    else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A)) {
+    } else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A)) {
       if (game_mode == CLEAR_DATA) {
         if (confirm_action()) {
           play_bomb_sound();
@@ -280,7 +272,7 @@ static void show_mode_selection_screen(void) {
           upgrade_sprite_unlocked = false;
           update_locks = true;
         }
-        prev_y = 0;  // Updates the window.
+        prev_y = 0;                    // Updates the window.
         prev_input = (J_START | J_A);  // Makes sure these keys are released before triggering this again.
         continue;
       } else if ((game_mode == HARD && !hard_mode_unlocked) || (game_mode == TURBO && !turbo_mode_unlocked)) {
@@ -299,14 +291,13 @@ static void show_mode_selection_screen(void) {
       } else {
         play_flyaway_sound();
         // Make sprite fly off the screen
-        for (uint8_t i = 0; i < 144/8; i++){
-          scroll_sprite(PLAYER_SPRITE_ID,8,0);
+        for (uint8_t i = 0; i < 144 / 8; i++) {
+          scroll_sprite(PLAYER_SPRITE_ID, 8, 0);
           vsync();
         }
         break;
       }
-    }
-    else if (KEY_FIRST_PRESS(input, prev_input, J_B)) {
+    } else if (KEY_FIRST_PRESS(input, prev_input, J_B)) {
       game_mode = TITLE_SCREEN;
       break;
     }
@@ -321,19 +312,18 @@ static void show_mode_selection_screen(void) {
 static void show_gameover_screen(void) {
   HIDE_WIN;
   clear_window();
-  for (uint8_t row=0; row<SCREEN_TILE_HEIGHT; ++row){
-    for (uint8_t col=0; col<SCREEN_TILE_WIDTH; ++col){
-      if ((row == 0) || (row == 17)){
+  for (uint8_t row = 0; row < SCREEN_TILE_HEIGHT; ++row) {
+    for (uint8_t col = 0; col < SCREEN_TILE_WIDTH; ++col) {
+      if ((row == 0) || (row == 17)) {
         // Top and bottom block border
-        background_map[row*SCREEN_TILE_WIDTH+col] = 0x25;
-      }
-      else{
-        background_map[row*SCREEN_TILE_WIDTH+col] = 0x0;
+        background_map[row * SCREEN_TILE_WIDTH + col] = 0x25;
+      } else {
+        background_map[row * SCREEN_TILE_WIDTH + col] = 0x0;
       }
     }
   }
   // Write GAME OVER
-  uint16_t start_idx = 3*SCREEN_TILE_WIDTH+5;
+  uint16_t start_idx = 3 * SCREEN_TILE_WIDTH + 5;
   background_map[start_idx++] = CHAR_G;
   background_map[start_idx++] = CHAR_A;
   background_map[start_idx++] = CHAR_M;
@@ -345,7 +335,7 @@ static void show_gameover_screen(void) {
   background_map[start_idx++] = CHAR_R;
 
   // Write SCORE
-  start_idx = 5*SCREEN_TILE_WIDTH+2;
+  start_idx = 5 * SCREEN_TILE_WIDTH + 2;
   background_map[start_idx++] = CHAR_S;
   background_map[start_idx++] = CHAR_C;
   background_map[start_idx++] = CHAR_O;
@@ -353,14 +343,14 @@ static void show_gameover_screen(void) {
   background_map[start_idx++] = CHAR_E;
 
   // Write BEST
-  start_idx = 8*SCREEN_TILE_WIDTH+3;
+  start_idx = 8 * SCREEN_TILE_WIDTH + 3;
   background_map[start_idx++] = CHAR_B;
   background_map[start_idx++] = CHAR_E;
   background_map[start_idx++] = CHAR_S;
   background_map[start_idx++] = CHAR_T;
 
   // WRITE TIP
-  start_idx = 13*SCREEN_TILE_WIDTH+2;
+  start_idx = 13 * SCREEN_TILE_WIDTH + 2;
   background_map[start_idx++] = CHAR_T;
   background_map[start_idx++] = CHAR_I;
   background_map[start_idx++] = CHAR_P;
@@ -369,34 +359,34 @@ static void show_gameover_screen(void) {
   // Write the tip message
   uint8_t rdn = MOD8(rand());
   uint8_t tip_idx = 0;
-  start_idx = 14*SCREEN_TILE_WIDTH+3;
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
+  start_idx = 14 * SCREEN_TILE_WIDTH + 3;
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
 
-  start_idx = 15*SCREEN_TILE_WIDTH+3;
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
-  background_map[start_idx++] = tips[rdn*25+(tip_idx++)];
+  start_idx = 15 * SCREEN_TILE_WIDTH + 3;
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
 
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
   move_bkg(0, 0);
@@ -407,9 +397,9 @@ static void show_gameover_screen(void) {
   fade_in();
   wait_for_keys_pressed(J_START | J_A | J_B);
   wait_for_keys_released(J_START | J_A | J_B);
-  
+
   bool ret = update_modes_unlocked(&hard_mode_unlocked, &turbo_mode_unlocked, &upgrade_sprite_unlocked);
-   
+
   if (ret) {
     show_reward_screen();
   }
@@ -424,7 +414,7 @@ static void handle_gameover(void) {
   game_paused = true;
   mute_all_channels();
   remove_VBL(hUGE_dosound);
-  
+
   set_sprite_tile(PLAYER_SPRITE_ID, DEATH_SPRITE);
   wait_frames(10);
   HIDE_BKG;
@@ -525,17 +515,17 @@ void main(void) {
   uint16_t rand_seed = DIV_REG;
   rand_seed <<= 8;
 
-  fixed screen_pos_x;  // The x position of the screen (high 8 bits: pixels, low 8 bits: subpixels)
-  uint8_t input;  // The joypad input of this frame
-  uint8_t prev_input;  // The joypad input of the previous frame
-  uint8_t prev_left_column;  // The left-most column on the screen in the previous frame. Used to track when the background has scrolled a full column's worth of pixels.
-  uint8_t column_count;  // How many columns have been scrolled in the current screen
+  fixed screen_pos_x;            // The x position of the screen (high 8 bits: pixels, low 8 bits: subpixels)
+  uint8_t input;                 // The joypad input of this frame
+  uint8_t prev_input;            // The joypad input of the previous frame
+  uint8_t prev_left_column;      // The left-most column on the screen in the previous frame. Used to track when the background has scrolled a full column's worth of pixels.
+  uint8_t column_count;          // How many columns have been scrolled in the current screen
   uint8_t difficulty_countdown;  // A count-down of the number of screens before a difficulty increase
-  bool generated_column;  // Whether or not a column was generated this frame
+  bool generated_column;         // Whether or not a column was generated this frame
   uint8_t generated_column_idx;  // The index of the generated column
-  bool update_window_score;  // Whether or not the score in the window needs to be updated
-  uint8_t prev_timer_seconds;  // The `timer_seconds` of the previous frame. Used to determine whether or not to update the window score tiles.
-  uint16_t prev_point_score;  // The `point_score` of the previous frame. Used to determine whether or not to update the window score tiles.
+  bool update_window_score;      // Whether or not the score in the window needs to be updated
+  uint8_t prev_timer_seconds;    // The `timer_seconds` of the previous frame. Used to determine whether or not to update the window score tiles.
+  uint16_t prev_point_score;     // The `point_score` of the previous frame. Used to determine whether or not to update the window score tiles.
 
   while (true) {
     /*
@@ -543,7 +533,7 @@ void main(void) {
      */
 
     // Clear collision and background maps.
-    for (uint16_t ii = 0; ii < COLUMN_HEIGHT*ROW_WIDTH; ++ii) {
+    for (uint16_t ii = 0; ii < COLUMN_HEIGHT * ROW_WIDTH; ++ii) {
       collision_map[ii] = 0;
       background_map[ii] = 0;
     }
@@ -593,34 +583,34 @@ void main(void) {
     // Copy tutorial screen tiles to the background.
     for (uint8_t i = 0; i < COLUMN_HEIGHT; ++i) {
       for (uint8_t j = 0; j < SCREEN_TILE_WIDTH; ++j) {
-        background_map[i*ROW_WIDTH+j] = tutorial_screen_map[i*SCREEN_TILE_WIDTH+j];
+        background_map[i * ROW_WIDTH + j] = tutorial_screen_map[i * SCREEN_TILE_WIDTH + j];
       }
     }
-    
+
     // Add text to tutorial screen
-    background_map[5*ROW_WIDTH+7] = CHAR_A;
-    background_map[5*ROW_WIDTH+10] = CHAR_S;
-    background_map[5*ROW_WIDTH+11] = CHAR_H;
-    background_map[5*ROW_WIDTH+12] = CHAR_O;
-    background_map[5*ROW_WIDTH+13] = CHAR_O;
-    background_map[5*ROW_WIDTH+14] = CHAR_T;
+    background_map[5 * ROW_WIDTH + 7] = CHAR_A;
+    background_map[5 * ROW_WIDTH + 10] = CHAR_S;
+    background_map[5 * ROW_WIDTH + 11] = CHAR_H;
+    background_map[5 * ROW_WIDTH + 12] = CHAR_O;
+    background_map[5 * ROW_WIDTH + 13] = CHAR_O;
+    background_map[5 * ROW_WIDTH + 14] = CHAR_T;
 
-    background_map[8*ROW_WIDTH+7] = CHAR_B;
-    background_map[8*ROW_WIDTH+10] = CHAR_B;
-    background_map[8*ROW_WIDTH+11] = CHAR_O;
-    background_map[8*ROW_WIDTH+12] = CHAR_M;
-    background_map[8*ROW_WIDTH+13] = CHAR_B;
+    background_map[8 * ROW_WIDTH + 7] = CHAR_B;
+    background_map[8 * ROW_WIDTH + 10] = CHAR_B;
+    background_map[8 * ROW_WIDTH + 11] = CHAR_O;
+    background_map[8 * ROW_WIDTH + 12] = CHAR_M;
+    background_map[8 * ROW_WIDTH + 13] = CHAR_B;
 
-    background_map[11*ROW_WIDTH+3] = CHAR_S;
-    background_map[11*ROW_WIDTH+4] = CHAR_T;
-    background_map[11*ROW_WIDTH+5] = CHAR_A;
-    background_map[11*ROW_WIDTH+6] = CHAR_R;
-    background_map[11*ROW_WIDTH+7] = CHAR_T;
-    background_map[11*ROW_WIDTH+10] = CHAR_P;
-    background_map[11*ROW_WIDTH+11] = CHAR_A;
-    background_map[11*ROW_WIDTH+12] = CHAR_U;
-    background_map[11*ROW_WIDTH+13] = CHAR_S;
-    background_map[11*ROW_WIDTH+14] = CHAR_E;
+    background_map[11 * ROW_WIDTH + 3] = CHAR_S;
+    background_map[11 * ROW_WIDTH + 4] = CHAR_T;
+    background_map[11 * ROW_WIDTH + 5] = CHAR_A;
+    background_map[11 * ROW_WIDTH + 6] = CHAR_R;
+    background_map[11 * ROW_WIDTH + 7] = CHAR_T;
+    background_map[11 * ROW_WIDTH + 10] = CHAR_P;
+    background_map[11 * ROW_WIDTH + 11] = CHAR_A;
+    background_map[11 * ROW_WIDTH + 12] = CHAR_U;
+    background_map[11 * ROW_WIDTH + 13] = CHAR_S;
+    background_map[11 * ROW_WIDTH + 14] = CHAR_E;
 
     set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
 
@@ -646,7 +636,6 @@ void main(void) {
     }
     play_all_channels();
 #endif
-
 
     generated_column_idx = SCREEN_TILE_WIDTH - 1;
     for (uint8_t i = 0; i < ROW_WIDTH - SCREEN_TILE_WIDTH; ++i) {
@@ -742,7 +731,7 @@ void main(void) {
 #if ENABLE_SCORING
       // Update the score tiles, if necessary.
       if (show_timer_score) {
-        if (timer_score_changed){
+        if (timer_score_changed) {
           update_timer_score_tiles();
           update_window_score = true;
           timer_score_changed = false;
@@ -788,7 +777,7 @@ void main(void) {
           // into account here by writing to VRAM in two batches.
           uint8_t first_batch_width = ROW_WIDTH - bombed_col_left;
           set_bkg_submap(bombed_col_left, bombed_row_top, first_batch_width, bombed_height, background_map, ROW_WIDTH);
-          set_bkg_submap(0, bombed_row_top, BOMB_LENGTH-first_batch_width, bombed_height, background_map, ROW_WIDTH);
+          set_bkg_submap(0, bombed_row_top, BOMB_LENGTH - first_batch_width, bombed_height, background_map, ROW_WIDTH);
         }
       }
 

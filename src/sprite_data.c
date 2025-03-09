@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 
+// The below data is generated with a specific format and thus shouldn't be auto-formatted.
+// clang-format off
+
 const uint8_t player_sprites[] = {
   0X60,0X60,0XF8,0X98,0X8E,0XF6,0XF1,0X8F,0XF1,0X8F,0X8E,0XF6,0XF8,0X98,0X60,0X60,
   0X78,0X78,0X8E,0XF6,0XF1,0X8F,0XF1,0X8F,0X8E,0XF6,0XF8,0X98,0X60,0X60,0X00,0X00,

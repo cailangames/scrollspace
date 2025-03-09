@@ -3,10 +3,9 @@
 #ifndef _PLAYER_H_
 #define _PLAYER_H_
 
+#include <gb/gb.h>
 #include <stdbool.h>
 #include <stdint.h>
-
-#include <gb/gb.h>
 
 #include "collision.h"
 #include "common.h"
@@ -14,8 +13,8 @@
 #include "sprites.h"
 
 enum AnimationState {
-  HIDDEN=0,
-  SHOWN=1,
+  HIDDEN = 0,
+  SHOWN = 1,
 };
 
 static uint8_t player_sprite_base_id = 0;
@@ -39,15 +38,13 @@ void update_health_bar_tiles(int8_t health) {
       health_bar_window_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
     }
     health_bar_window_tiles[7] = HEALTH_BAR_START + 2;  // right edge of bar
-  }
-  else if (health >= 88) {
+  } else if (health >= 88) {
     health_bar_window_tiles[0] = HEALTH_BAR_START;  // left edge of bar
     for (uint8_t i = 1; i < 7; ++i) {
       health_bar_window_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
     }
     health_bar_window_tiles[7] = HEALTH_BAR_START + 5;  // right edge of bar
-  }
-  else if (health >= 16) {
+  } else if (health >= 16) {
     uint8_t idx = health / 12;
     health_bar_window_tiles[0] = HEALTH_BAR_START;  // left edge of bar
     for (uint8_t i = 1; i < 7; ++i) {
@@ -58,12 +55,10 @@ void update_health_bar_tiles(int8_t health) {
       }
     }
     health_bar_window_tiles[7] = HEALTH_BAR_START + 5;  // clear right edge of bar
-  }
-  else if (health > 0) {
+  } else if (health > 0) {
     health_bar_window_tiles[1] = HEALTH_BAR_START + 4;
     health_bar_window_tiles[0] = HEALTH_BAR_START;
-  }
-  else {
+  } else {
     health_bar_window_tiles[1] = HEALTH_BAR_START + 4;  // clear bottom 2 tiles
     health_bar_window_tiles[0] = HEALTH_BAR_START + 3;
   }
@@ -285,8 +280,7 @@ bool handle_player_collisions(void) {
           break;
       }
     }
-  }
-  else {
+  } else {
     // The player *is* in the invincibility frames state.
     --iframes_counter;
     if (!shield_active) {
@@ -326,8 +320,7 @@ bool handle_player_collisions(void) {
         }
         health_changed = true;
         play_health_sound();
-      }
-      else {
+      } else {
         // Pick up shield.
         if (!shield_active) {
           player_sprite_base_id += 10;

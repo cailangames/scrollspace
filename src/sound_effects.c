@@ -1,7 +1,7 @@
+#include "sound_effects.h"
+
 #include <gb/hardware.h>
 #include <hUGEDriver.h>
-
-#include "sound_effects.h"
 
 void mute_all_channels(void) {
   hUGE_mute_channel(HT_CH1, HT_CH_MUTE);

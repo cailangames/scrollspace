@@ -1,9 +1,8 @@
-#include <stdbool.h>
-#include <stdint.h>
+#include "wait.h"
 
 #include <gb/gb.h>
-
-#include "wait.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 void wait_frames(uint8_t n) {
   for (uint8_t i = 0; i < n; ++i) {

@@ -3,10 +3,9 @@
 #ifndef _COLLISION_H_
 #define _COLLISION_H_
 
+#include <gb/hardware.h>
 #include <stdbool.h>
 #include <stdint.h>
-
-#include <gb/hardware.h>
 
 #include "common.h"
 #include "sprites.h"

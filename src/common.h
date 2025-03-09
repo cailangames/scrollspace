@@ -25,14 +25,14 @@
  * Screen
  */
 // The top of the *visible* screen is 16 pixels from the actual top of the screen.
-#define SCREEN_T  16
+#define SCREEN_T 16
 #define SCREEN_B 144
 // The left side of the *visible* screen is 8 pixels from the actual left side of the screen.
 #define SCREEN_L 8
 #define SCREEN_R 160
 #define SCREEN_TILE_WIDTH 20
 #define SCREEN_TILE_HEIGHT 18
-#define SCREEN_SCROLL_WIDTH (SCREEN_TILE_WIDTH+2)
+#define SCREEN_SCROLL_WIDTH (SCREEN_TILE_WIDTH + 2)
 #define ROW_WIDTH 32
 #define COLUMN_HEIGHT 17
 #define PIXELS_PER_COLUMN 8
@@ -47,6 +47,7 @@
 #define MAP_INDEX(row, column) ((((uint16_t)(row)) << 5) + (column))
 #define MAP_INDEX_ROW_OFFSET(row) (((uint16_t)(row)) << 5)
 // Note: Indexes 0x01-0x24 are used for font characters.
+// clang-format off
 #define EMPTY_TILE        0x00
 #define WALL_BLOCK_TILE   0x25
 #define MINE_TILE         0x27
@@ -56,10 +57,11 @@
 #define HEALTH_KIT_TILE   0x2C
 #define HEALTH_BAR_START  0x33
 #define LOCK_TILE         0x46
+// clang-format on
 
-#define INTRO_SCENE_OFFSET        0x80
-#define INTRO_SCENE_STARS_OFFSET  0x8C
-#define TITLE_SCREEN_OFFSET       0xA4
+#define INTRO_SCENE_OFFSET 0x80
+#define INTRO_SCENE_STARS_OFFSET 0x8C
+#define TITLE_SCREEN_OFFSET 0xA4
 
 /*
  * Sprites
@@ -85,15 +87,15 @@
 #define HEALTH_KIT_ID 255
 #define HEALTH_KIT_VALUE 5
 // When the player is damaged enough, health kits provide more health to the player.
-#define HEALTH_KIT_DAMAGED_VALUE (2*HEALTH_KIT_VALUE)
-#define HEALTH_KIT_CRITICALLY_DAMAGED_VALUE (4*HEALTH_KIT_VALUE)
+#define HEALTH_KIT_DAMAGED_VALUE (2 * HEALTH_KIT_VALUE)
+#define HEALTH_KIT_CRITICALLY_DAMAGED_VALUE (4 * HEALTH_KIT_VALUE)
 #define COLLISION_DAMAGE 5
 #define IFRAMES_DURATION 60
 #define IFRAMES_ANIMATION_CYCLE 5
 // A BOMB_RADIUS of N will create square bomb explosions of (2*N+1, 2*N+1) size in tiles. The +1 is
 // for the center row, which is centered on the ship.
 #define BOMB_RADIUS 3
-#define BOMB_LENGTH (BOMB_RADIUS*2 + 1)
+#define BOMB_LENGTH (BOMB_RADIUS * 2 + 1)
 #define BOMB_COOLDOWN_FRAMES 420
 #define BULLET_LIFESPAN 25
 #define BULLET_DAMAGE 1
@@ -111,6 +113,7 @@
 #define PLAYER_KNOCKBACK_DURATION 2
 // The speeds are 16-bit fixed point numbers, where the high 8 bits are the pixels
 // (per frame) and the low 8 bits are the subpixels.
+// clang-format off
 #define PLAYER_SPEED_NORMAL    0x0100
 #define PLAYER_SPEED_HARD      0x0140
 #define PLAYER_SPEED_TURBO     0x0180
@@ -122,6 +125,7 @@
 #define SCROLL_SPEED_TURBO     0x0300
 #define SCROLL_SPEED_TURBO_MAX 0x0400
 #define SCROLL_SPEED_INCREASE  0x0040
+// clang-format on
 // Increase the difficulty after this many screens have been scrolled.
 #define DIFFICULTY_INCREASE_SCREEN_COUNT 10
 #define POINTS_PER_MINE 2
@@ -132,10 +136,12 @@
 #define TURBO_MODE_UNLOCK_POINTS 1000
 #define UPGRADE_SPRITE_UNLOCK_POINTS 500
 // The below probabilities are out of 65,535 (uint16_t max).
+// clang-format off
 #define HEALTH_PICKUP_PROBABILITY  100
 #define SHIELD_PICKUP_PROBABILITY  100
 #define MINE_PROBABILITY_NARROW    2000
 #define MINE_PROBABILITY_WIDE_OPEN 8000
+// clang-format on
 
 /*
  * Font
@@ -194,22 +200,22 @@
 #define MOD64(n) ((n) & 0x3F)
 
 /*
- * Game Modes 
+ * Game Modes
  */
 enum GameMode {
-  NORMAL=0,
-  HARD=1,
-  TURBO=2,
-  CLEAR_DATA=3,
-  TITLE_SCREEN=4,
+  NORMAL = 0,
+  HARD = 1,
+  TURBO = 2,
+  CLEAR_DATA = 3,
+  TITLE_SCREEN = 4,
 };
 
 /*
  * Other declarations
  */
 extern struct Sprite player_sprite;
-extern uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
-extern uint8_t background_map[COLUMN_HEIGHT*ROW_WIDTH];
+extern uint8_t collision_map[COLUMN_HEIGHT * ROW_WIDTH];
+extern uint8_t background_map[COLUMN_HEIGHT * ROW_WIDTH];
 // How many pixels per frame to scroll the screen (high 8 bits: pixels, low 8 bits: subpixels)
 extern fixed scroll_speed;
 extern uint16_t point_score;

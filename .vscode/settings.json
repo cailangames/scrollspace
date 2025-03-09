@@ -1,0 +1,5 @@
+{
+    "editor.tabSize": 2,
+    "makefile.configureOnOpen": false,
+    "C_Cpp.clang_format_style": "{BasedOnStyle: Google, ColumnLimit: 0}"
+}

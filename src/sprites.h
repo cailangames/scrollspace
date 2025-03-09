@@ -3,15 +3,14 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
 #include <types.h>
 
 enum Direction {
-  NONE=0,
-  UP=1,
-  RIGHT=2,
-  DOWN=4,
-  LEFT=8,
+  NONE = 0,
+  UP = 1,
+  RIGHT = 2,
+  DOWN = 4,
+  LEFT = 8,
 };
 
 struct CollisionBox {

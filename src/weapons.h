@@ -3,11 +3,10 @@
 #ifndef _WEAPONS_H_
 #define _WEAPONS_H_
 
-#include <stdbool.h>
-#include <stdint.h>
-
 #include <gb/gb.h>
 #include <gb/hardware.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "collision.h"
 #include "common.h"
@@ -187,8 +186,7 @@ bool update_weapons(uint8_t input, uint8_t prev_input) {
         b->x.w = 0;
         b->y.w = 0;
         --active_bullet_count;
-      }
-      else {
+      } else {
         uint16_t collision_idx = check_bullet_collisions(b);
         if (collision_idx != UINT16_MAX) {
           // The bullet collided with a wall or mine.

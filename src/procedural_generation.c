@@ -1,18 +1,21 @@
 #pragma bank 1
 
-#include <stdint.h>
+#include "procedural_generation.h"
 
 #include <gb/gb.h>
 #include <rand.h>
+#include <stdint.h>
 
 #include "common.h"
-#include "procedural_generation.h"
 
 #define BIOME_COUNT 64
 #define BIOME_CONNECTION_COUNT 32
 #define COLUMNS_PER_BIOME 20
 #define MINIMUM_CAVE_WIDTH 4
 #define WIDE_OPEN_BIOMES_START 50
+
+// The below data is generated with a specific format and thus shouldn't be auto-formatted.
+// clang-format off
 
 // Data for biome columns
 //
@@ -156,8 +159,10 @@ static const uint8_t next_possible_biomes[BIOME_COUNT][BIOME_CONNECTION_COUNT] =
   /* 63 */ {  0,  1,  3,  4,  6,  9, 10, 11, 12, 13, 15, 16, 17, 18, 20, 21, 27, 28, 29, 31, 33, 36, 39, 40, 48, 49, 52, 57, 58, 59, 60, 62 },
 };
 
+// clang-format on
+
 // Current generation state variables
-static uint8_t biome_id = 0;  // The ID of the biome that's currently being generated
+static uint8_t biome_id = 0;            // The ID of the biome that's currently being generated
 static uint8_t biome_column_index = 0;  // The column index within the current biome being generated
 
 void reset_generation_state(void) BANKED {

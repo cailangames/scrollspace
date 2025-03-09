@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 
+// The below data is generated with a specific format and thus shouldn't be auto-formatted.
+// clang-format off
+
 // 4 tiles
 const uint8_t block_tiles[] = {
   0X10,0XEF,0X42,0XB9,0X08,0XD7,0X44,0XBA,0X10,0XEB,0X49,0XB6,0X02,0XD9,0X10,0XEF,
