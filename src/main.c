@@ -30,6 +30,8 @@
 // Tile data
 #include "tile_data.h"
 
+const uint8_t confirmation_prompt_msg[] = {0, 0, 0, 0, CHAR_A, CHAR_R, CHAR_E, 0, CHAR_Y, CHAR_O, CHAR_U, 0, CHAR_S, CHAR_U, CHAR_R, CHAR_E, CHAR_QUESTION_MARK, 0, 0, 0};
+const uint8_t yes_or_no_msg[] = {0, 0, 0, 0, 0, CHAR_Y, CHAR_E, CHAR_S, 0, 0, 0, 0, CHAR_CURSOR, 0, CHAR_N, CHAR_O, 0, 0, 0, 0};
 enum GameMode game_mode = NORMAL;
 struct Sprite player_sprite;
 uint8_t collision_map[COLUMN_HEIGHT*ROW_WIDTH];
