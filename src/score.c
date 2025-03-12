@@ -30,8 +30,7 @@ struct HighScore {
 };
 
 static const uint8_t ram_signature[] = {CHAR_P, CHAR_G, CHAR_I, CHAR_S};
-#define RAM_SIGNATURE_LENGTH (sizeof(ram_signature) / sizeof(uint8_t))
-#define HIGH_SCORE_ADDRESS (RAM_BANK0_ADDRESS + RAM_SIGNATURE_LENGTH)
+#define HIGH_SCORE_ADDRESS (RAM_BANK0_ADDRESS + UINT8_ARRARY_SIZE(ram_signature))
 
 static uint8_t timer_frames = 0;
 static uint8_t timer_seconds = 0;
@@ -114,95 +113,37 @@ void show_reward_screen(void) {
   // Use the game_mode variable to determine what was unlocked
 
   // Clear the background map and add borders (top, bottom, right)
-  // TODO: Check the bounds here. They seem too big for `background_map`.
   for (uint8_t row = 0; row < SCREEN_TILE_HEIGHT; ++row) {
     for (uint8_t col = 0; col < SCREEN_TILE_WIDTH; ++col) {
-      if ((row == 0) || (row == 17) || (col == 19)) {
-        // Top and bottom block border
+      if (row == 0 || row == 17 || col == 19) {
         background_map[row * SCREEN_TILE_WIDTH + col] = 0x25;
       } else {
         background_map[row * SCREEN_TILE_WIDTH + col] = 0x0;
       }
     }
   }
-
-  // Write CONGRATULATIONS!
-  uint16_t start_idx = 6 * SCREEN_TILE_WIDTH + 2;
-  background_map[start_idx++] = CHAR_C;
-  background_map[start_idx++] = CHAR_O;
-  background_map[start_idx++] = CHAR_N;
-  background_map[start_idx++] = CHAR_G;
-  background_map[start_idx++] = CHAR_R;
-  background_map[start_idx++] = CHAR_A;
-  background_map[start_idx++] = CHAR_T;
-  background_map[start_idx++] = CHAR_U;
-  background_map[start_idx++] = CHAR_L;
-  background_map[start_idx++] = CHAR_A;
-  background_map[start_idx++] = CHAR_T;
-  background_map[start_idx++] = CHAR_I;
-  background_map[start_idx++] = CHAR_O;
-  background_map[start_idx++] = CHAR_N;
-  background_map[start_idx++] = CHAR_S;
-  background_map[start_idx++] = CHAR_EXCLAMATION_MARK;
-
+  vsync();
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
+
+  // Write "CONGRATULATIONS!"
+  set_bkg_tiles(2, 6, UINT8_ARRARY_SIZE(congratulations_text), 1, congratulations_text);
   wait_frames(60);
 
-  start_idx = 8 * SCREEN_TILE_WIDTH + 4;
-  background_map[start_idx++] = CHAR_Y;
-  background_map[start_idx++] = CHAR_O;
-  background_map[start_idx++] = CHAR_U;
-  background_map[start_idx++] = CHAR_SPACE;
-  background_map[start_idx++] = CHAR_U;
-  background_map[start_idx++] = CHAR_N;
-  background_map[start_idx++] = CHAR_L;
-  background_map[start_idx++] = CHAR_O;
-  background_map[start_idx++] = CHAR_C;
-  background_map[start_idx++] = CHAR_K;
-  background_map[start_idx++] = CHAR_E;
-  background_map[start_idx++] = CHAR_D;
-
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
+  // Write "YOU UNLOCKED"
+  set_bkg_tiles(4, 8, UINT8_ARRARY_SIZE(you_unlocked_text), 1, you_unlocked_text);
   wait_frames(60);
 
+  // Write the reward's name.
   if (game_mode == NORMAL) {
-    // HARD MODE
-    start_idx = 11 * SCREEN_TILE_WIDTH + 5;
-    background_map[start_idx++] = CHAR_H;
-    background_map[start_idx++] = CHAR_A;
-    background_map[start_idx++] = CHAR_R;
-    background_map[start_idx++] = CHAR_D;
-    background_map[start_idx++] = CHAR_SPACE;
-    background_map[start_idx++] = CHAR_M;
-    background_map[start_idx++] = CHAR_O;
-    background_map[start_idx++] = CHAR_D;
-    background_map[start_idx++] = CHAR_E;
+    // "HARD MODE"
+    set_bkg_tiles(5, 11, UINT8_ARRARY_SIZE(hard_mode_text), 1, hard_mode_text);
   } else if (game_mode == HARD) {
-    // TURBO MODE
-    start_idx = 11 * SCREEN_TILE_WIDTH + 4;
-    background_map[start_idx++] = CHAR_T;
-    background_map[start_idx++] = CHAR_U;
-    background_map[start_idx++] = CHAR_R;
-    background_map[start_idx++] = CHAR_B;
-    background_map[start_idx++] = CHAR_O;
-    background_map[start_idx++] = CHAR_SPACE;
-    background_map[start_idx++] = CHAR_M;
-    background_map[start_idx++] = CHAR_O;
-    background_map[start_idx++] = CHAR_D;
-    background_map[start_idx++] = CHAR_E;
+    // "TURBO MODE"
+    set_bkg_tiles(4, 11, UINT8_ARRARY_SIZE(turbo_mode_text), 1, turbo_mode_text);
   } else {
-    start_idx = 11 * SCREEN_TILE_WIDTH + 6;
-    background_map[start_idx++] = CHAR_N;
-    background_map[start_idx++] = CHAR_E;
-    background_map[start_idx++] = CHAR_W;
-    background_map[start_idx++] = CHAR_SPACE;
-    background_map[start_idx++] = CHAR_S;
-    background_map[start_idx++] = CHAR_H;
-    background_map[start_idx++] = CHAR_I;
-    background_map[start_idx++] = CHAR_P;
+    // "NEW SHIP"
+    set_bkg_tiles(6, 11, UINT8_ARRARY_SIZE(new_ship_text), 1, new_ship_text);
   }
-
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
 
   if (game_mode == TURBO) {
     set_sprite_tile(0, 0);
@@ -227,21 +168,21 @@ void show_reward_screen(void) {
 }
 
 // Checks if the high scores meet the thresholds for unlocking the harder game modes, and sets the
-// output bool pointers accordingly.
+// output bool pointers accordingly. Returns true if any of the unlocked bools changed, false otherwise.
 bool update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked, bool* upgrade_sprite_unlocked) {
   const struct HighScore* highscore = (const struct HighScore*)HIGH_SCORE_ADDRESS;
   bool changed = false;
-  if ((highscore->points >= HARD_MODE_UNLOCK_POINTS) && (!(*hard_mode_unlocked))) {
+  if (highscore->points >= HARD_MODE_UNLOCK_POINTS && !(*hard_mode_unlocked)) {
     *hard_mode_unlocked = true;
     changed = true;
   }
   ++highscore;
-  if ((highscore->points >= TURBO_MODE_UNLOCK_POINTS) && (!(*turbo_mode_unlocked))) {
+  if (highscore->points >= TURBO_MODE_UNLOCK_POINTS && !(*turbo_mode_unlocked)) {
     *turbo_mode_unlocked = true;
     changed = true;
   }
   ++highscore;
-  if ((highscore->points >= UPGRADE_SPRITE_UNLOCK_POINTS) && (!(*upgrade_sprite_unlocked))) {
+  if (highscore->points >= UPGRADE_SPRITE_UNLOCK_POINTS && !(*upgrade_sprite_unlocked)) {
     *upgrade_sprite_unlocked = true;
     changed = true;
   }
@@ -256,16 +197,17 @@ void init_highscores(void) {
   SWITCH_RAM(0);
   uint8_t* ram_ptr = (uint8_t*)RAM_BANK0_ADDRESS;
   bool initialized = true;
-  for (uint8_t i = 0; i < RAM_SIGNATURE_LENGTH; ++i) {
+  for (uint8_t i = 0; i < UINT8_ARRARY_SIZE(ram_signature); ++i) {
     if (ram_ptr[i] != ram_signature[i]) {
       initialized = false;
+      break;
     }
   }
   if (initialized) {
     return;
   }
   // High scores are *not* present. Write the signature and initialize scores with zeroes.
-  for (uint8_t i = 0; i < RAM_SIGNATURE_LENGTH; ++i) {
+  for (uint8_t i = 0; i < UINT8_ARRARY_SIZE(ram_signature); ++i) {
     ram_ptr[i] = ram_signature[i];
   }
   clear_score_data();

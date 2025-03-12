@@ -41,11 +41,14 @@
 /*
  * Tiles
  */
-#define TILE_SIZE_BYTES 16
 #define TILE_SIZE_PIXELS 8
+#define TILE_DATA_SIZE_BYTES 16
+#define TILE_COUNT(arr) (sizeof(arr) / TILE_DATA_SIZE_BYTES)
 // Bit-shift by 5 is equivalent to multiply by 32, which is the ROW_WIDTH.
 #define MAP_INDEX(row, column) ((((uint16_t)(row)) << 5) + (column))
 #define MAP_INDEX_ROW_OFFSET(row) (((uint16_t)(row)) << 5)
+// Like `MAP_INDEX()`, but only for the size of one screen (20x18 tiles).
+#define SCREEN_MAP_INDEX(row, column) ((((uint16_t)(row)) * SCREEN_TILE_WIDTH) + (column))
 // Note: Indexes 0x01-0x24 are used for font characters.
 // clang-format off
 #define EMPTY_TILE        0x00
@@ -132,7 +135,7 @@
 #define POINTS_PER_PICKUP 2
 #define POINTS_PER_SCREEN_SCROLLED 5
 // IMPORTANT: If you update these thresholds, you must update the unlock messages in score.h too.
-#define HARD_MODE_UNLOCK_POINTS 2000
+#define HARD_MODE_UNLOCK_POINTS 10
 #define TURBO_MODE_UNLOCK_POINTS 1000
 #define UPGRADE_SPRITE_UNLOCK_POINTS 500
 // The below probabilities are out of 65,535 (uint16_t max).
@@ -200,7 +203,12 @@
 #define MOD64(n) ((n) & 0x3F)
 
 /*
- * Game Modes
+ * Arrays
+ */
+#define UINT8_ARRARY_SIZE(arr) (sizeof(arr) / sizeof(uint8_t))
+
+/*
+ * Game modes
  */
 enum GameMode {
   NORMAL = 0,
@@ -211,7 +219,7 @@ enum GameMode {
 };
 
 /*
- * Other declarations
+ * Global variables
  */
 extern struct Sprite player_sprite;
 extern uint8_t collision_map[COLUMN_HEIGHT * ROW_WIDTH];

@@ -2,6 +2,8 @@
 
 #include <gb/gb.h>
 #include <hUGEDriver.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "common.h"
 #include "display_effects.h"
@@ -15,27 +17,13 @@
 void show_title_screen(bool restart_song) BANKED {
   HIDE_WIN;
   clear_window();
-  // Copy title screen to background_map
-  for (uint8_t i = 0; i < SCREEN_TILE_HEIGHT; ++i) {
-    for (uint8_t j = 0; j < SCREEN_TILE_WIDTH; ++j) {
-      background_map[i * SCREEN_TILE_WIDTH + j] = title_screen_map[i * SCREEN_TILE_WIDTH + j];
-    }
-  }
 
-  // Add Press Start text
-  background_map[10 * SCREEN_TILE_WIDTH + 6] = CHAR_P;
-  background_map[10 * SCREEN_TILE_WIDTH + 7] = CHAR_R;
-  background_map[10 * SCREEN_TILE_WIDTH + 8] = CHAR_E;
-  background_map[10 * SCREEN_TILE_WIDTH + 9] = CHAR_S;
-  background_map[10 * SCREEN_TILE_WIDTH + 10] = CHAR_S;
+  // Set the background tiles for the title screen.
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, title_screen_map);
 
-  background_map[11 * SCREEN_TILE_WIDTH + 8] = CHAR_S;
-  background_map[11 * SCREEN_TILE_WIDTH + 9] = CHAR_T;
-  background_map[11 * SCREEN_TILE_WIDTH + 10] = CHAR_A;
-  background_map[11 * SCREEN_TILE_WIDTH + 11] = CHAR_R;
-  background_map[11 * SCREEN_TILE_WIDTH + 12] = CHAR_T;
-
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
+  // Add the "PRESS START" text.
+  set_bkg_tiles(6, 10, UINT8_ARRARY_SIZE(press_text), 1, press_text);
+  set_bkg_tiles(8, 11, UINT8_ARRARY_SIZE(start_text), 1, start_text);
 
   if (restart_song) {
     fade_in();
@@ -49,45 +37,29 @@ void show_title_screen(bool restart_song) BANKED {
   }
 #endif
 
-  /*
-   * Blink PRESS START while waiting for user input
-   */
+  for (uint8_t i = 0; i < 5; ++i) {
+    background_map[i] = EMPTY_TILE;
+  }
+
+  // Blink "PRESS START" while waiting for user input.
   uint8_t counter = 0;
-  while (1) {
+  while (true) {
     if (joypad() & J_START) {
       wait_for_keys_released(J_START);
       return;
     }
+
+    vsync();
     ++counter;
     if (counter == 15) {
-      // Add Press Start text
-      background_map[10 * SCREEN_TILE_WIDTH + 6] = EMPTY_TILE;
-      background_map[10 * SCREEN_TILE_WIDTH + 7] = EMPTY_TILE;
-      background_map[10 * SCREEN_TILE_WIDTH + 8] = EMPTY_TILE;
-      background_map[10 * SCREEN_TILE_WIDTH + 9] = EMPTY_TILE;
-      background_map[10 * SCREEN_TILE_WIDTH + 10] = EMPTY_TILE;
-
-      background_map[11 * SCREEN_TILE_WIDTH + 8] = EMPTY_TILE;
-      background_map[11 * SCREEN_TILE_WIDTH + 9] = EMPTY_TILE;
-      background_map[11 * SCREEN_TILE_WIDTH + 10] = EMPTY_TILE;
-      background_map[11 * SCREEN_TILE_WIDTH + 11] = EMPTY_TILE;
-      background_map[11 * SCREEN_TILE_WIDTH + 12] = EMPTY_TILE;
+      // Clear the "PRESS START" text.
+      set_bkg_tiles(6, 10, 5, 1, background_map);
+      set_bkg_tiles(8, 11, 5, 1, background_map);
     } else if (counter == 30) {
-      // Add Press Start text
-      background_map[10 * SCREEN_TILE_WIDTH + 6] = CHAR_P;
-      background_map[10 * SCREEN_TILE_WIDTH + 7] = CHAR_R;
-      background_map[10 * SCREEN_TILE_WIDTH + 8] = CHAR_E;
-      background_map[10 * SCREEN_TILE_WIDTH + 9] = CHAR_S;
-      background_map[10 * SCREEN_TILE_WIDTH + 10] = CHAR_S;
-
-      background_map[11 * SCREEN_TILE_WIDTH + 8] = CHAR_S;
-      background_map[11 * SCREEN_TILE_WIDTH + 9] = CHAR_T;
-      background_map[11 * SCREEN_TILE_WIDTH + 10] = CHAR_A;
-      background_map[11 * SCREEN_TILE_WIDTH + 11] = CHAR_R;
-      background_map[11 * SCREEN_TILE_WIDTH + 12] = CHAR_T;
+      // Add the "PRESS START" text.
+      set_bkg_tiles(6, 10, UINT8_ARRARY_SIZE(press_text), 1, press_text);
+      set_bkg_tiles(8, 11, UINT8_ARRARY_SIZE(start_text), 1, start_text);
       counter = 0;
     }
-    vsync();
-    set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
   }
 }

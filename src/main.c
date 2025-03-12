@@ -56,7 +56,7 @@ static void increment_timer_score_isr(void) {
 
 // Loads the title screen tiles.
 static void load_title_screen(void) {
-  set_bkg_data(TITLE_SCREEN_OFFSET, sizeof(title_screen_tiles) / TILE_SIZE_BYTES, title_screen_tiles);
+  set_bkg_data(TITLE_SCREEN_OFFSET, TILE_COUNT(title_screen_tiles), title_screen_tiles);
 }
 
 // Loads font data.
@@ -77,18 +77,18 @@ static void load_sprite_data(void) {
 // Loads background tile data.
 static void load_tile_data(void) {
   uint8_t tile_index = WALL_BLOCK_TILE;
-  set_bkg_data(tile_index, sizeof(block_tiles) / TILE_SIZE_BYTES, block_tiles);
-  tile_index += sizeof(block_tiles) / TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(powerup_tiles) / TILE_SIZE_BYTES, powerup_tiles);
-  tile_index += sizeof(powerup_tiles) / TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(health_bar_tiles) / TILE_SIZE_BYTES, health_bar_tiles);
-  tile_index += sizeof(health_bar_tiles) / TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(font_extras_tiles) / TILE_SIZE_BYTES, font_extras_tiles);
-  tile_index += sizeof(font_extras_tiles) / TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(tutorial_screen_tiles) / TILE_SIZE_BYTES, tutorial_screen_tiles);
-  tile_index += sizeof(tutorial_screen_tiles) / TILE_SIZE_BYTES;
-  set_bkg_data(tile_index, sizeof(lock_tiles) / TILE_SIZE_BYTES, lock_tiles);
-  tile_index += sizeof(lock_tiles) / TILE_SIZE_BYTES;
+  set_bkg_data(tile_index, TILE_COUNT(block_tiles), block_tiles);
+  tile_index += TILE_COUNT(block_tiles);
+  set_bkg_data(tile_index, TILE_COUNT(powerup_tiles), powerup_tiles);
+  tile_index += TILE_COUNT(powerup_tiles);
+  set_bkg_data(tile_index, TILE_COUNT(health_bar_tiles), health_bar_tiles);
+  tile_index += TILE_COUNT(health_bar_tiles);
+  set_bkg_data(tile_index, TILE_COUNT(font_extras_tiles), font_extras_tiles);
+  tile_index += TILE_COUNT(font_extras_tiles);
+  set_bkg_data(tile_index, TILE_COUNT(tutorial_screen_tiles), tutorial_screen_tiles);
+  tile_index += TILE_COUNT(tutorial_screen_tiles);
+  set_bkg_data(tile_index, TILE_COUNT(lock_tiles), lock_tiles);
+  tile_index += TILE_COUNT(lock_tiles);
 }
 
 // Displays a confirmation prompt to the player to confirm whether or not they want to perform an
@@ -133,13 +133,13 @@ static bool confirm_action(void) {
 
 // Shows the mode selection screen and stores the mode chosen by the player in `game_mode`.
 static void show_mode_selection_screen(void) {
-  // Add walls at the top and bottom of the screen.
-  uint16_t row_offset = MAP_INDEX_ROW_OFFSET(COLUMN_HEIGHT - 1);
   if (upgrade_sprite_unlocked) {
     set_sprite_data(0, 10, player_upgrade_sprites);
     set_sprite_data(10, 9, player_upgrade_shield_sprites);
   }
 
+  // Add walls at the top and bottom of the screen.
+  uint16_t row_offset = MAP_INDEX_ROW_OFFSET(COLUMN_HEIGHT - 1);
   for (uint8_t i = 0; i < SCREEN_TILE_WIDTH; ++i) {
     background_map[i] = WALL_BLOCK_TILE;
     background_map[row_offset + i] = WALL_BLOCK_TILE;

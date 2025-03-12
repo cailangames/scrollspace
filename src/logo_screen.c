@@ -97,7 +97,7 @@ void show_logo_screen(void) BANKED {
   HIDE_BKG;
 
   // Load logo tiles and map into VRAM
-  set_bkg_data(0, sizeof(cailan_games_logo_tiles) / TILE_SIZE_BYTES, cailan_games_logo_tiles);
+  set_bkg_data(0, TILE_COUNT(cailan_games_logo_tiles), cailan_games_logo_tiles);
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, cailan_games_logo_map);
 
   // Load the cursor sprite into VRAM
