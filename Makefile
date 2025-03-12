@@ -42,7 +42,7 @@ all: $(TARGETS)
 
 # Compile .c files in "src/" to .o object files
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
-	$(LCC) $(CFLAGS) -c -I$(HUGE_H) -I$(GBDK_HOME) -o $@ $<
+	$(LCC) $(CFLAGS) -c -I$(HUGE_H) -I$(GBDK_HOME) -Iinclude -o $@ $<
 
 # Link the compiled object files into a .$(EXT) ROM file
 $(BINS): $(OBJS)
