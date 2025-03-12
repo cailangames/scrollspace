@@ -25,8 +25,6 @@
 #include "wait.h"
 #include "weapons.h"
 
-const uint8_t confirmation_prompt_msg[] = {0, 0, 0, 0, CHAR_A, CHAR_R, CHAR_E, 0, CHAR_Y, CHAR_O, CHAR_U, 0, CHAR_S, CHAR_U, CHAR_R, CHAR_E, CHAR_QUESTION_MARK, 0, 0, 0};
-const uint8_t yes_or_no_msg[] = {0, 0, 0, 0, 0, CHAR_Y, CHAR_E, CHAR_S, 0, 0, 0, 0, CHAR_CURSOR, 0, CHAR_N, CHAR_O, 0, 0, 0, 0};
 enum GameMode game_mode = NORMAL;
 struct Sprite player_sprite;
 uint8_t collision_map[COLUMN_HEIGHT * ROW_WIDTH];
@@ -95,8 +93,8 @@ static void load_tile_data(void) {
 // action. Returns true if the player confirmed the action, false otherwise.
 static bool confirm_action(void) {
   vsync();
-  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, confirmation_prompt_msg);
-  set_win_tiles(0, 1, SCREEN_TILE_WIDTH, 1, yes_or_no_msg);
+  set_win_tiles(0, 0, UINT8_ARRARY_SIZE(confirmation_prompt_text), 1, confirmation_prompt_text);
+  set_win_tiles(0, 1, UINT8_ARRARY_SIZE(yes_or_no_text), 1, yes_or_no_text);
   move_win(7, 128);  // Need 2 rows in the window for the confirmation prompt.
   wait_for_keys_released(J_START | J_A);
 
