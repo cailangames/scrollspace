@@ -1,4 +1,4 @@
-// Code for the procedural map generation.
+// Code for the procedural map generation
 
 #ifndef _PROCEDURAL_GENERATION_H_
 #define _PROCEDURAL_GENERATION_H_

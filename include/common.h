@@ -1,4 +1,4 @@
-// Code and values that are widely used across files.
+// Code and values that are widely used across files
 
 #ifndef _COMMON_H_
 #define _COMMON_H_

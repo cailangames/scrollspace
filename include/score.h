@@ -1,4 +1,4 @@
-// Code that handles scores, including the high scores.
+// Code that handles scores, including the high scores
 //
 // There are two scores:
 //   1. A point-based score that is incremented whenever the player destroys objects or clears screens.
@@ -26,16 +26,17 @@
 // Clears the window with empty tiles.
 void clear_window(void);
 
-// Clears (zeroes out) the high score data in the  al RAM.
+// Clears (zeroes out) the high score data in the external RAM.
 void clear_score_data(void);
 
+// Shows the screen for giving the player a reward when they've earned a high enough score.
 void show_reward_screen(void);
 
 // Checks if the high scores meet the thresholds for unlocking the harder game modes, and sets the
-// output bool pointers accordingly.
+// output bool pointers accordingly. Returns true if any of the unlocked bools changed, false otherwise.
 bool update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked, bool* upgrade_sprite_unlocked);
 
-// Initializes the  al RAM and reads each mode's high scores from it. If no high scores are
+// Initializes the external RAM and reads each mode's high scores from it. If no high scores are
 // found, then they're initialized with zeroes.
 void init_highscores(void);
 

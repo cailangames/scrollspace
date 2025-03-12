@@ -40,6 +40,7 @@ static uint8_t timer_hours = 0;
 static uint8_t score_tiles[11] = {0x0};
 static uint8_t high_score_tiles[SCREEN_TILE_WIDTH];
 
+// Writes the high score to `high_score_tiles`.
 static void highscores2tiles(void) {
   // Get high scores from external RAM.
   const struct HighScore* highscore = (const struct HighScore*)HIGH_SCORE_ADDRESS;
@@ -89,7 +90,6 @@ static void highscores2tiles(void) {
   high_score_tiles[19] = 0;
 }
 
-// Clears the window with empty tiles.
 void clear_window(void) {
   for (uint8_t i = 0; i < SCREEN_TILE_WIDTH; ++i) {
     high_score_tiles[i] = 0;
@@ -97,7 +97,6 @@ void clear_window(void) {
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, high_score_tiles);
 }
 
-// Clears (zeroes out) the high score data in the external RAM.
 void clear_score_data(void) {
   struct HighScore* highscore = (struct HighScore*)HIGH_SCORE_ADDRESS;
   for (uint8_t i = 0; i < 3; ++i) {
@@ -167,8 +166,6 @@ void show_reward_screen(void) {
   HIDE_SPRITES;
 }
 
-// Checks if the high scores meet the thresholds for unlocking the harder game modes, and sets the
-// output bool pointers accordingly. Returns true if any of the unlocked bools changed, false otherwise.
 bool update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked, bool* upgrade_sprite_unlocked) {
   const struct HighScore* highscore = (const struct HighScore*)HIGH_SCORE_ADDRESS;
   bool changed = false;
@@ -189,8 +186,6 @@ bool update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked, 
   return changed;
 }
 
-// Initializes the external RAM and reads each mode's high scores from it. If no high scores are
-// found, then they're initialized with zeroes.
 void init_highscores(void) {
   // Turn on RAM and read the high scores (if present).
   ENABLE_RAM;
@@ -213,7 +208,6 @@ void init_highscores(void) {
   clear_score_data();
 }
 
-// Increments the timer-based score.
 bool increment_timer_score(void) {
   bool changed = false;
   ++timer_frames;
@@ -235,8 +229,6 @@ bool increment_timer_score(void) {
   return changed;
 }
 
-// Updates the score tiles with the timer-based score. Note: This does *not* update the window;
-// call `write_score_to_window()` for that.
 void update_timer_score_tiles(void) {
   // Seconds
   uint8_t sec_tenths = timer_seconds / 10;
@@ -256,8 +248,6 @@ void update_timer_score_tiles(void) {
   score_tiles[0] = hour_tenths + 0x01;
 }
 
-// Updates the score tiles with the point-based score. Note: This does *not* update the window;
-// call `write_score_to_window()` for that.
 void update_point_score_tiles(void) {
   uint8_t tenk = point_score / 10000;
   uint8_t onek = (point_score - tenk * 10000) / 1000;
@@ -274,34 +264,27 @@ void update_point_score_tiles(void) {
   score_tiles[7] = single + 0x01;
 }
 
-// Writes the score tiles to the window.
 void write_score_to_window(void) {
   set_win_tiles(12, 0, 8, 1, score_tiles);
 }
 
-// Converts the current high scores to tiles and displays the tiles in the window.
-// The high scores are retrieved from RAM bank 0 as described in this file's header comment.
 void display_highscores(void) {
   highscores2tiles();
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, high_score_tiles);
 }
 
-// Displays the unlock HARD mode message.
 void display_hardmode_unlock_msg(void) {
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, unlock_hard_mode_text);
 }
 
-// Displays the unlock TURBO mode message.
 void display_turbomode_unlock_msg(void) {
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, unlock_turbo_mode_text);
 }
 
-// Displays the window message for the "clear data" option.
 void display_clear_data_msg(void) {
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, clear_data_text);
 }
 
-// Converts the point-based and timer-based scores to tiles and displays them in the gameover screen.
 void display_gameover_scores(void) {
   // Get high scores from external RAM.
   struct HighScore* highscore = (struct HighScore*)HIGH_SCORE_ADDRESS;
@@ -382,7 +365,6 @@ void display_gameover_scores(void) {
   set_bkg_tiles(10, 9, 8, 1, score_tiles);
 }
 
-// Resets all scores.
 void reset_scores(void) {
   point_score = 0;
   timer_frames = 0;

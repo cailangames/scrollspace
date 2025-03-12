@@ -620,7 +620,7 @@ void main(void) {
     init_player();
     write_health_bar_to_window();
     init_weapons();
-    write_bomb_icon_to_window();
+    update_bomb_ready_icon();
 
 #if ENABLE_MUSIC
     mute_all_channels();
@@ -692,7 +692,7 @@ void main(void) {
       // Update the player sprite and weapons based on the input.
       move_player(input);
 #if ENABLE_WEAPONS
-      bool bomb_dropped = update_weapons(input, prev_input);
+      update_weapons(input, prev_input);
 #endif
 #if ENABLE_COLLISIONS
       bool health_changed = handle_player_collisions();
@@ -759,27 +759,7 @@ void main(void) {
         set_bkg_tile_xy(player_sprite.collided_col, player_sprite.collided_row, background_map[MAP_INDEX(player_sprite.collided_row, player_sprite.collided_col)]);
         player_sprite.collided = false;
       }
-      struct Sprite* b = bullet_sprites;
-      for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
-        if (b->collided) {
-          set_bkg_tile_xy(b->collided_col, b->collided_row, background_map[MAP_INDEX(b->collided_row, b->collided_col)]);
-          b->collided = false;
-        }
-        ++b;
-      }
-
-      // Update background tiles when a bomb is dropped.
-      if (bomb_dropped) {
-        if (bombed_col_left + BOMB_LENGTH <= ROW_WIDTH) {
-          set_bkg_submap(bombed_col_left, bombed_row_top, BOMB_LENGTH, bombed_height, background_map, ROW_WIDTH);
-        } else {
-          // The screen wraps around to the start of the background map, so we need to take that
-          // into account here by writing to VRAM in two batches.
-          uint8_t first_batch_width = ROW_WIDTH - bombed_col_left;
-          set_bkg_submap(bombed_col_left, bombed_row_top, first_batch_width, bombed_height, background_map, ROW_WIDTH);
-          set_bkg_submap(0, bombed_row_top, BOMB_LENGTH - first_batch_width, bombed_height, background_map, ROW_WIDTH);
-        }
-      }
+      update_tiles_hit_by_weapons();
 
       // Update background tiles when a new column is generated.
       if (generated_column) {
@@ -800,11 +780,8 @@ void main(void) {
       }
 #endif
 
-      // Write bomb icon tiles to the window layer, if necessary.
-      if (bomb_icon_update_needed) {
-        write_bomb_icon_to_window();
-        bomb_icon_update_needed = false;
-      }
+      // Update the "bomb ready" icon in the window layer, if necessary.
+      update_bomb_ready_icon();
     }
   }
 }

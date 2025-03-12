@@ -1,4 +1,4 @@
-// Code for playing sound effects.
+// Code for playing sound effects
 
 #ifndef _SOUND_EFFECTS_H_
 #define _SOUND_EFFECTS_H_
