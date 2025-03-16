@@ -211,6 +211,7 @@ bool handle_player_collisions(void) {
     if (damage_animation_state == HIDDEN) {
       move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
       damage_animation_state = SHOWN;
+      OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
     }
     // Normal collision check for player
     uint16_t collision_idx = check_player_collisions(false);
@@ -277,13 +278,31 @@ bool handle_player_collisions(void) {
       if (damage_animation_counter == 0) {
         // Toggle the animation state.
         if (damage_animation_state == HIDDEN) {
-          move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
+          // move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
+          OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
           damage_animation_state = SHOWN;
         } else {
-          move_sprite(PLAYER_SPRITE_ID, 0, 0);
+          // move_sprite(PLAYER_SPRITE_ID, 0, 0);
+          OBP0_REG = 0x18;  // 0b0001 1100 - White, Light grey,  black, black
           damage_animation_state = HIDDEN;
         }
         damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
+      }
+    }
+    else if (iframes_counter <= IFRAMES_DURATION - 2*IFRAMES_ANIMATION_CYCLE) {
+      // Toggle the sprite to signify the end of the shield powerup
+      // Use the same logic as the damage animation 
+      --damage_animation_counter;
+      if (damage_animation_counter == 0) {
+        // Toggle the animation state.
+        if (damage_animation_state == HIDDEN) {
+          OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
+          damage_animation_state = SHOWN;
+        } else {
+          OBP0_REG = 0x00;  // 0b0000 0000 - All white 
+          damage_animation_state = HIDDEN;
+        }
+        damage_animation_counter = 2*IFRAMES_ANIMATION_CYCLE;
       }
     }
     // Check for collision with pickups only, not mines, to allow players to pick up items in the
@@ -314,6 +333,9 @@ bool handle_player_collisions(void) {
         if (!shield_active) {
           player_sprite_base_id += 10;
           shield_active = true;
+          damage_animation_counter = 2*IFRAMES_ANIMATION_CYCLE;
+          damage_animation_state = SHOWN;
+          OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
         }
         iframes_counter = SHIELD_DURATION;
         play_shield_sound();
