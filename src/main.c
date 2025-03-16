@@ -524,6 +524,9 @@ void main(void) {
   bool update_window_score;      // Whether or not the score in the window needs to be updated
   uint8_t prev_timer_seconds;    // The `timer_seconds` of the previous frame. Used to determine whether or not to update the window score tiles.
   uint16_t prev_point_score;     // The `point_score` of the previous frame. Used to determine whether or not to update the window score tiles.
+  
+  // Set palette 1 colors (for bullets)
+  OBP1_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
 
   while (true) {
     /*

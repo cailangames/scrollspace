@@ -138,6 +138,7 @@ void update_weapons(uint8_t input, uint8_t prev_input) {
       b->y.w = player_sprite.y.w;
       b->cb.y = b->y.h + BULLET_COLLISION_Y_OFFSET;
       move_sprite(b->sprite_id, b->x.h, b->y.h);
+      set_sprite_prop(b->sprite_id, 0x10); // puts the bullet on palette 1
       ++active_bullet_count;
       play_gun_sound();
       break;

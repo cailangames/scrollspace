@@ -283,7 +283,7 @@ bool handle_player_collisions(void) {
           damage_animation_state = SHOWN;
         } else {
           // move_sprite(PLAYER_SPRITE_ID, 0, 0);
-          OBP0_REG = 0x18;  // 0b0001 1100 - White, Light grey,  black, black
+          OBP0_REG = 0x18;  // 0b0001 1000 - Black, Light grey,  black, black
           damage_animation_state = HIDDEN;
         }
         damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
@@ -299,7 +299,7 @@ bool handle_player_collisions(void) {
           OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
           damage_animation_state = SHOWN;
         } else {
-          OBP0_REG = 0x00;  // 0b0000 0000 - All white 
+          OBP0_REG = 0xD0;  // 0b1101 0000 - Black and then All white 
           damage_animation_state = HIDDEN;
         }
         damage_animation_counter = 2*IFRAMES_ANIMATION_CYCLE;
