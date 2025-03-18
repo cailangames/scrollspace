@@ -288,10 +288,9 @@ bool handle_player_collisions(void) {
         }
         damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
       }
-    }
-    else if (iframes_counter <= IFRAMES_DURATION - 2*IFRAMES_ANIMATION_CYCLE) {
+    } else if (iframes_counter <= IFRAMES_DURATION - 2 * IFRAMES_ANIMATION_CYCLE) {
       // Toggle the sprite to signify the end of the shield powerup
-      // Use the same logic as the damage animation 
+      // Use the same logic as the damage animation
       --damage_animation_counter;
       if (damage_animation_counter == 0) {
         // Toggle the animation state.
@@ -299,10 +298,10 @@ bool handle_player_collisions(void) {
           OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
           damage_animation_state = SHOWN;
         } else {
-          OBP0_REG = 0xD0;  // 0b1101 0000 - Black and then All white 
+          OBP0_REG = 0xD0;  // 0b1101 0000 - Black and then All white
           damage_animation_state = HIDDEN;
         }
-        damage_animation_counter = 2*IFRAMES_ANIMATION_CYCLE;
+        damage_animation_counter = 2 * IFRAMES_ANIMATION_CYCLE;
       }
     }
     // Check for collision with pickups only, not mines, to allow players to pick up items in the
@@ -333,7 +332,7 @@ bool handle_player_collisions(void) {
         if (!shield_active) {
           player_sprite_base_id += 10;
           shield_active = true;
-          damage_animation_counter = 2*IFRAMES_ANIMATION_CYCLE;
+          damage_animation_counter = 2 * IFRAMES_ANIMATION_CYCLE;
           damage_animation_state = SHOWN;
           OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
         }

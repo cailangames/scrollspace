@@ -37,7 +37,7 @@ static bool hard_mode_unlocked = false;
 static bool turbo_mode_unlocked = false;
 static bool upgrade_sprite_unlocked = false;
 static bool game_paused = true;
-// Whether or not to show the timer-based score. If false, the points-based score is shown instead.
+// Whether or not to show the timer-based score. If false, the point-based score is shown instead.
 // Note: The value of this variable is kept between runs of the game.
 static bool show_timer_score = false;
 static bool timer_score_changed = false;
@@ -497,6 +497,8 @@ void main(void) {
   // Initialize high scores.
   init_highscores();
   update_modes_unlocked(&hard_mode_unlocked, &turbo_mode_unlocked, &upgrade_sprite_unlocked);
+  // Set palette 1 colors (for bullets).
+  OBP1_REG = 0xE4;  // 0b1110 0100 - black, dark gray, light gray, white
 
 #if ENABLE_SCORING
   // Add timer score incrementer to VBL interrupt handler.
@@ -522,11 +524,7 @@ void main(void) {
   bool generated_column;         // Whether or not a column was generated this frame
   uint8_t generated_column_idx;  // The index of the generated column
   bool update_window_score;      // Whether or not the score in the window needs to be updated
-  uint8_t prev_timer_seconds;    // The `timer_seconds` of the previous frame. Used to determine whether or not to update the window score tiles.
   uint16_t prev_point_score;     // The `point_score` of the previous frame. Used to determine whether or not to update the window score tiles.
-  
-  // Set palette 1 colors (for bullets)
-  OBP1_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
 
   while (true) {
     /*
@@ -549,7 +547,6 @@ void main(void) {
     generated_column = false;
     generated_column_idx = 0;
     update_window_score = false;
-    prev_timer_seconds = UINT8_MAX;
     prev_point_score = UINT16_MAX;
 
     /*
@@ -587,6 +584,7 @@ void main(void) {
         background_map[i * ROW_WIDTH + j] = tutorial_screen_map[i * SCREEN_TILE_WIDTH + j];
       }
     }
+    // TODO: Update `collision_map` for the tutorial screen.
 
     // Add text to tutorial screen
     background_map[5 * ROW_WIDTH + 7] = CHAR_A;
@@ -669,6 +667,7 @@ void main(void) {
       input = joypad();
 
       if (KEY_PRESSED(input, J_START)) {
+        // Pause the game.
         game_paused = true;
 #if ENABLE_MUSIC
         mute_all_channels();
@@ -684,9 +683,10 @@ void main(void) {
       }
 
       if (KEY_FIRST_PRESS(input, prev_input, J_SELECT)) {
+        // Toggle between point-based score and timer-based score.
         show_timer_score = !show_timer_score;
         // Make sure that the score in the window is updated.
-        prev_timer_seconds = UINT8_MAX;
+        timer_score_changed = true;
         prev_point_score = point_score - 1;
       }
 
@@ -741,8 +741,8 @@ void main(void) {
         if (point_score != prev_point_score) {
           update_point_score_tiles();
           update_window_score = true;
+          prev_point_score = point_score;
         }
-        prev_point_score = point_score;
       }
 #endif
 
