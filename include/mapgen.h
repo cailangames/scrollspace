@@ -1,7 +1,7 @@
-// Code for the procedural map generation
+// Code for procedurally generating game maps.
 
-#ifndef _PROCEDURAL_GENERATION_H_
-#define _PROCEDURAL_GENERATION_H_
+#ifndef _MAPGEN_H_
+#define _MAPGEN_H_
 
 #include <gb/gb.h>
 #include <stdint.h>

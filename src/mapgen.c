@@ -1,6 +1,6 @@
 #pragma bank 1
 
-#include "procedural_generation.h"
+#include "mapgen.h"
 
 #include <gb/gb.h>
 #include <rand.h>

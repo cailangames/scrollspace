@@ -34,7 +34,7 @@ import (
 // Flags
 var (
 	randomSeed           = flag.Int64("random_seed", 0, "The random seed to use for RNG. To use a specific seed, set this flag to a non-zero value.")
-	inputFile            = flag.String("input_file", "biomes.c", "The input file containing the biome data")
+	inputFile            = flag.String("input_file", "../src/mapgen.c", "The input file containing the biome data")
 	outputFile           = flag.String("output_file", "simulation.png", "The output .png file to write the simulated game map to. If this flag is empty, a text version of the simulated game map is written to stdout.")
 	simulatedBiomesCount = flag.Int("simulated_biomes_count", 10, "How many biomes to simulate per run")
 	simulationRuns       = flag.Int("simulation_runs", 5, "How many simulation runs the program should do. Each simulation run is stack on top of each other in the output.")
@@ -85,7 +85,7 @@ func (gm *GameMap) fillColumn(column int, data Column) {
 			gm.Tiles[column][i] = BlockTile
 			continue
 		}
-		// Note: The below should match the mine and pickup generation code in procedural_generation.c.
+		// Note: The below should match the mine and pickup generation code in mapgen.c.
 		n := rng.Intn(math.MaxUint16 + 1)
 		if n < math.MaxUint16-(mineProbability+shieldPickupProbability+healthPickupProbability) {
 			gm.Tiles[column][i] = EmptyTile
