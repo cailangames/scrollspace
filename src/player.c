@@ -206,7 +206,7 @@ bool handle_player_collisions(void) {
     // First check if the damage animation or shield powerup is still active. If so, deactivate it.
     if (shield_active) {
       shield_active = false;
-      player_sprite_base_id -= 10;
+      player_sprite_base_id -= PLAYER_SHIELD_SPRITES_OFFSET;
     }
     if (damage_animation_state == HIDDEN) {
       move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
@@ -244,7 +244,7 @@ bool handle_player_collisions(void) {
           background_map[collision_idx] = 0;
           shield_active = true;
           iframes_counter = SHIELD_DURATION;
-          player_sprite_base_id += 10;
+          player_sprite_base_id += PLAYER_SHIELD_SPRITES_OFFSET;
           point_score += POINTS_PER_PICKUP;
           play_shield_sound();
           break;
@@ -330,7 +330,7 @@ bool handle_player_collisions(void) {
       } else {
         // Pick up shield.
         if (!shield_active) {
-          player_sprite_base_id += 10;
+          player_sprite_base_id += PLAYER_SHIELD_SPRITES_OFFSET;
           shield_active = true;
           damage_animation_counter = 2 * IFRAMES_ANIMATION_CYCLE;
           damage_animation_state = SHOWN;
@@ -355,7 +355,7 @@ bool handle_player_collisions(void) {
     }
 
     if (shield_active) {
-      player_sprite_base_id += 10;
+      player_sprite_base_id += PLAYER_SHIELD_SPRITES_OFFSET;
     }
   }
 

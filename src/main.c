@@ -131,51 +131,26 @@ static bool confirm_action(void) {
 
 // Shows the mode selection screen and stores the mode chosen by the player in `game_mode`.
 static void show_mode_selection_screen(void) {
+  // Add walls at the top and bottom of the screen. The very bottom row is under the window, so we
+  // clear it out too.
+  memset(background_map, EMPTY_TILE, SCREEN_TILE_WIDTH * SCREEN_TILE_HEIGHT);
+  memset(background_map, WALL_BLOCK_TILE, SCREEN_TILE_WIDTH);
+  memset(background_map + (SCREEN_TILE_WIDTH * (COLUMN_HEIGHT - 1)), WALL_BLOCK_TILE, SCREEN_TILE_WIDTH);
+
+  // Draw the background tiles first.
+  SHOW_WIN;  // Show the window here to cover the bottom-most row.
+  vsync();
+  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
+  set_bkg_tiles(7, 3, UINT8_ARRARY_SIZE(normal_text), 1, normal_text);
+  set_bkg_tiles(7, 6, UINT8_ARRARY_SIZE(hard_text), 1, hard_text);
+  set_bkg_tiles(7, 9, UINT8_ARRARY_SIZE(turbo_text), 1, turbo_text);
+  set_bkg_tiles(7, 14, UINT8_ARRARY_SIZE(clear_data_text), 1, clear_data_text);
+
+  // Then draw the player sprite.
   if (upgrade_sprite_unlocked) {
-    set_sprite_data(0, 10, player_upgrade_sprites);
-    set_sprite_data(10, 9, player_upgrade_shield_sprites);
+    set_sprite_data(PLAYER_SPRITE_ID, UINT8_ARRARY_SIZE(player_upgrade_sprites), player_upgrade_sprites);
+    set_sprite_data(PLAYER_SPRITE_ID + PLAYER_SHIELD_SPRITES_OFFSET, UINT8_ARRARY_SIZE(player_upgrade_shield_sprites), player_upgrade_shield_sprites);
   }
-
-  // Add walls at the top and bottom of the screen.
-  uint16_t row_offset = MAP_INDEX_ROW_OFFSET(COLUMN_HEIGHT - 1);
-  for (uint8_t i = 0; i < SCREEN_TILE_WIDTH; ++i) {
-    background_map[i] = WALL_BLOCK_TILE;
-    background_map[row_offset + i] = WALL_BLOCK_TILE;
-  }
-
-  // Write "NORMAL".
-  background_map[MAP_INDEX(3, 7)] = CHAR_N;
-  background_map[MAP_INDEX(3, 8)] = CHAR_O;
-  background_map[MAP_INDEX(3, 9)] = CHAR_R;
-  background_map[MAP_INDEX(3, 10)] = CHAR_M;
-  background_map[MAP_INDEX(3, 11)] = CHAR_A;
-  background_map[MAP_INDEX(3, 12)] = CHAR_L;
-
-  // Write "HARD".
-  background_map[MAP_INDEX(6, 7)] = CHAR_H;
-  background_map[MAP_INDEX(6, 8)] = CHAR_A;
-  background_map[MAP_INDEX(6, 9)] = CHAR_R;
-  background_map[MAP_INDEX(6, 10)] = CHAR_D;
-
-  // Write "TURBO".
-  background_map[MAP_INDEX(9, 7)] = CHAR_T;
-  background_map[MAP_INDEX(9, 8)] = CHAR_U;
-  background_map[MAP_INDEX(9, 9)] = CHAR_R;
-  background_map[MAP_INDEX(9, 10)] = CHAR_B;
-  background_map[MAP_INDEX(9, 11)] = CHAR_O;
-
-  // Write "CLEAR DATA".
-  background_map[MAP_INDEX(14, 7)] = CHAR_C;
-  background_map[MAP_INDEX(14, 8)] = CHAR_L;
-  background_map[MAP_INDEX(14, 9)] = CHAR_E;
-  background_map[MAP_INDEX(14, 10)] = CHAR_A;
-  background_map[MAP_INDEX(14, 11)] = CHAR_R;
-  background_map[MAP_INDEX(14, 12)] = 0;
-  background_map[MAP_INDEX(14, 13)] = CHAR_D;
-  background_map[MAP_INDEX(14, 14)] = CHAR_A;
-  background_map[MAP_INDEX(14, 15)] = CHAR_T;
-  background_map[MAP_INDEX(14, 16)] = CHAR_A;
-
   if (game_mode == TITLE_SCREEN) {
     game_mode = NORMAL;
   }
@@ -183,13 +158,9 @@ static void show_mode_selection_screen(void) {
   // which mode the player selected last and default the cursor to that mode.
   uint8_t y = (game_mode == NORMAL) ? 40 : (game_mode == HARD) ? 64
                                                                : 88;
-
-  vsync();
-  set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
   set_sprite_tile(PLAYER_SPRITE_ID, 0);
   move_sprite(PLAYER_SPRITE_ID, 32, y);
   SHOW_SPRITES;
-  SHOW_WIN;
 
   uint8_t prev_input = 0;
   uint8_t prev_y = 0;  // Note that y != prev_y for the first frame so that the window is updated properly.

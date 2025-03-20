@@ -16,6 +16,7 @@
 #include <gb/gb.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "common.h"
 #include "sprite_data.h"
@@ -91,9 +92,7 @@ static void highscores2tiles(void) {
 }
 
 void clear_window(void) {
-  for (uint8_t i = 0; i < SCREEN_TILE_WIDTH; ++i) {
-    high_score_tiles[i] = 0;
-  }
+  memset(high_score_tiles, 0, SCREEN_TILE_WIDTH);
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, high_score_tiles);
 }
 
@@ -282,7 +281,7 @@ void display_turbomode_unlock_msg(void) {
 }
 
 void display_clear_data_msg(void) {
-  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, clear_data_text);
+  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, clear_data_description_text);
 }
 
 void display_gameover_scores(void) {
