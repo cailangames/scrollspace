@@ -281,83 +281,23 @@ static void show_mode_selection_screen(void) {
 static void show_gameover_screen(void) {
   HIDE_WIN;
   clear_window();
-  for (uint8_t row = 0; row < SCREEN_TILE_HEIGHT; ++row) {
-    for (uint8_t col = 0; col < SCREEN_TILE_WIDTH; ++col) {
-      if ((row == 0) || (row == 17)) {
-        // Top and bottom block border
-        background_map[row * SCREEN_TILE_WIDTH + col] = 0x25;
-      } else {
-        background_map[row * SCREEN_TILE_WIDTH + col] = 0x0;
-      }
-    }
-  }
-  // Write GAME OVER
-  uint16_t start_idx = 3 * SCREEN_TILE_WIDTH + 5;
-  background_map[start_idx++] = CHAR_G;
-  background_map[start_idx++] = CHAR_A;
-  background_map[start_idx++] = CHAR_M;
-  background_map[start_idx++] = CHAR_E;
-  background_map[start_idx++] = CHAR_SPACE;
-  background_map[start_idx++] = CHAR_O;
-  background_map[start_idx++] = CHAR_V;
-  background_map[start_idx++] = CHAR_E;
-  background_map[start_idx++] = CHAR_R;
 
-  // Write SCORE
-  start_idx = 5 * SCREEN_TILE_WIDTH + 2;
-  background_map[start_idx++] = CHAR_S;
-  background_map[start_idx++] = CHAR_C;
-  background_map[start_idx++] = CHAR_O;
-  background_map[start_idx++] = CHAR_R;
-  background_map[start_idx++] = CHAR_E;
+  // Pick random tip.
+  uint8_t tip_index = MOD8(rand());
+  const uint8_t* tip = tip_messages + (tip_index * TIP_MESSAGE_LENGTH);
 
-  // Write BEST
-  start_idx = 8 * SCREEN_TILE_WIDTH + 3;
-  background_map[start_idx++] = CHAR_B;
-  background_map[start_idx++] = CHAR_E;
-  background_map[start_idx++] = CHAR_S;
-  background_map[start_idx++] = CHAR_T;
-
-  // WRITE TIP
-  start_idx = 13 * SCREEN_TILE_WIDTH + 2;
-  background_map[start_idx++] = CHAR_T;
-  background_map[start_idx++] = CHAR_I;
-  background_map[start_idx++] = CHAR_P;
-  background_map[start_idx++] = CHAR_COLON;
-
-  // Write the tip message
-  uint8_t rdn = MOD8(rand());
-  uint8_t tip_idx = 0;
-  start_idx = 14 * SCREEN_TILE_WIDTH + 3;
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-
-  start_idx = 15 * SCREEN_TILE_WIDTH + 3;
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
-  background_map[start_idx++] = tips[rdn * 25 + (tip_idx++)];
+  // Add walls at the top and bottom of the screen.
+  memset(background_map, WALL_BLOCK_TILE, SCREEN_TILE_WIDTH);
+  memset(background_map + SCREEN_TILE_WIDTH, EMPTY_TILE, SCREEN_TILE_WIDTH * (SCREEN_TILE_HEIGHT - 2));
+  memset(background_map + (SCREEN_TILE_WIDTH * (SCREEN_TILE_HEIGHT - 1)), WALL_BLOCK_TILE, SCREEN_TILE_WIDTH);
 
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
+  set_bkg_tiles(5, 3, UINT8_ARRARY_SIZE(game_over_text), 1, game_over_text);
+  set_bkg_tiles(2, 5, UINT8_ARRARY_SIZE(score_text), 1, score_text);
+  set_bkg_tiles(3, 8, UINT8_ARRARY_SIZE(best_text), 1, best_text);
+  set_bkg_tiles(2, 13, UINT8_ARRARY_SIZE(tip_text), 1, tip_text);
+  set_bkg_tiles(3, 14, TIP_WRAP_LENGTH, 1, tip);
+  set_bkg_tiles(3, 15, TIP_MESSAGE_LENGTH - TIP_WRAP_LENGTH, 1, tip + TIP_WRAP_LENGTH);
   move_bkg(0, 0);
 
   display_gameover_scores();

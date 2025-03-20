@@ -16,11 +16,18 @@ extern const uint8_t clear_data_text[10];
 extern const uint8_t clear_data_description_text[20];
 extern const uint8_t confirmation_prompt_text[20];
 extern const uint8_t yes_or_no_text[20];
+extern const uint8_t game_over_text[9];
+extern const uint8_t score_text[5];
+extern const uint8_t best_text[4];
+extern const uint8_t tip_text[4];
 extern const uint8_t congratulations_text[16];
 extern const uint8_t you_unlocked_text[12];
 extern const uint8_t hard_mode_text[9];
 extern const uint8_t turbo_mode_text[10];
 extern const uint8_t new_ship_text[8];
-extern const uint8_t tips[200];
+extern const uint8_t tip_messages[200];
+
+#define TIP_MESSAGE_LENGTH 25
+#define TIP_WRAP_LENGTH 16
 
 #endif
