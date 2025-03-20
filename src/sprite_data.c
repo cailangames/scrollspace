@@ -1,5 +1,7 @@
 #pragma bank 1
 
+#include "sprite_data.h"
+
 #include <stdint.h>
 
 // The below data is generated with a specific format and thus shouldn't be auto-formatted.

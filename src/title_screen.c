@@ -1,5 +1,7 @@
 #pragma bank 1
 
+#include "title_screen.h"
+
 #include <gb/gb.h>
 #include <hUGEDriver.h>
 #include <stdbool.h>
