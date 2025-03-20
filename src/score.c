@@ -41,59 +41,50 @@ static uint8_t timer_hours = 0;
 static uint8_t score_tiles[11] = {0x0};
 static uint8_t high_score_tiles[SCREEN_TILE_WIDTH];
 
-// Writes the high score to `high_score_tiles`.
-static void highscores2tiles(void) {
-  // Get high scores from external RAM.
-  const struct HighScore* highscore = (const struct HighScore*)HIGH_SCORE_ADDRESS;
-  if (game_mode == HARD) {
-    ++highscore;
-  } else if (game_mode == TURBO) {
-    ++highscore;
-    ++highscore;
-  }
-
-  // Write out "BEST ".
-  high_score_tiles[0] = CHAR_B;
-  high_score_tiles[1] = CHAR_E;
-  high_score_tiles[2] = CHAR_S;
-  high_score_tiles[3] = CHAR_T;
-  high_score_tiles[4] = CHAR_SPACE;
-
-  // Seconds
-  uint8_t tenths = highscore->seconds / 10;
-  high_score_tiles[12] = (highscore->seconds - 10 * tenths) + 0x01;
-  high_score_tiles[11] = tenths + 0x01;
-  high_score_tiles[10] = CHAR_COLON;
+// Writes the timer-based high score to the window.
+static void write_timer_high_score_to_window(const struct HighScore* highscore) {
+  // Hours
+  uint8_t* tiles = high_score_tiles;
+  uint8_t tenths = highscore->hours / 10;
+  *tiles++ = tenths + 0x01;
+  *tiles++ = (highscore->hours - 10 * tenths) + 0x01;
+  *tiles++ = CHAR_COLON;
 
   // Minutes
   tenths = highscore->minutes / 10;
-  high_score_tiles[9] = (highscore->minutes - 10 * tenths) + 0x01;
-  high_score_tiles[8] = tenths + 0x01;
-  high_score_tiles[7] = CHAR_COLON;
+  *tiles++ = tenths + 0x01;
+  *tiles++ = (highscore->minutes - 10 * tenths) + 0x01;
+  *tiles++ = CHAR_COLON;
 
-  // Hours
-  tenths = highscore->hours / 10;
-  high_score_tiles[6] = (highscore->hours - 10 * tenths) + 0x01;
-  high_score_tiles[5] = tenths + 0x01;
+  // Seconds
+  tenths = highscore->seconds / 10;
+  *tiles++ = tenths + 0x01;
+  *tiles = (highscore->seconds - 10 * tenths) + 0x01;
 
+  set_win_tiles(5, 0, 8, 1, high_score_tiles);
+}
+
+// Writes the point-based high score to the window.
+static void write_point_high_score_to_window(const struct HighScore* highscore) {
   // Points
   uint8_t tenk = highscore->points / 10000;
   uint8_t onek = (highscore->points - tenk * 10000) / 1000;
   uint8_t oneh = (highscore->points - tenk * 10000 - onek * 1000) / 100;
   uint8_t tens = (highscore->points - tenk * 10000 - onek * 1000 - oneh * 100) / 10;
   uint8_t single = (highscore->points - tenk * 10000 - onek * 1000 - oneh * 100 - tens * 10);
-  high_score_tiles[13] = 0;
-  high_score_tiles[14] = tenk + 0x01;
-  high_score_tiles[15] = onek + 0x01;
-  high_score_tiles[16] = oneh + 0x01;
-  high_score_tiles[17] = tens + 0x01;
-  high_score_tiles[18] = single + 0x01;
-  high_score_tiles[19] = 0;
+  uint8_t* tiles = high_score_tiles;
+  *tiles++ = tenk + 0x01;
+  *tiles++ = onek + 0x01;
+  *tiles++ = oneh + 0x01;
+  *tiles++ = tens + 0x01;
+  *tiles = single + 0x01;
+
+  set_win_tiles(14, 0, 5, 1, high_score_tiles);
 }
 
 void clear_window(void) {
   memset(high_score_tiles, 0, SCREEN_TILE_WIDTH);
-  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, high_score_tiles);
+  set_win_tiles(0, 0, UINT8_ARRARY_SIZE(high_score_tiles), 1, high_score_tiles);
 }
 
 void clear_score_data(void) {
@@ -268,8 +259,20 @@ void write_score_to_window(void) {
 }
 
 void display_highscores(void) {
-  highscores2tiles();
-  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, high_score_tiles);
+  clear_window();
+  set_win_tiles(0, 0, UINT8_ARRARY_SIZE(best_text), 1, best_text);
+
+  // Get high scores from external RAM.
+  const struct HighScore* highscore = (const struct HighScore*)HIGH_SCORE_ADDRESS;
+  if (game_mode == HARD) {
+    ++highscore;
+  } else if (game_mode == TURBO) {
+    ++highscore;
+    ++highscore;
+  }
+
+  write_timer_high_score_to_window(highscore);
+  write_point_high_score_to_window(highscore);
 }
 
 void display_hardmode_unlock_msg(void) {
