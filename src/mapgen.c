@@ -5,8 +5,11 @@
 #include <gb/gb.h>
 #include <rand.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "common.h"
+#include "text_data.h"
+#include "tile_data.h"
 
 #define BIOME_COUNT 64
 #define BIOME_CONNECTION_COUNT 32
@@ -169,6 +172,23 @@ void reset_generation_state(void) BANKED {
   // Start at a random biome.
   biome_id = MOD64(rand());
   biome_column_index = 0;
+}
+
+void generate_tutorial(void) BANKED {
+  // Fill in background and collision maps.
+  memset(collision_map, BLOCK_HEALTH, ROW_WIDTH);
+  memset(collision_map + ROW_WIDTH, 0, ROW_WIDTH * (COLUMN_HEIGHT - 2));
+  memset(collision_map + (ROW_WIDTH * (COLUMN_HEIGHT - 1)), BLOCK_HEALTH, ROW_WIDTH);
+  memset(background_map, WALL_BLOCK_TILE, ROW_WIDTH);
+  memset(background_map + ROW_WIDTH, EMPTY_TILE, ROW_WIDTH * (COLUMN_HEIGHT - 2));
+  memset(background_map + (ROW_WIDTH * (COLUMN_HEIGHT - 1)), WALL_BLOCK_TILE, ROW_WIDTH);
+  set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
+
+  // Copy tutorial screen tiles and text to the background.
+  set_bkg_tiles(9, 4, 7, 9, tutorial_screen_map);
+  set_bkg_tiles(16, 5, UINT8_ARRARY_SIZE(shoot_text), 1, shoot_text);
+  set_bkg_tiles(16, 8, UINT8_ARRARY_SIZE(bomb_text), 1, bomb_text);
+  set_bkg_tiles(16, 11, UINT8_ARRARY_SIZE(pause_text), 1, pause_text);
 }
 
 void generate_column(uint8_t column_idx) BANKED {

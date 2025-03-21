@@ -441,14 +441,7 @@ void main(void) {
     /*
      * Set up for main game loop.
      */
-
-    // Clear collision and background maps.
-    for (uint16_t ii = 0; ii < COLUMN_HEIGHT * ROW_WIDTH; ++ii) {
-      collision_map[ii] = 0;
-      background_map[ii] = 0;
-    }
-
-    // Initialize other variables.
+    // Initialize variables.
     screen_pos_x.w = 0x0000;
     input = 0;
     prev_input = 0;
@@ -456,7 +449,7 @@ void main(void) {
     column_count = 0;
     difficulty_countdown = DIFFICULTY_INCREASE_SCREEN_COUNT;
     generated_column = false;
-    generated_column_idx = 0;
+    generated_column_idx = ROW_WIDTH - 1;
     update_window_score = false;
     prev_point_score = UINT16_MAX;
 
@@ -489,40 +482,8 @@ void main(void) {
     // Reset the procedural generation state. (Needs to be called after initrand() has been called.)
     reset_generation_state();
 
-    // Copy tutorial screen tiles to the background.
-    for (uint8_t i = 0; i < COLUMN_HEIGHT; ++i) {
-      for (uint8_t j = 0; j < SCREEN_TILE_WIDTH; ++j) {
-        background_map[i * ROW_WIDTH + j] = tutorial_screen_map[i * SCREEN_TILE_WIDTH + j];
-      }
-    }
-    // TODO: Update `collision_map` for the tutorial screen.
-
-    // Add text to tutorial screen
-    background_map[5 * ROW_WIDTH + 7] = CHAR_A;
-    background_map[5 * ROW_WIDTH + 10] = CHAR_S;
-    background_map[5 * ROW_WIDTH + 11] = CHAR_H;
-    background_map[5 * ROW_WIDTH + 12] = CHAR_O;
-    background_map[5 * ROW_WIDTH + 13] = CHAR_O;
-    background_map[5 * ROW_WIDTH + 14] = CHAR_T;
-
-    background_map[8 * ROW_WIDTH + 7] = CHAR_B;
-    background_map[8 * ROW_WIDTH + 10] = CHAR_B;
-    background_map[8 * ROW_WIDTH + 11] = CHAR_O;
-    background_map[8 * ROW_WIDTH + 12] = CHAR_M;
-    background_map[8 * ROW_WIDTH + 13] = CHAR_B;
-
-    background_map[11 * ROW_WIDTH + 3] = CHAR_S;
-    background_map[11 * ROW_WIDTH + 4] = CHAR_T;
-    background_map[11 * ROW_WIDTH + 5] = CHAR_A;
-    background_map[11 * ROW_WIDTH + 6] = CHAR_R;
-    background_map[11 * ROW_WIDTH + 7] = CHAR_T;
-    background_map[11 * ROW_WIDTH + 10] = CHAR_P;
-    background_map[11 * ROW_WIDTH + 11] = CHAR_A;
-    background_map[11 * ROW_WIDTH + 12] = CHAR_U;
-    background_map[11 * ROW_WIDTH + 13] = CHAR_S;
-    background_map[11 * ROW_WIDTH + 14] = CHAR_E;
-
-    set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
+    // Generate the tutorial of the game map.
+    generate_tutorial();
 
     // Reset the window tiles.
     clear_window();
@@ -547,26 +508,19 @@ void main(void) {
     play_all_channels();
 #endif
 
-    generated_column_idx = SCREEN_TILE_WIDTH - 1;
-    for (uint8_t i = 0; i < ROW_WIDTH - SCREEN_TILE_WIDTH; ++i) {
-      generated_column_idx = MOD32(generated_column_idx + 1);  // MOD32 is for screen wrap-around.
-      generate_column(generated_column_idx);
-    }
-    set_bkg_tiles(0, 0, ROW_WIDTH, COLUMN_HEIGHT, background_map);
-
     wait_frames(15);
 
     // Reset scores and window tiles.
     reset_scores();
     write_score_to_window();
 
-    // Unpausing the game turns on the timer, so this should be done as close as possible to the
-    // main game loop.
-    game_paused = false;
-
     SHOW_SPRITES;
     SHOW_WIN;
     fade_in();
+
+    // Unpausing the game turns on the timer, so this should be done as close as possible to the
+    // main game loop.
+    game_paused = false;
 
     /*
      * MAIN GAME LOOP

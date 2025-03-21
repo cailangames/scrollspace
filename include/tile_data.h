@@ -13,6 +13,6 @@ extern const uint8_t font_extras_tiles[80];
 extern const uint8_t title_screen_tiles[752];
 extern const uint8_t title_screen_map[360];
 extern const uint8_t tutorial_screen_tiles[128];
-extern const uint8_t tutorial_screen_map[340];
+extern const uint8_t tutorial_screen_map[63];
 
 #endif
