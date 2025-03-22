@@ -308,11 +308,6 @@ void display_gameover_scores(void) {
   uint8_t last_minutes = highscore->minutes;
   uint8_t last_seconds = highscore->seconds;
 
-  // Get last high score and see if the current high score is better than it.
-  uint16_t last_total_seconds = last_hours * 3600 + last_minutes * 60 + last_seconds;
-  uint16_t current_total_seconds = timer_hours * 3600 + timer_minutes * 60 + timer_seconds;
-  bool new_record = false;
-
   // Display current timer-based score.
   update_timer_score_tiles();
   set_bkg_tiles(10, 5, 8, 1, score_tiles);
@@ -321,18 +316,28 @@ void display_gameover_scores(void) {
   update_point_score_tiles();
   set_bkg_tiles(10, 6, 8, 1, score_tiles);
 
-  if (current_total_seconds > last_total_seconds) {
-    // Persist the high score by updating it in external RAM.
+  bool new_record = false;
+  if (point_score > last_points) {
+    new_record = true;
+    // Save the new record to RAM
+    highscore->points = point_score;
+    // Update the time im RAM
     highscore->hours = timer_hours;
     highscore->minutes = timer_minutes;
     highscore->seconds = timer_seconds;
-    new_record = true;
   }
+  else if (point_score == last_points){
+    // Score is the same, check if they have achieved this score in less time than before
+    uint16_t last_total_seconds = last_hours * 3600 + last_minutes * 60 + last_seconds;
+    uint16_t current_total_seconds = timer_hours * 3600 + timer_minutes * 60 + timer_seconds;
 
-  if (point_score > last_points) {
-    // Persist the high score by updating it in external RAM.
-    highscore->points = point_score;
-    new_record = true;
+    if (current_total_seconds < last_total_seconds){
+      new_record = true;
+      // Update the time im RAM
+      highscore->hours = timer_hours;
+      highscore->minutes = timer_minutes;
+      highscore->seconds = timer_seconds;
+    }
   }
 
   if (new_record) {
