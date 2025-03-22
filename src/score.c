@@ -22,6 +22,7 @@
 #include "sprite_data.h"
 #include "text_data.h"
 #include "wait.h"
+#include "sound_effects.h"
 
 struct HighScore {
   uint16_t points;
@@ -116,10 +117,12 @@ void show_reward_screen(void) {
 
   // Write "CONGRATULATIONS!"
   set_bkg_tiles(2, 6, UINT8_ARRARY_SIZE(congratulations_text), 1, congratulations_text);
+  play_collision_sound();
   wait_frames(60);
 
   // Write "YOU UNLOCKED"
   set_bkg_tiles(4, 8, UINT8_ARRARY_SIZE(you_unlocked_text), 1, you_unlocked_text);
+  play_collision_sound();
   wait_frames(60);
 
   // Write the reward's name.
@@ -133,6 +136,7 @@ void show_reward_screen(void) {
     // "NEW SHIP"
     set_bkg_tiles(6, 11, UINT8_ARRARY_SIZE(new_ship_text), 1, new_ship_text);
   }
+  play_health_sound();
 
   if (game_mode == TURBO) {
     set_sprite_tile(0, 0);
@@ -142,12 +146,14 @@ void show_reward_screen(void) {
 
     wait_frames(60);
     SHOW_SPRITES;
+    play_gameover_sound();
     for (uint8_t i = 0; i < 5; ++i) {
       wait_frames(10);
       set_sprite_tile(0, 1);
       wait_frames(10);
       set_sprite_tile(0, 0);
     }
+    play_health_sound();
     set_sprite_tile(0, 1);
   }
 

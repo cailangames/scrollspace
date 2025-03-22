@@ -67,9 +67,9 @@ static void load_font(void) {
 
 // Loads sprite data.
 static void load_sprite_data(void) {
-  set_sprite_data(0, 10, player_sprites);
-  set_sprite_data(10, 9, player_shield_sprites);
-  set_sprite_data(19, 3, projectile_sprites);
+  set_sprite_data(PLAYER_SPRITE_ID, TILE_COUNT(player_sprites), player_sprites);
+  set_sprite_data(PLAYER_SPRITE_ID + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_shield_sprites), player_shield_sprites);
+  set_sprite_data(BULLET_SPRITE, TILE_COUNT(projectile_sprites), projectile_sprites);
 }
 
 // Loads background tile data.
@@ -148,8 +148,8 @@ static void show_mode_selection_screen(void) {
 
   // Then draw the player sprite.
   if (upgrade_sprite_unlocked) {
-    set_sprite_data(PLAYER_SPRITE_ID, UINT8_ARRARY_SIZE(player_upgrade_sprites), player_upgrade_sprites);
-    set_sprite_data(PLAYER_SPRITE_ID + PLAYER_SHIELD_SPRITES_OFFSET, UINT8_ARRARY_SIZE(player_upgrade_shield_sprites), player_upgrade_shield_sprites);
+    set_sprite_data(PLAYER_SPRITE_ID, TILE_COUNT(player_upgrade_sprites), player_upgrade_sprites);
+    set_sprite_data(PLAYER_SPRITE_ID + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_upgrade_shield_sprites), player_upgrade_shield_sprites);
   }
   if (game_mode == TITLE_SCREEN) {
     game_mode = NORMAL;
@@ -234,8 +234,8 @@ static void show_mode_selection_screen(void) {
         if (confirm_action()) {
           play_bomb_sound();
           clear_score_data();
-          set_sprite_data(0, 10, player_sprites);
-          set_sprite_data(10, 9, player_shield_sprites);
+          set_sprite_data(PLAYER_SPRITE_ID, TILE_COUNT(player_sprites), player_sprites);
+          set_sprite_data(PLAYER_SPRITE_ID + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_shield_sprites), player_shield_sprites);
           hard_mode_unlocked = false;
           turbo_mode_unlocked = false;
           upgrade_sprite_unlocked = false;

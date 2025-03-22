@@ -278,12 +278,12 @@ bool handle_player_collisions(void) {
       if (damage_animation_counter == 0) {
         // Toggle the animation state.
         if (damage_animation_state == HIDDEN) {
-          // move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
-          OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
+          move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
+          // OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
           damage_animation_state = SHOWN;
         } else {
-          // move_sprite(PLAYER_SPRITE_ID, 0, 0);
-          OBP0_REG = 0x18;  // 0b0001 1000 - Black, Light grey,  black, black
+          move_sprite(PLAYER_SPRITE_ID, 0, 0);
+          // OBP0_REG = 0x18;  // 0b0001 1000 - Black, Light grey,  black, black
           damage_animation_state = HIDDEN;
         }
         damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
