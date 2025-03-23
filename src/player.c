@@ -306,12 +306,9 @@ bool handle_player_collisions(void) {
     }
     // Check for collision with pickups only, not mines, to allow players to pick up items in the
     // iframes state.
-    uint16_t collision_idx = check_player_collisions(true);
+    uint16_t collision_idx = check_player_collisions(false);
     if (collision_idx != UINT16_MAX) {
       uint8_t collision_id = collision_map[collision_idx];
-      collision_map[collision_idx] = 0;
-      background_map[collision_idx] = 0;
-      point_score += POINTS_PER_PICKUP;
       if (collision_id == HEALTH_KIT_ID) {
         // Pick up health kit and update player health.
         // When updating this code, be wary that the max value of an int8_t is 127.
@@ -327,7 +324,10 @@ bool handle_player_collisions(void) {
         }
         health_changed = true;
         play_health_sound();
-      } else {
+        collision_map[collision_idx] = 0;
+        background_map[collision_idx] = 0;
+        point_score += POINTS_PER_PICKUP;
+      } else if (collision_id == SHIELD_ID) {
         // Pick up shield.
         if (!shield_active) {
           player_sprite_base_id += PLAYER_SHIELD_SPRITES_OFFSET;
@@ -338,6 +338,24 @@ bool handle_player_collisions(void) {
         }
         iframes_counter = SHIELD_DURATION;
         play_shield_sound();
+        collision_map[collision_idx] = 0;
+        background_map[collision_idx] = 0;
+        point_score += POINTS_PER_PICKUP;
+      }
+      else if (shield_active) {
+        // The player hit a wall or a mine with the shield on
+        if (collision_id <= SHIELD_COLLISION_DAMAGE) {
+          // The wall or mine is destroyed.
+          if (background_map[collision_idx] == MINE_TILE) {
+            point_score += POINTS_PER_MINE;
+          }
+          collision_map[collision_idx] = 0;
+          background_map[collision_idx] = 0;
+        } else {
+          // Apply damage to the wall or mine.
+          collision_map[collision_idx] -= SHIELD_COLLISION_DAMAGE;
+        }
+        play_collision_sound();
       }
     }
   }
