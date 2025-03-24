@@ -341,8 +341,7 @@ bool handle_player_collisions(void) {
         collision_map[collision_idx] = 0;
         background_map[collision_idx] = 0;
         point_score += POINTS_PER_PICKUP;
-      }
-      else if (shield_active) {
+      } else if (shield_active) {
         // The player hit a wall or a mine with the shield on
         if (collision_id <= SHIELD_COLLISION_DAMAGE) {
           // The wall or mine is destroyed.

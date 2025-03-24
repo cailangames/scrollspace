@@ -26,6 +26,7 @@ const uint8_t pause_text[] = {CHAR_P, CHAR_A, CHAR_U, CHAR_S, CHAR_E};
 const uint8_t game_over_text[] = {CHAR_G, CHAR_A, CHAR_M, CHAR_E, 0, CHAR_O, CHAR_V, CHAR_E, CHAR_R};
 const uint8_t score_text[] = {CHAR_S, CHAR_C, CHAR_O, CHAR_R, CHAR_E};
 const uint8_t best_text[] = {CHAR_B, CHAR_E, CHAR_S, CHAR_T};
+const uint8_t new_record_text[] = {CHAR_N, CHAR_E, CHAR_W, 0, CHAR_R, CHAR_E, CHAR_C, CHAR_O, CHAR_R, CHAR_D, CHAR_EXCLAMATION_MARK};
 const uint8_t tip_text[] = {CHAR_T, CHAR_I, CHAR_P, CHAR_COLON};
 const uint8_t congratulations_text[] = {CHAR_C, CHAR_O, CHAR_N, CHAR_G, CHAR_R, CHAR_A, CHAR_T, CHAR_U, CHAR_L, CHAR_A, CHAR_T, CHAR_I, CHAR_O, CHAR_N, CHAR_S, CHAR_EXCLAMATION_MARK};
 const uint8_t you_unlocked_text[] = {CHAR_Y, CHAR_O, CHAR_U, 0, CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, CHAR_E, CHAR_D};

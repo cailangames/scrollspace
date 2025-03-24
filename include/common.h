@@ -17,9 +17,9 @@
 /*
  * Keys
  */
-#define KEY_PRESSED(input, key) (input & key)
-#define KEY_HELD(input, old_input, key) ((input & key) && (old_input & key))
-#define KEY_FIRST_PRESS(input, old_input, key) ((input & key) && !(old_input & key))
+#define KEY_PRESSED(input, key) ((input) & (key))
+#define KEY_HELD(input, old_input, key) (((input) & (key)) && ((old_input) & (key)))
+#define KEY_FIRST_PRESS(input, old_input, key) (((input) & (key)) && !((old_input) & (key)))
 
 /*
  * Screen

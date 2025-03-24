@@ -19,10 +19,10 @@
 #include <string.h>
 
 #include "common.h"
+#include "sound_effects.h"
 #include "sprite_data.h"
 #include "text_data.h"
 #include "wait.h"
-#include "sound_effects.h"
 
 struct HighScore {
   uint16_t points;
@@ -39,13 +39,12 @@ static uint8_t timer_seconds = 0;
 static uint8_t timer_minutes = 0;
 static uint8_t timer_hours = 0;
 
-static uint8_t score_tiles[11] = {0x0};
-static uint8_t high_score_tiles[SCREEN_TILE_WIDTH];
+static uint8_t score_tiles[SCREEN_TILE_WIDTH];
 
 // Writes the timer-based high score to the window.
 static void write_timer_high_score_to_window(const struct HighScore* highscore) {
   // Hours
-  uint8_t* tiles = high_score_tiles;
+  uint8_t* tiles = score_tiles;
   uint8_t tenths = highscore->hours / 10;
   *tiles++ = tenths + 0x01;
   *tiles++ = (highscore->hours - 10 * tenths) + 0x01;
@@ -62,7 +61,7 @@ static void write_timer_high_score_to_window(const struct HighScore* highscore) 
   *tiles++ = tenths + 0x01;
   *tiles = (highscore->seconds - 10 * tenths) + 0x01;
 
-  set_win_tiles(5, 0, 8, 1, high_score_tiles);
+  set_win_tiles(11, 0, 8, 1, score_tiles);
 }
 
 // Writes the point-based high score to the window.
@@ -73,19 +72,19 @@ static void write_point_high_score_to_window(const struct HighScore* highscore) 
   uint8_t oneh = (highscore->points - tenk * 10000 - onek * 1000) / 100;
   uint8_t tens = (highscore->points - tenk * 10000 - onek * 1000 - oneh * 100) / 10;
   uint8_t single = (highscore->points - tenk * 10000 - onek * 1000 - oneh * 100 - tens * 10);
-  uint8_t* tiles = high_score_tiles;
+  uint8_t* tiles = score_tiles;
   *tiles++ = tenk + 0x01;
   *tiles++ = onek + 0x01;
   *tiles++ = oneh + 0x01;
   *tiles++ = tens + 0x01;
   *tiles = single + 0x01;
 
-  set_win_tiles(14, 0, 5, 1, high_score_tiles);
+  set_win_tiles(5, 0, 5, 1, score_tiles);
 }
 
 void clear_window(void) {
-  memset(high_score_tiles, 0, SCREEN_TILE_WIDTH);
-  set_win_tiles(0, 0, UINT8_ARRARY_SIZE(high_score_tiles), 1, high_score_tiles);
+  memset(score_tiles, 0, UINT8_ARRARY_SIZE(score_tiles));
+  set_win_tiles(0, 0, UINT8_ARRARY_SIZE(score_tiles), 1, score_tiles);
 }
 
 void clear_score_data(void) {
@@ -100,17 +99,14 @@ void clear_score_data(void) {
 }
 
 void show_reward_screen(void) {
-  // Use the game_mode variable to determine what was unlocked
-
-  // Clear the background map and add borders (top, bottom, right)
-  for (uint8_t row = 0; row < SCREEN_TILE_HEIGHT; ++row) {
-    for (uint8_t col = 0; col < SCREEN_TILE_WIDTH; ++col) {
-      if (row == 0 || row == 17 || col == 19) {
-        background_map[row * SCREEN_TILE_WIDTH + col] = 0x25;
-      } else {
-        background_map[row * SCREEN_TILE_WIDTH + col] = 0x0;
-      }
-    }
+  // Clear the background map and add borders (top, bottom, right).
+  memset(background_map, WALL_BLOCK_TILE, SCREEN_TILE_WIDTH);
+  memset(background_map + SCREEN_TILE_WIDTH, EMPTY_TILE, SCREEN_TILE_WIDTH * (SCREEN_TILE_HEIGHT - 2));
+  memset(background_map + (SCREEN_TILE_WIDTH * (SCREEN_TILE_HEIGHT - 1)), WALL_BLOCK_TILE, SCREEN_TILE_WIDTH);
+  uint8_t* bkg_map = background_map + (SCREEN_TILE_WIDTH * 2) - 1;
+  for (uint8_t i = 0; i < SCREEN_TILE_HEIGHT - 2; ++i) {
+    *bkg_map = WALL_BLOCK_TILE;
+    bkg_map += SCREEN_TILE_WIDTH;
   }
   vsync();
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
@@ -140,9 +136,8 @@ void show_reward_screen(void) {
 
   if (game_mode == TURBO) {
     set_sprite_tile(0, 0);
-    move_sprite(0, 8 * TILE_SIZE_PIXELS + SCREEN_L, 13 * TILE_SIZE_PIXELS + SCREEN_T);
+    move_sprite(0, 9 * TILE_SIZE_PIXELS + SCREEN_L, 13 * TILE_SIZE_PIXELS + SCREEN_T);
     set_sprite_data(1, 1, player_upgrade_sprites);
-    move_sprite(1, 0, 0);
 
     wait_frames(60);
     SHOW_SPRITES;
@@ -226,22 +221,23 @@ bool increment_timer_score(void) {
 }
 
 void update_timer_score_tiles(void) {
-  // Seconds
-  uint8_t sec_tenths = timer_seconds / 10;
-  score_tiles[7] = (timer_seconds - 10 * sec_tenths) + 0x01;
-  score_tiles[6] = sec_tenths + 0x01;
-  score_tiles[5] = CHAR_COLON;
+  // Hours
+  uint8_t* tiles = score_tiles;
+  uint8_t hour_tenths = timer_hours / 10;
+  *tiles++ = hour_tenths + 0x01;
+  *tiles++ = (timer_hours - 10 * hour_tenths) + 0x01;
+  *tiles++ = CHAR_COLON;
 
   // Minutes
   uint8_t min_tenths = timer_minutes / 10;
-  score_tiles[4] = (timer_minutes - 10 * min_tenths) + 0x01;
-  score_tiles[3] = min_tenths + 0x01;
-  score_tiles[2] = CHAR_COLON;
+  *tiles++ = min_tenths + 0x01;
+  *tiles++ = (timer_minutes - 10 * min_tenths) + 0x01;
+  *tiles++ = CHAR_COLON;
 
-  // Hours
-  uint8_t hour_tenths = timer_hours / 10;
-  score_tiles[1] = (timer_hours - 10 * hour_tenths) + 0x01;
-  score_tiles[0] = hour_tenths + 0x01;
+  // Seconds
+  uint8_t sec_tenths = timer_seconds / 10;
+  *tiles++ = sec_tenths + 0x01;
+  *tiles = (timer_seconds - 10 * sec_tenths) + 0x01;
 }
 
 void update_point_score_tiles(void) {
@@ -250,14 +246,15 @@ void update_point_score_tiles(void) {
   uint8_t oneh = (point_score - tenk * 10000 - onek * 1000) / 100;
   uint8_t tens = (point_score - tenk * 10000 - onek * 1000 - oneh * 100) / 10;
   uint8_t single = (point_score - tenk * 10000 - onek * 1000 - oneh * 100 - tens * 10);
-  score_tiles[0] = 0;
-  score_tiles[1] = 0;
-  score_tiles[2] = 0;
-  score_tiles[3] = tenk + 0x01;
-  score_tiles[4] = onek + 0x01;
-  score_tiles[5] = oneh + 0x01;
-  score_tiles[6] = tens + 0x01;
-  score_tiles[7] = single + 0x01;
+  uint8_t* tiles = score_tiles;
+  *tiles++ = 0;
+  *tiles++ = 0;
+  *tiles++ = 0;
+  *tiles++ = tenk + 0x01;
+  *tiles++ = onek + 0x01;
+  *tiles++ = oneh + 0x01;
+  *tiles++ = tens + 0x01;
+  *tiles = single + 0x01;
 }
 
 void write_score_to_window(void) {
@@ -277,20 +274,20 @@ void display_highscores(void) {
     ++highscore;
   }
 
-  write_timer_high_score_to_window(highscore);
   write_point_high_score_to_window(highscore);
+  write_timer_high_score_to_window(highscore);
 }
 
 void display_hardmode_unlock_msg(void) {
-  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, unlock_hard_mode_text);
+  set_win_tiles(0, 0, UINT8_ARRARY_SIZE(unlock_hard_mode_text), 1, unlock_hard_mode_text);
 }
 
 void display_turbomode_unlock_msg(void) {
-  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, unlock_turbo_mode_text);
+  set_win_tiles(0, 0, UINT8_ARRARY_SIZE(unlock_turbo_mode_text), 1, unlock_turbo_mode_text);
 }
 
 void display_clear_data_msg(void) {
-  set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, clear_data_description_text);
+  set_win_tiles(0, 0, UINT8_ARRARY_SIZE(clear_data_description_text), 1, clear_data_description_text);
 }
 
 void display_gameover_scores(void) {
@@ -308,32 +305,30 @@ void display_gameover_scores(void) {
   uint8_t last_minutes = highscore->minutes;
   uint8_t last_seconds = highscore->seconds;
 
-  // Display current timer-based score.
-  update_timer_score_tiles();
-  set_bkg_tiles(10, 5, 8, 1, score_tiles);
-
   // Display current point-based score.
   update_point_score_tiles();
+  set_bkg_tiles(10, 5, 8, 1, score_tiles);
+
+  // Display current timer-based score.
+  update_timer_score_tiles();
   set_bkg_tiles(10, 6, 8, 1, score_tiles);
 
   bool new_record = false;
   if (point_score > last_points) {
     new_record = true;
-    // Save the new record to RAM
+    // Save the new record to external RAM.
     highscore->points = point_score;
-    // Update the time im RAM
     highscore->hours = timer_hours;
     highscore->minutes = timer_minutes;
     highscore->seconds = timer_seconds;
-  }
-  else if (point_score == last_points){
+  } else if (point_score == last_points) {
     // Score is the same, check if they have achieved this score in less time than before
     uint16_t last_total_seconds = last_hours * 3600 + last_minutes * 60 + last_seconds;
     uint16_t current_total_seconds = timer_hours * 3600 + timer_minutes * 60 + timer_seconds;
 
-    if (current_total_seconds < last_total_seconds){
+    if (current_total_seconds < last_total_seconds) {
       new_record = true;
-      // Update the time im RAM
+      // Update the time in external RAM.
       highscore->hours = timer_hours;
       highscore->minutes = timer_minutes;
       highscore->seconds = timer_seconds;
@@ -341,22 +336,7 @@ void display_gameover_scores(void) {
   }
 
   if (new_record) {
-    score_tiles[0] = CHAR_N;
-    score_tiles[1] = CHAR_E;
-    score_tiles[2] = CHAR_W;
-    score_tiles[3] = CHAR_SPACE;
-    score_tiles[4] = CHAR_R;
-    score_tiles[5] = CHAR_E;
-    score_tiles[6] = CHAR_C;
-    score_tiles[7] = CHAR_O;
-    score_tiles[8] = CHAR_R;
-    score_tiles[9] = CHAR_D;
-    score_tiles[10] = CHAR_EXCLAMATION_MARK;
-    set_bkg_tiles(4, 11, 11, 1, score_tiles);
-
-    score_tiles[8] = CHAR_SPACE;
-    score_tiles[9] = CHAR_SPACE;
-    score_tiles[10] = CHAR_SPACE;
+    set_bkg_tiles(4, 11, UINT8_ARRARY_SIZE(new_record_text), 1, new_record_text);
   }
 
   /**
@@ -365,16 +345,15 @@ void display_gameover_scores(void) {
    * for updating the score_tiles. Doing this earlier overwrites them
    * and we lose the scores stored in RAM
    */
+  // Display the last point-based high score.
+  point_score = last_points;
+  update_point_score_tiles();
+  set_bkg_tiles(10, 8, 8, 1, score_tiles);
   // Display the last timer-based high score.
   timer_hours = last_hours;
   timer_minutes = last_minutes;
   timer_seconds = last_seconds;
   update_timer_score_tiles();
-  set_bkg_tiles(10, 8, 8, 1, score_tiles);
-
-  // Display the last point-based high score.
-  point_score = last_points;
-  update_point_score_tiles();
   set_bkg_tiles(10, 9, 8, 1, score_tiles);
 }
 
@@ -384,5 +363,6 @@ void reset_scores(void) {
   timer_seconds = 0;
   timer_minutes = 0;
   timer_hours = 0;
+  memset(score_tiles, 0, UINT8_ARRARY_SIZE(score_tiles));
   update_point_score_tiles();
 }

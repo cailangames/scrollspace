@@ -46,8 +46,9 @@ void show_title_screen(bool restart_song) BANKED {
   // Blink "PRESS START" while waiting for user input.
   uint8_t counter = 0;
   while (true) {
-    if (joypad() & J_START) {
-      wait_for_keys_released(J_START);
+    uint8_t input = joypad();
+    if (KEY_PRESSED(input, J_START | J_A)) {
+      wait_for_keys_released(J_START | J_A);
       return;
     }
 
