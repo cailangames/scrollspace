@@ -172,11 +172,11 @@ void show_intro_scene(void) BANKED {
   x = 24;
   y = 72;
 
-#if ENABLE_MUSIC
-  hUGE_init(&intro_song);
+  __critical {
+    hUGE_init(&intro_song);
+    add_VBL(hUGE_dosound);
+  }
   play_all_channels();
-  add_VBL(hUGE_dosound);
-#endif
 
   HIDE_BKG;
   // Load intro tiles and map into VRAM

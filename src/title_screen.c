@@ -30,14 +30,13 @@ void show_title_screen(bool restart_song) BANKED {
   if (restart_song) {
     fade_in();
     SHOW_BKG;
-  }
-#if ENABLE_MUSIC
-  if (restart_song) {
-    hUGE_init(&intro_song);
+
+    __critical {
+      hUGE_init(&intro_song);
+      add_VBL(hUGE_dosound);
+    }
     play_all_channels();
-    add_VBL(hUGE_dosound);
   }
-#endif
 
   for (uint8_t i = 0; i < 5; ++i) {
     background_map[i] = EMPTY_TILE;

@@ -9,7 +9,6 @@
 
 // The following are used for performance testing of individual components.
 #define ENABLE_SCORING 1
-#define ENABLE_MUSIC 1
 #define ENABLE_WEAPONS 1
 #define ENABLE_COLLISIONS 1
 #define ENABLE_INTRO 1

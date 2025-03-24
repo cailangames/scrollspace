@@ -322,7 +322,9 @@ static void show_gameover_screen(void) {
 static void handle_gameover(void) {
   game_paused = true;
   mute_all_channels();
-  remove_VBL(hUGE_dosound);
+  __critical {
+    remove_VBL(hUGE_dosound);
+  }
 
   set_sprite_tile(PLAYER_SPRITE_ID, DEATH_SPRITE);
   wait_frames(10);
@@ -371,14 +373,12 @@ static void increase_difficulty(void) {
 }
 
 void main(void) {
-#if ENABLE_MUSIC
   // Enable sound playback.
   NR52_REG = 0x80;
   NR51_REG = 0xFF;
   NR50_REG = 0x33;
   // Mute all channels.
   mute_all_channels();
-#endif
 
 #if ENABLE_INTRO
   /*
@@ -493,20 +493,15 @@ void main(void) {
     init_weapons();
     update_bomb_ready_icon();
 
-#if ENABLE_MUSIC
     mute_all_channels();
-#endif
 
     wait_frames(10);
 
-#if ENABLE_MUSIC
-    if (game_mode == NORMAL) {
-      hUGE_init(&main_song);
-    } else {
-      hUGE_init(&main_song_fast);
+    const hUGESong_t* song = (game_mode == NORMAL) ? &main_song : &main_song_fast;
+    __critical {
+      hUGE_init(song);
     }
     play_all_channels();
-#endif
 
     wait_frames(15);
 
@@ -534,15 +529,11 @@ void main(void) {
       if (KEY_PRESSED(input, J_START)) {
         // Pause the game.
         game_paused = true;
-#if ENABLE_MUSIC
         mute_all_channels();
-#endif
         wait_for_keys_released(J_START);
         wait_for_keys_pressed(J_START);
         wait_for_keys_released(J_START);
-#if ENABLE_MUSIC
         play_all_channels();
-#endif
         game_paused = false;
         continue;
       }
