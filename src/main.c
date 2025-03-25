@@ -25,6 +25,9 @@
 #include "wait.h"
 #include "weapons.h"
 
+// Option to enable/disable intro for development.
+#define ENABLE_INTRO 1
+
 enum GameMode game_mode = NORMAL;
 struct Sprite player_sprite;
 uint8_t collision_map[COLUMN_HEIGHT * ROW_WIDTH];
@@ -42,7 +45,6 @@ static bool game_paused = true;
 static bool show_timer_score = false;
 static bool timer_score_changed = false;
 
-#if ENABLE_SCORING
 // Increments the timer score. To be called during an ISR (interrupt service routine).
 static void increment_timer_score_isr(void) {
   if (game_paused) {
@@ -50,7 +52,6 @@ static void increment_timer_score_isr(void) {
   }
   timer_score_changed = increment_timer_score();
 }
-#endif
 
 // Loads the title screen tiles.
 static void load_title_screen(void) {
@@ -276,7 +277,6 @@ static void show_mode_selection_screen(void) {
   HIDE_SPRITES;
 }
 
-#if ENABLE_COLLISIONS
 // Shows the game over screen.
 static void show_gameover_screen(void) {
   HIDE_WIN;
@@ -342,7 +342,6 @@ static void handle_gameover(void) {
   show_gameover_screen();
   show_title_screen(true);
 }
-#endif
 
 // Incrementally increases the difficulty of the game, e.g. by increasing the scroll speed.
 static void increase_difficulty(void) {
@@ -411,10 +410,8 @@ void main(void) {
   // Set palette 1 colors (for bullets).
   OBP1_REG = 0xE4;  // 0b1110 0100 - black, dark gray, light gray, white
 
-#if ENABLE_SCORING
   // Add timer score incrementer to VBL interrupt handler.
   add_VBL(increment_timer_score_isr);
-#endif
 
   /*
    * TITLE SCREEN
@@ -548,10 +545,7 @@ void main(void) {
 
       // Update the player sprite and weapons based on the input.
       move_player(input);
-#if ENABLE_WEAPONS
       update_weapons(input, prev_input);
-#endif
-#if ENABLE_COLLISIONS
       bool health_changed = handle_player_collisions();
       if (health_changed) {
         if (player_sprite.health <= 0) {
@@ -559,7 +553,6 @@ void main(void) {
           break;
         }
       }
-#endif
 
       prev_input = input;
 
@@ -585,7 +578,6 @@ void main(void) {
         }
       }
 
-#if ENABLE_SCORING
       // Update the score tiles, if necessary.
       if (show_timer_score) {
         if (timer_score_changed) {
@@ -600,7 +592,6 @@ void main(void) {
           prev_point_score = point_score;
         }
       }
-#endif
 
       // Wait for the frame to finish drawing.
       vsync();
@@ -629,13 +620,11 @@ void main(void) {
         write_health_bar_to_window();
       }
 
-#if ENABLE_SCORING
       // Write the score tiles to the window layer, if necessary.
       if (update_window_score) {
         write_score_to_window();
         update_window_score = false;
       }
-#endif
 
       // Update the "bomb ready" icon in the window layer, if necessary.
       update_bomb_ready_icon();
