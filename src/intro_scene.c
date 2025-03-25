@@ -5,6 +5,7 @@
 #include <gb/gb.h>
 #include <hUGEDriver.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "common.h"
 #include "display_effects.h"
@@ -158,19 +159,47 @@ static const uint8_t intro_atmosphere_map[] = {
 
 // clang-format on
 
-void show_intro_scene(void) BANKED {
-  uint8_t x, y, idx;
-  uint8_t row, col;
-
-  // Fill the background map with empty tiles
-  for (row = 0; row < COLUMN_HEIGHT; ++row) {
-    for (col = 0; col < ROW_WIDTH; ++col) {
-      background_map[row * ROW_WIDTH + col] = 0x98;
-    }
+// Swaps in the heat shield sprites, starting at the given sprite ID.
+static void swap_in_heat_shield_sprites(uint8_t starting_id, uint8_t x, uint8_t y) {
+  // Swap out current sprites.
+  uint8_t i = (starting_id == 1) ? 0 : starting_id - 9;
+  while (i < starting_id) {
+    move_sprite(i, 0, 0);
+    ++i;
   }
 
-  x = 24;
-  y = 72;
+  // Swap in new sprites.
+  move_sprite(starting_id++, x - 8, y - 8);  // top left
+  move_sprite(starting_id++, x, y - 8);      // top middle
+  move_sprite(starting_id++, x + 8, y - 8);  // top right
+  move_sprite(starting_id++, x - 8, y);      // left of player
+  move_sprite(starting_id++, x, y);          // player sprite
+  move_sprite(starting_id++, x + 8, y);      // right of player
+  move_sprite(starting_id++, x - 8, y + 8);  // bottom left
+  move_sprite(starting_id++, x, y + 8);      // bottom middle
+  move_sprite(starting_id, x + 8, y + 8);    // bottom right
+}
+
+// Scrolls the ship through the atmosphere to the given y position, updating the color palette
+// along the way.
+static void scroll_through_atmosphere(uint8_t end_y) {
+  uint8_t i = 0;
+  while (SCY_REG < end_y) {
+    scroll_bkg(1, 1);
+    vsync();
+    i = MOD8(i + 1);
+    if (i == 0) {
+      OBP0_REG = 0x8C;  // 0b1000 1100 - dark gray, white, black, white
+    } else {
+      OBP0_REG = 0xE4;  // 0b1101 0000 - black, dark gray, light gray, white
+    }
+  }
+  OBP0_REG = 0xE4;  // 0b1110 0100 - black, light gray, white, transparent
+}
+
+void show_intro_scene(void) BANKED {
+  // Fill the background map with empty tiles
+  memset(background_map, 0x98, COLUMN_HEIGHT * ROW_WIDTH);
 
   __critical {
     hUGE_init(&intro_song);
@@ -188,12 +217,14 @@ void show_intro_scene(void) BANKED {
 
   // Load player sprite and set it to sprite 0
   set_sprite_data(0, 1, player_sprites);
-  set_sprite_data(1, 27, intro_player_heatshield_sprites_data);
-  for (uint8_t i = 0; i < 28; i++) {
+  set_sprite_data(1, TILE_COUNT(intro_player_heatshield_sprites_data), intro_player_heatshield_sprites_data);
+  for (uint8_t i = 0; i < 28; ++i) {
     set_sprite_tile(i, i);
   }
 
   // Move sprite to initial position
+  uint8_t x = 24;
+  uint8_t y = 72;
   move_sprite(0, x, y);
   fade_in();
 
@@ -203,15 +234,15 @@ void show_intro_scene(void) BANKED {
   /*
    * Horizontal movement through space
    */
-  for (idx = 0; idx < 90; idx++) {
+  for (uint8_t i = 0; i < 90; ++i) {
     vsync();
     scroll_bkg(4, 0);
   }
-  for (idx = 0; idx < 36; idx++) {
+  for (uint8_t i = 0; i < 36; ++i) {
     vsync();
     scroll_bkg(3, 0);
   }
-  for (idx = 0; idx < 22; idx++) {
+  for (uint8_t i = 0; i < 22; ++i) {
     vsync();
     scroll_bkg(2, 0);
   }
@@ -226,22 +257,11 @@ void show_intro_scene(void) BANKED {
     vsync();
   }
 
-  // set_bkg_tiles(0,0,20,14,empty_screen_map);
-  // set_bkg_tiles(20,0,12,14,empty_screen_map);
   set_bkg_tiles(0, 0, 20, 14, background_map);
   set_bkg_tiles(20, 0, 12, 14, background_map);
 
   // Switch to heat shield sprites
-  move_sprite(0, 0, 0);
-  move_sprite(1, x - 8, y - 8);  // top left
-  move_sprite(2, x, y - 8);      // top middle
-  move_sprite(3, x + 8, y - 8);  // top right
-  move_sprite(4, x - 8, y);      // left of player
-  move_sprite(5, x, y);          // player sprite
-  move_sprite(6, x + 8, y);      // right of player
-  move_sprite(7, x - 8, y + 8);  // bottom left
-  move_sprite(8, x, y + 8);      // bottom middle
-  move_sprite(9, x + 8, y + 8);  // bottom right
+  swap_in_heat_shield_sprites(1, x, y);
 
   hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
 
@@ -254,78 +274,16 @@ void show_intro_scene(void) BANKED {
   NR43_REG = 0x81;
   NR44_REG = 0x80;
 
-  idx = 0;
-  while (SCY_REG < 176) {
-    scroll_bkg(1, 1);
-    vsync();
-    ++idx;
-    if ((idx % 8) == 0) {
-      OBP0_REG = 0x8C;  // 0b1000 1100 - Dark gray, white, black, white
-      idx = 0;
-    } else {
-      OBP0_REG = 0xE4;  // 0b1101 0000 - Black, Dark Grey, Light gray, white
-    }
-  }
-  OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Light gray, white, transparent
+  scroll_through_atmosphere(176);
 
   // Switch to dissipated heat shield sprites
-  for (uint8_t i = 1; i < 10; i++) {
-    move_sprite(i, 0, 0);
-  }
-  move_sprite(10, x - 8, y - 8);  // top left
-  move_sprite(11, x, y - 8);      // top middle
-  move_sprite(12, x + 8, y - 8);  // top right
-  move_sprite(13, x - 8, y);      // left of player
-  move_sprite(14, x, y);          // player sprite
-  move_sprite(15, x + 8, y);      // right of player
-  move_sprite(16, x - 8, y + 8);  // bottom left
-  move_sprite(17, x, y + 8);      // bottom middle
-  move_sprite(18, x + 8, y + 8);  // bottom right
-
-  idx = 0;
-  while (SCY_REG < 208) {
-    scroll_bkg(1, 1);
-    vsync();
-    ++idx;
-    if ((idx % 8) == 0) {
-      OBP0_REG = 0x8C;  // 0b00 1100 - Light gray, white, black, transparent
-      idx = 0;
-    } else {
-      OBP0_REG = 0xE4;  // 0b1101 0000 - Black, Light gray, white, transparent
-    }
-  }
-  OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Light gray, white, transparent
+  swap_in_heat_shield_sprites(10, x, y);
+  scroll_through_atmosphere(208);
 
   // Switch to almost gone dissipated heat shield sprites
-  for (uint8_t i = 10; i < 19; i++) {
-    move_sprite(i, 0, 0);
-  }
-  move_sprite(19, x - 8, y - 8);  // top left
-  move_sprite(20, x, y - 8);      // top middle
-  move_sprite(21, x + 8, y - 8);  // top right
-  move_sprite(22, x - 8, y);      // left of player
-  move_sprite(23, x, y);          // player sprite
-  move_sprite(24, x + 8, y);      // right of player
-  move_sprite(25, x - 8, y + 8);  // bottom left
-  move_sprite(26, x, y + 8);      // bottom middle
-  move_sprite(27, x + 8, y + 8);  // bottom right
+  swap_in_heat_shield_sprites(19, x, y);
+  scroll_through_atmosphere(224);
 
-  idx = 0;
-  while (SCY_REG < 224) {
-    scroll_bkg(1, 1);
-    vsync();
-    ++idx;
-    if ((idx % 8) == 0) {
-      OBP0_REG = 0x8C;  // 0b00 1100 - Light gray, white, black, transparent
-      idx = 0;
-    } else {
-      OBP0_REG = 0xE4;  // 0b1101 0000 - Black, Light gray, white, transparent
-    }
-  }
-  OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Light gray, white, transparent
-
-  // set_bkg_tiles(0,14,20,14,empty_screen_map);
-  // set_bkg_tiles(20,14,12,14,empty_screen_map);
   set_bkg_tiles(0, 14, 20, 14, background_map);
   set_bkg_tiles(20, 14, 12, 14, background_map);
 
@@ -337,13 +295,11 @@ void show_intro_scene(void) BANKED {
   hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
 
   // Hide all sprites except the plane itself
-  for (uint8_t i = 1; i < 28; i++) {
+  for (uint8_t i = 1; i < 28; ++i) {
     move_sprite(i, 0, 0);
   }
   move_sprite(0, x, y);
 
-  // set_bkg_tiles(0,28,20,2,empty_screen_map);
-  // set_bkg_tiles(20,28,12,2,empty_screen_map);
   set_bkg_tiles(0, 28, 20, 2, background_map);
   set_bkg_tiles(20, 28, 12, 2, background_map);
 
@@ -354,18 +310,18 @@ void show_intro_scene(void) BANKED {
   // Load title screen
   set_bkg_tiles(12, 13, 20, 18, title_screen_map);
   // Load the bricks on the missing areas
-  for (row = 1; row < 13; row++) {
-    for (col = 20; col <= 31; col++) {
-      set_bkg_tile_xy(col, row, 165);
+  for (uint8_t row = 1; row < 13; ++row) {
+    for (uint8_t col = 20; col < 32; ++col) {
+      set_bkg_tile_xy(col, row, 0xA5);
     }
   }
-  for (row = 22; row < 31; row++) {
-    for (col = 3; col < 12; col++) {
-      set_bkg_tile_xy(col, row, 165);
+  for (uint8_t row = 22; row < 31; ++row) {
+    for (uint8_t col = 3; col < 12; ++col) {
+      set_bkg_tile_xy(col, row, 0xA5);
     }
   }
 
-  // Set sprite priority so that bkg are drawn on top
+  // Set the ship sprite's priority so that background tiles are drawn on top of the sprite.
   set_sprite_prop(0, 0x80);
 
   while (SCY_REG < 8) {
@@ -378,14 +334,13 @@ void show_intro_scene(void) BANKED {
     vsync();
   }
 
-  uint8_t count = 0;
-  for (count = 0; count < 12; count++) {
+  for (uint8_t i = 0; i < 12; ++i) {
     scroll_sprite(0, 2, 2);
     vsync();
   }
 
   // Fly off and spell PRESS START
-  for (uint8_t i = 0; i < 116 / 4; i++) {
+  for (uint8_t i = 0; i < 116 / 4; ++i) {
     scroll_sprite(0, 4, 0);
     vsync();
   }

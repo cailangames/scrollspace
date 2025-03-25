@@ -1,3 +1,5 @@
+// Main game loop for Scroll Space
+
 #include <gb/gb.h>
 #include <gbdk/bcd.h>
 #include <gbdk/font.h>
