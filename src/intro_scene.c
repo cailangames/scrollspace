@@ -303,23 +303,19 @@ void show_intro_scene(void) BANKED {
   set_bkg_tiles(0, 28, 20, 2, background_map);
   set_bkg_tiles(20, 28, 12, 2, background_map);
 
+  // Fill in background map with block tiles
+  memset(background_map, 0xA5, 144);
+
   while (SCX_REG != 0) {
     scroll_bkg(1, 1);
     vsync();
   }
+
   // Load title screen
   set_bkg_tiles(12, 13, 20, 18, title_screen_map);
-  // Load the bricks on the missing areas
-  for (uint8_t row = 1; row < 13; ++row) {
-    for (uint8_t col = 20; col < 32; ++col) {
-      set_bkg_tile_xy(col, row, 0xA5);
-    }
-  }
-  for (uint8_t row = 22; row < 31; ++row) {
-    for (uint8_t col = 3; col < 12; ++col) {
-      set_bkg_tile_xy(col, row, 0xA5);
-    }
-  }
+  // Load the blocks into the missing side areas
+  set_bkg_tiles(20, 1, 12, 12, background_map);
+  set_bkg_tiles(3, 22, 9, 9, background_map);
 
   // Set the ship sprite's priority so that background tiles are drawn on top of the sprite.
   set_sprite_prop(0, 0x80);
