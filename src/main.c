@@ -371,6 +371,7 @@ static void increase_difficulty(void) {
       player_sprite.speed.w = PLAYER_SPEED_TURBO_MAX;
     }
   }
+  decrease_pickup_probability();
 }
 
 void main(void) {

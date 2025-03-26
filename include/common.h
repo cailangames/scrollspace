@@ -42,8 +42,8 @@
 #define MAP_INDEX_ROW_OFFSET(row) (((uint16_t)(row)) << 5)
 // Like `MAP_INDEX()`, but only for the size of one screen (20x18 tiles).
 #define SCREEN_MAP_INDEX(row, column) ((((uint16_t)(row)) * SCREEN_TILE_WIDTH) + (column))
-// Note: Indexes 0x01-0x24 are used for font characters.
 // clang-format off
+// Note: Indexes 0x01-0x24 are used for font characters.
 #define EMPTY_TILE        0x00
 #define WALL_BLOCK_TILE   0x25
 #define MINE_TILE         0x27
@@ -109,9 +109,9 @@
 #define PLAYER_KNOCKBACK_SPEED 0x0400
 // Important: PLAYER_KNOCKBACK_DURATION should be less than IFRAMES_DURATION.
 #define PLAYER_KNOCKBACK_DURATION 2
+// clang-format off
 // The speeds are 16-bit fixed point numbers, where the high 8 bits are the pixels
 // (per frame) and the low 8 bits are the subpixels.
-// clang-format off
 #define PLAYER_SPEED_NORMAL    0x0100
 #define PLAYER_SPEED_HARD      0x0140
 #define PLAYER_SPEED_TURBO     0x0180
@@ -129,16 +129,17 @@
 #define POINTS_PER_MINE 2
 #define POINTS_PER_PICKUP 2
 #define POINTS_PER_SCREEN_SCROLLED 5
-// IMPORTANT: If you update these thresholds, you must update the unlock messages in score.h too.
+// IMPORTANT: If you update these thresholds, you must update the unlock messages in text_data.c too.
 #define HARD_MODE_UNLOCK_POINTS 2000
 #define TURBO_MODE_UNLOCK_POINTS 1000
 #define UPGRADE_SPRITE_UNLOCK_POINTS 500
-// The below probabilities are out of 65,535 (uint16_t max).
 // clang-format off
-#define HEALTH_PICKUP_PROBABILITY  100
-#define SHIELD_PICKUP_PROBABILITY  100
-#define MINE_PROBABILITY_NARROW    2000
-#define MINE_PROBABILITY_WIDE_OPEN 8000
+// The below probabilities are out of 65,535 (uint16_t max).
+#define PICKUP_PROBABILITY          100
+#define PICKUP_PROBABILITY_MIN      5
+#define PICKUP_PROBABILITY_DECREASE 5
+#define MINE_PROBABILITY_NARROW     2000
+#define MINE_PROBABILITY_WIDE_OPEN  8000
 // clang-format on
 
 /*

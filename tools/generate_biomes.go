@@ -691,8 +691,7 @@ func PrintConstants(seed int64, biomes []*Biome, connections [][]int) {
 
 // Prints the biome data to stdout in the C code format.
 func PrintBiomes(biomes []*Biome) {
-	fmt.Println("// Biome type legend: N = Narrow, T = Transition, W = Wide Open")
-	fmt.Println("static const uint8_t biome_columns[BIOME_COUNT][COLUMNS_PER_BIOME] = {")
+	fmt.Println("const uint8_t biome_columns[BIOME_COUNT][COLUMNS_PER_BIOME] = {")
 	for i, biome := range biomes {
 		fmt.Printf("  /* %02d %s */ { ", i, biome.Name)
 		first := true
@@ -711,7 +710,7 @@ func PrintBiomes(biomes []*Biome) {
 
 // Prints the biome connections to stdout in the C code format.
 func PrintBiomeConnections(connections [][]int) {
-	fmt.Println("static const uint8_t next_possible_biomes[BIOME_COUNT][BIOME_CONNECTION_COUNT] = {")
+	fmt.Println("const uint8_t next_possible_biomes[BIOME_COUNT][BIOME_CONNECTION_COUNT] = {")
 	for i, biome := range connections {
 		fmt.Printf("  /* %02d */ { ", i)
 		first := true
