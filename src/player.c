@@ -211,7 +211,7 @@ bool handle_player_collisions(void) {
     if (damage_animation_state == HIDDEN) {
       move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
       damage_animation_state = SHOWN;
-      OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
+      OBP0_REG = 0xE4;  // 0b1110 0100 - black, dark gray, light gray, white
     }
     // Normal collision check for player
     uint16_t collision_idx = check_player_collisions(false);
@@ -279,11 +279,9 @@ bool handle_player_collisions(void) {
         // Toggle the animation state.
         if (damage_animation_state == HIDDEN) {
           move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
-          // OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
           damage_animation_state = SHOWN;
         } else {
           move_sprite(PLAYER_SPRITE_ID, 0, 0);
-          // OBP0_REG = 0x18;  // 0b0001 1000 - Black, Light grey,  black, black
           damage_animation_state = HIDDEN;
         }
         damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
@@ -295,10 +293,10 @@ bool handle_player_collisions(void) {
       if (damage_animation_counter == 0) {
         // Toggle the animation state.
         if (damage_animation_state == HIDDEN) {
-          OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
+          OBP0_REG = 0xE4;  // 0b1110 0100 - black, dark gray, light gray, white
           damage_animation_state = SHOWN;
         } else {
-          OBP0_REG = 0xD0;  // 0b1101 0000 - Black and then All white
+          OBP0_REG = 0xD0;  // 0b1101 0000 - black, white, white, white
           damage_animation_state = HIDDEN;
         }
         damage_animation_counter = 2 * IFRAMES_ANIMATION_CYCLE;
@@ -334,7 +332,7 @@ bool handle_player_collisions(void) {
           shield_active = true;
           damage_animation_counter = 2 * IFRAMES_ANIMATION_CYCLE;
           damage_animation_state = SHOWN;
-          OBP0_REG = 0xE4;  // 0b1110 0100 - Black, Dark Grey, Light gray, white
+          OBP0_REG = 0xE4;  // 0b1110 0100 - black, dark gray, light gray, white
         }
         iframes_counter = SHIELD_DURATION;
         play_shield_sound();

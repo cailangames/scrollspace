@@ -296,7 +296,7 @@ func drawBiomeIndex(img *image.RGBA, index, column, yOffset int) {
 func drawGameMap(img *image.RGBA, gameMap *GameMap, yOffset int) {
 	// Fill in cells.
 	black := color.RGBA{0, 0, 0, 255}
-	grey := color.RGBA{128, 128, 128, 255}
+	gray := color.RGBA{128, 128, 128, 255}
 	raspberry := color.RGBA{227, 11, 92, 255}
 	cornflowerBlue := color.RGBA{100, 149, 237, 255}
 	for col := 0; col < len(gameMap.Tiles); col++ {
@@ -307,7 +307,7 @@ func drawGameMap(img *image.RGBA, gameMap *GameMap, yOffset int) {
 			case BlockTile:
 				fillCell(img, black, row, col, yOffset)
 			case MineTile:
-				fillCell(img, grey, row, col, yOffset)
+				fillCell(img, gray, row, col, yOffset)
 			case HealthTile:
 				fillCell(img, raspberry, row, col, yOffset)
 			case ShieldTile:
@@ -324,10 +324,10 @@ func drawGameMap(img *image.RGBA, gameMap *GameMap, yOffset int) {
 	}
 
 	// Draw bottom border.
-	lightGrey := color.RGBA{211, 211, 211, 255}
+	lightGray := color.RGBA{211, 211, 211, 255}
 	for y := (rowsPerColumn * pixelsPerTile) + yOffset; y < ((rowsPerColumn+1)*pixelsPerTile)+yOffset; y++ {
 		for x := 0; x < len(gameMap.Tiles)*pixelsPerTile; x++ {
-			img.Set(x, y, lightGrey)
+			img.Set(x, y, lightGray)
 		}
 	}
 }
@@ -351,9 +351,9 @@ func outputImage(gameMaps []*GameMap, file string) {
 	}
 
 	// Draw grid lines.
-	lightGrey := color.RGBA{211, 211, 211, 255}
+	lightGray := color.RGBA{211, 211, 211, 255}
 	for x := (columnsPerBiome * pixelsPerTile) - 1; x < width; x += columnsPerBiome * pixelsPerTile {
-		drawLine(img, lightGrey, x, 0, x, height)
+		drawLine(img, lightGray, x, 0, x, height)
 	}
 
 	// Write .png file.
