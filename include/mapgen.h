@@ -3,7 +3,6 @@
 #ifndef _MAPGEN_H_
 #define _MAPGEN_H_
 
-#include <gb/gb.h>
 #include <stdint.h>
 
 // Resets the state of the procedural generation variables.

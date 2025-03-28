@@ -12,6 +12,7 @@
 #include "score.h"
 #include "songs.h"
 #include "sound_effects.h"
+#include "text_data.h"
 #include "tile_data.h"
 #include "wait.h"
 

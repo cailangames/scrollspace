@@ -14,14 +14,7 @@
 #ifndef _SCORE_H_
 #define _SCORE_H_
 
-#include <gb/gb.h>
 #include <stdbool.h>
-#include <stdint.h>
-
-#include "common.h"
-#include "sprite_data.h"
-#include "text_data.h"
-#include "wait.h"
 
 // Clears the window with empty tiles.
 void clear_window(void);
@@ -32,9 +25,10 @@ void clear_score_data(void);
 // Shows the screen for giving the player a reward when they've earned a high enough score.
 void show_reward_screen(void);
 
-// Checks if the high scores meet the thresholds for unlocking the harder game modes, and sets the
-// output bool pointers accordingly. Returns true if any of the unlocked bools changed, false otherwise.
-bool update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked, bool* upgrade_sprite_unlocked);
+// Checks if the high scores meet the thresholds for unlocking, e.g., harder game modes, and sets
+// the `*_unlocked` global variables accordingly. Returns true if any of the unlocked bools
+// changed, false otherwise.
+bool update_unlocks(void);
 
 // Initializes the external RAM and reads each mode's high scores from it. If no high scores are
 // found, then they're initialized with zeroes.
@@ -57,15 +51,6 @@ void write_score_to_window(void);
 // Converts the current high scores to tiles and displays the tiles in the window.
 // The high scores are retrieved from RAM bank 0 as described in this file's header comment.
 void display_highscores(void);
-
-// Displays the unlock HARD mode message.
-void display_hardmode_unlock_msg(void);
-
-// Displays the unlock TURBO mode message.
-void display_turbomode_unlock_msg(void);
-
-// Displays the window message for the "clear data" option.
-void display_clear_data_msg(void);
 
 // Converts the point-based and timer-based scores to tiles and displays them in the gameover screen.
 void display_gameover_scores(void);

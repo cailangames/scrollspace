@@ -157,21 +157,21 @@ void show_reward_screen(void) {
   HIDE_SPRITES;
 }
 
-bool update_modes_unlocked(bool* hard_mode_unlocked, bool* turbo_mode_unlocked, bool* upgrade_sprite_unlocked) {
+bool update_unlocks(void) {
   const struct HighScore* highscore = (const struct HighScore*)HIGH_SCORE_ADDRESS;
   bool changed = false;
-  if (highscore->points >= HARD_MODE_UNLOCK_POINTS && !(*hard_mode_unlocked)) {
-    *hard_mode_unlocked = true;
+  if (highscore->points >= HARD_MODE_UNLOCK_POINTS && !hard_mode_unlocked) {
+    hard_mode_unlocked = true;
     changed = true;
   }
   ++highscore;
-  if (highscore->points >= TURBO_MODE_UNLOCK_POINTS && !(*turbo_mode_unlocked)) {
-    *turbo_mode_unlocked = true;
+  if (highscore->points >= TURBO_MODE_UNLOCK_POINTS && !turbo_mode_unlocked) {
+    turbo_mode_unlocked = true;
     changed = true;
   }
   ++highscore;
-  if (highscore->points >= UPGRADE_SPRITE_UNLOCK_POINTS && !(*upgrade_sprite_unlocked)) {
-    *upgrade_sprite_unlocked = true;
+  if (highscore->points >= UPGRADE_SPRITE_UNLOCK_POINTS && !upgrade_sprite_unlocked) {
+    upgrade_sprite_unlocked = true;
     changed = true;
   }
   return changed;
@@ -276,18 +276,6 @@ void display_highscores(void) {
 
   write_point_high_score_to_window(highscore);
   write_timer_high_score_to_window(highscore);
-}
-
-void display_hardmode_unlock_msg(void) {
-  set_win_tiles(0, 0, UINT8_ARRARY_SIZE(unlock_hard_mode_text), 1, unlock_hard_mode_text);
-}
-
-void display_turbomode_unlock_msg(void) {
-  set_win_tiles(0, 0, UINT8_ARRARY_SIZE(unlock_turbo_mode_text), 1, unlock_turbo_mode_text);
-}
-
-void display_clear_data_msg(void) {
-  set_win_tiles(0, 0, UINT8_ARRARY_SIZE(clear_data_description_text), 1, clear_data_description_text);
 }
 
 void display_gameover_scores(void) {

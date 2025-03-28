@@ -3,7 +3,9 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include <stdbool.h>
 #include <stdint.h>
+#include <types.h>
 
 #include "sprites.h"
 
@@ -224,5 +226,8 @@ extern uint8_t background_map[COLUMN_HEIGHT * ROW_WIDTH];
 extern fixed scroll_speed;
 extern uint16_t point_score;
 extern enum GameMode game_mode;
+extern bool hard_mode_unlocked;
+extern bool turbo_mode_unlocked;
+extern bool upgrade_sprite_unlocked;
 
 #endif
