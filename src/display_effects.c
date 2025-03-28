@@ -3,41 +3,25 @@
 #include <gb/hardware.h>
 #include <stdint.h>
 
+#include "common.h"
 #include "wait.h"
 
-void fade_out(void) {
-  for (uint8_t i = 0; i < 4; ++i) {
-    switch (i) {
-      case 0:
-        BGP_REG = 0xE4;
-        break;
-      case 1:
-        BGP_REG = 0xF9;
-        break;
-      case 2:
-        BGP_REG = 0xFE;
-        break;
-      case 3:
-        BGP_REG = 0xFF;
-        break;
-    }
+static const uint8_t fade_out_values[] = {0xE4, 0xF9, 0xFE, 0xFF};
+static const uint8_t fade_in_values[] = {0xFE, 0xF9, 0xE4};
+
+// Helper function for fading out/in.
+static void fade(const uint8_t* values, uint8_t size) {
+  for (uint8_t i = 0; i < size; ++i) {
+    BGP_REG = *values;
+    ++values;
     wait_frames(10);
   }
 }
 
+void fade_out(void) {
+  fade(fade_out_values, UINT8_ARRARY_SIZE(fade_out_values));
+}
+
 void fade_in(void) {
-  for (uint8_t i = 0; i < 3; ++i) {
-    switch (i) {
-      case 0:
-        BGP_REG = 0xFE;
-        break;
-      case 1:
-        BGP_REG = 0xF9;
-        break;
-      case 2:
-        BGP_REG = 0xE4;
-        break;
-    }
-    wait_frames(10);
-  }
+  fade(fade_in_values, UINT8_ARRARY_SIZE(fade_in_values));
 }
