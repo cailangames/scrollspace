@@ -34,7 +34,7 @@ import (
 // Flags
 var (
 	randomSeed           = flag.Int64("random_seed", 0, "The random seed to use for RNG. To use a specific seed, set this flag to a non-zero value.")
-	inputFile            = flag.String("input_file", "../src/mapgen.c", "The input file containing the biome data")
+	inputFile            = flag.String("input_file", "../src/mapgen_data.c", "The input file containing the biome data")
 	outputFile           = flag.String("output_file", "simulation.png", "The output .png file to write the simulated game map to. If this flag is empty, a text version of the simulated game map is written to stdout.")
 	simulatedBiomesCount = flag.Int("simulated_biomes_count", 10, "How many biomes to simulate per run")
 	simulationRuns       = flag.Int("simulation_runs", 5, "How many simulation runs the program should do. Each simulation run is stack on top of each other in the output.")
@@ -42,12 +42,14 @@ var (
 
 // Constants - These should match the constants in generate_biomes.go and common.h.
 const (
-	pixelsPerTile   = 8
-	columnsPerBiome = 20
-	rowsPerColumn   = 17
-	minCaveWidth    = 4
+	pixelsPerTile            = 8
+	columnsPerBiome          = 20
+	rowsPerColumn            = 17
+	minCaveWidth             = 4
+	wideOpenBiomesStartIndex = 50
 	// The below probabilities are out of 65,535 (uint16 max value).
-	mineProbability         = 2000
+	mineProbabilityNarrow   = 2000
+	mineProbabilityWideOpen = 8000
 	healthPickupProbability = 100
 	shieldPickupProbability = 100
 )
@@ -78,7 +80,12 @@ type GameMap struct {
 	ChosenBiomes []int
 }
 
-func (gm *GameMap) fillColumn(column int, data Column) {
+func (gm *GameMap) fillColumn(column int, data Column, wideOpenBiome bool) {
+	mineProbability := mineProbabilityNarrow
+	if wideOpenBiome {
+		mineProbability = mineProbabilityWideOpen
+	}
+
 	gm.Tiles[column] = make([]TileType, rowsPerColumn)
 	for i := range gm.Tiles[column] {
 		if i < int(data.TopRow) || i >= int(data.TopRow+data.Width) {
@@ -132,8 +139,9 @@ func GenerateGameMap(biomes [][]Column, connections [][]int, simulationCount int
 	biome := rng.Intn(len(biomes))
 	for i := 0; i < simulationCount; i++ {
 		gameMap.ChosenBiomes = append(gameMap.ChosenBiomes, biome)
+		wideOpenBiome := biome >= wideOpenBiomesStartIndex
 		for col := 0; col < columnsPerBiome; col++ {
-			gameMap.fillColumn(startIdx+col, biomes[biome][col])
+			gameMap.fillColumn(startIdx+col, biomes[biome][col], wideOpenBiome)
 		}
 		startIdx += columnsPerBiome
 		conn := rng.Intn(len(connections[biome]))
