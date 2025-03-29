@@ -138,7 +138,7 @@ void move_player(uint8_t input) {
   // Reset player collision box to default.
   player_sprite.cb_x_offset = 1;
   player_sprite.cb_y_offset = 2;
-  player_sprite.cb.w = 5;
+  player_sprite.cb.w = (player_sprite.health > PLAYER_DAMAGED_THRESHOLD) ? 5 : 4;
   player_sprite.cb.h = 4;
 
   if (knockback_counter != 0) {
@@ -172,7 +172,7 @@ void move_player(uint8_t input) {
       // Make collision box smaller when plane is "tilted".
       player_sprite.cb_x_offset = 2;
       player_sprite.cb_y_offset = 3;
-      player_sprite.cb.w = 3;
+      --player_sprite.cb.w;
       player_sprite.cb.h = 1;
     } else if (KEY_PRESSED(input, J_DOWN)) {
       player_sprite.direction |= DOWN;
@@ -185,7 +185,7 @@ void move_player(uint8_t input) {
       // Make collision box smaller when plane is "tilted".
       player_sprite.cb_x_offset = 2;
       player_sprite.cb_y_offset = 4;
-      player_sprite.cb.w = 3;
+      --player_sprite.cb.w;
       player_sprite.cb.h = 1;
     }
   }
