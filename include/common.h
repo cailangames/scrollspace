@@ -65,6 +65,7 @@
  * Sprites
  */
 #define PLAYER_SPRITE_ID 0
+#define PLAYER_BASE_SPRITE 0
 #define PLAYER_SHIELD_SPRITES_OFFSET 10
 #define DEATH_SPRITE 9
 #define BULLET_SPRITE 19

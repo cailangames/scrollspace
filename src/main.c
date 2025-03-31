@@ -73,8 +73,8 @@ static void load_font(void) {
 
 // Loads sprite data.
 static void load_sprite_data(void) {
-  set_sprite_data(PLAYER_SPRITE_ID, TILE_COUNT(player_sprites), player_sprites);
-  set_sprite_data(PLAYER_SPRITE_ID + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_shield_sprites), player_shield_sprites);
+  set_sprite_data(PLAYER_BASE_SPRITE, TILE_COUNT(player_sprites), player_sprites);
+  set_sprite_data(PLAYER_BASE_SPRITE + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_shield_sprites), player_shield_sprites);
   set_sprite_data(BULLET_SPRITE, TILE_COUNT(projectile_sprites), projectile_sprites);
 }
 

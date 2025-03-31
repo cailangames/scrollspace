@@ -89,7 +89,7 @@ void init_weapons(void) {
   for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
     b->active = false;
     b->sprite_id = i + 1;  // +1 so we don't override the player (always sprite_id 0)
-    b->sprite_tile_id = BULLET_SPRITE;
+    b->sprite_tile = BULLET_SPRITE;
     b->lifespan = 0;
     b->health = 0;
     b->direction = RIGHT;
@@ -106,7 +106,7 @@ void init_weapons(void) {
     b->collided = false;
     b->collided_row = 0;
     b->collided_col = 0;
-    set_sprite_tile(b->sprite_id, b->sprite_tile_id);
+    set_sprite_tile(b->sprite_id, b->sprite_tile);
     set_sprite_prop(b->sprite_id, 0x10);  // Puts the bullet sprite on palette 1.
     move_sprite(b->sprite_id, b->x.h, b->y.h);
 

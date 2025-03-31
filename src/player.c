@@ -14,7 +14,7 @@ enum AnimationState {
   SHOWN = 1,
 };
 
-static uint8_t player_sprite_base_id = 0;
+static uint8_t player_base_sprite = 0;
 static bool shield_active = false;
 // Used during the damage recovery to toggle between showing and hidding the player sprite.
 static enum AnimationState damage_animation_state = SHOWN;
@@ -97,7 +97,7 @@ void write_health_bar_to_window(void) {
 
 void init_player(void) {
   player_sprite.sprite_id = PLAYER_SPRITE_ID;
-  player_sprite.sprite_tile_id = 0;
+  player_sprite.sprite_tile = PLAYER_BASE_SPRITE;
   player_sprite.x.w = PLAYER_START_X;
   player_sprite.y.w = PLAYER_START_Y;
   player_sprite.direction = RIGHT;
@@ -115,7 +115,7 @@ void init_player(void) {
   player_sprite.collided_col = 0;
   move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
 
-  player_sprite_base_id = 0;
+  player_base_sprite = 0;
   shield_active = false;
   damage_animation_state = SHOWN;
   damage_animation_counter = 0;
@@ -134,7 +134,7 @@ void init_player(void) {
 }
 
 void move_player(uint8_t input) {
-  player_sprite.sprite_tile_id = player_sprite_base_id;
+  player_sprite.sprite_tile = player_base_sprite;
   // Reset player collision box to default.
   player_sprite.cb_x_offset = 1;
   player_sprite.cb_y_offset = 2;
@@ -167,7 +167,7 @@ void move_player(uint8_t input) {
       if (player_sprite.y.h < SCREEN_T) {
         player_sprite.y.w = ((uint16_t)(SCREEN_T) << 8);
       }
-      player_sprite.sprite_tile_id = player_sprite_base_id + 1;
+      player_sprite.sprite_tile = player_base_sprite + 1;
 
       // Make collision box smaller when plane is "tilted".
       player_sprite.cb_x_offset = 2;
@@ -180,7 +180,7 @@ void move_player(uint8_t input) {
       if (player_sprite.y.h > SCREEN_B) {
         player_sprite.y.w = ((uint16_t)(SCREEN_B) << 8);
       }
-      player_sprite.sprite_tile_id = player_sprite_base_id + 2;
+      player_sprite.sprite_tile = player_base_sprite + 2;
 
       // Make collision box smaller when plane is "tilted".
       player_sprite.cb_x_offset = 2;
@@ -195,7 +195,7 @@ void move_player(uint8_t input) {
   player_sprite.cb.y = player_sprite.y.h + player_sprite.cb_y_offset;
 
   // Move the player's sprite.
-  set_sprite_tile(PLAYER_SPRITE_ID, player_sprite.sprite_tile_id);
+  set_sprite_tile(PLAYER_SPRITE_ID, player_sprite.sprite_tile);
   move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
 }
 
@@ -206,7 +206,7 @@ bool handle_player_collisions(void) {
     // First check if the damage animation or shield powerup is still active. If so, deactivate it.
     if (shield_active) {
       shield_active = false;
-      player_sprite_base_id -= PLAYER_SHIELD_SPRITES_OFFSET;
+      player_base_sprite -= PLAYER_SHIELD_SPRITES_OFFSET;
     }
     if (damage_animation_state == HIDDEN) {
       move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
@@ -244,7 +244,7 @@ bool handle_player_collisions(void) {
           background_map[collision_idx] = 0;
           shield_active = true;
           iframes_counter = SHIELD_DURATION;
-          player_sprite_base_id += PLAYER_SHIELD_SPRITES_OFFSET;
+          player_base_sprite += PLAYER_SHIELD_SPRITES_OFFSET;
           point_score += POINTS_PER_PICKUP;
           play_shield_sound();
           break;
@@ -328,7 +328,7 @@ bool handle_player_collisions(void) {
       } else if (collision_id == SHIELD_ID) {
         // Pick up shield.
         if (!shield_active) {
-          player_sprite_base_id += PLAYER_SHIELD_SPRITES_OFFSET;
+          player_base_sprite += PLAYER_SHIELD_SPRITES_OFFSET;
           shield_active = true;
           damage_animation_counter = 2 * IFRAMES_ANIMATION_CYCLE;
           damage_animation_state = SHOWN;
@@ -362,15 +362,15 @@ bool handle_player_collisions(void) {
     update_health_bar_tiles(player_sprite.health);
     // Update the ship sprite based on the current health.
     if (player_sprite.health > PLAYER_DAMAGED_THRESHOLD) {
-      player_sprite_base_id = 0;
+      player_base_sprite = 0;
     } else if (player_sprite.health > PLAYER_CRITICALLY_DAMAGED_THRESHOLD) {
-      player_sprite_base_id = 3;
+      player_base_sprite = 3;
     } else {
-      player_sprite_base_id = 6;
+      player_base_sprite = 6;
     }
 
     if (shield_active) {
-      player_sprite_base_id += PLAYER_SHIELD_SPRITES_OFFSET;
+      player_base_sprite += PLAYER_SHIELD_SPRITES_OFFSET;
     }
   }
 

@@ -75,8 +75,8 @@ void show_mode_selection_screen(void) {
 
   // Then draw the player sprite.
   if (upgrade_sprite_unlocked) {
-    set_sprite_data(PLAYER_SPRITE_ID, TILE_COUNT(player_upgrade_sprites), player_upgrade_sprites);
-    set_sprite_data(PLAYER_SPRITE_ID + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_upgrade_shield_sprites), player_upgrade_shield_sprites);
+    set_sprite_data(PLAYER_BASE_SPRITE, TILE_COUNT(player_upgrade_sprites), player_upgrade_sprites);
+    set_sprite_data(PLAYER_BASE_SPRITE + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_upgrade_shield_sprites), player_upgrade_shield_sprites);
   }
   if (game_mode == TITLE_SCREEN) {
     game_mode = NORMAL;
@@ -85,7 +85,7 @@ void show_mode_selection_screen(void) {
   // which mode the player selected last and default the cursor to that mode.
   uint8_t y = (game_mode == NORMAL) ? 40 : (game_mode == HARD) ? 64
                                                                : 88;
-  set_sprite_tile(PLAYER_SPRITE_ID, 0);
+  set_sprite_tile(PLAYER_SPRITE_ID, PLAYER_BASE_SPRITE);
   move_sprite(PLAYER_SPRITE_ID, 32, y);
   SHOW_SPRITES;
 
@@ -162,8 +162,8 @@ void show_mode_selection_screen(void) {
         if (confirm_action()) {
           play_bomb_sound();
           clear_score_data();
-          set_sprite_data(PLAYER_SPRITE_ID, TILE_COUNT(player_sprites), player_sprites);
-          set_sprite_data(PLAYER_SPRITE_ID + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_shield_sprites), player_shield_sprites);
+          set_sprite_data(PLAYER_BASE_SPRITE, TILE_COUNT(player_sprites), player_sprites);
+          set_sprite_data(PLAYER_BASE_SPRITE + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_shield_sprites), player_shield_sprites);
           hard_mode_unlocked = false;
           turbo_mode_unlocked = false;
           upgrade_sprite_unlocked = false;

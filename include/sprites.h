@@ -24,7 +24,7 @@ struct CollisionBox {
 
 struct Sprite {
   uint8_t sprite_id;
-  uint8_t sprite_tile_id;
+  uint8_t sprite_tile;
   fixed x;
   fixed y;
   fixed speed;
