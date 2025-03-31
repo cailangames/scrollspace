@@ -12,6 +12,17 @@
 #include "text_data.h"
 #include "wait.h"
 
+// Loads the player sprite data.
+static void load_player_sprites(void) {
+  if (using_upgrade_sprite) {
+    set_sprite_data(PLAYER_BASE_SPRITE, TILE_COUNT(player_upgrade_sprites), player_upgrade_sprites);
+    set_sprite_data(PLAYER_BASE_SPRITE + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_upgrade_shield_sprites), player_upgrade_shield_sprites);
+  } else {
+    set_sprite_data(PLAYER_BASE_SPRITE, TILE_COUNT(player_sprites), player_sprites);
+    set_sprite_data(PLAYER_BASE_SPRITE + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_shield_sprites), player_shield_sprites);
+  }
+}
+
 // Displays the given message in the window.
 static void display_window_message(const uint8_t* text) {
   set_win_tiles(0, 0, SCREEN_TILE_WIDTH, 1, text);
@@ -74,10 +85,7 @@ void show_mode_selection_screen(void) {
   set_bkg_tiles(7, 14, UINT8_ARRARY_SIZE(clear_data_text), 1, clear_data_text);
 
   // Then draw the player sprite.
-  if (upgrade_sprite_unlocked) {
-    set_sprite_data(PLAYER_BASE_SPRITE, TILE_COUNT(player_upgrade_sprites), player_upgrade_sprites);
-    set_sprite_data(PLAYER_BASE_SPRITE + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_upgrade_shield_sprites), player_upgrade_shield_sprites);
-  }
+  load_player_sprites();
   if (game_mode == TITLE_SCREEN) {
     game_mode = NORMAL;
   }
@@ -117,6 +125,12 @@ void show_mode_selection_screen(void) {
     // Handle input.
     uint8_t input = joypad();
     if (KEY_PRESSED(input, J_SELECT)) {
+      if (KEY_FIRST_PRESS(input, prev_input, J_SELECT) && upgrade_sprite_unlocked) {
+        // Toggle the player's ship sprite.
+        using_upgrade_sprite = !using_upgrade_sprite;
+        load_player_sprites();
+      }
+
       // It's cheatin' time!
       if (KEY_PRESSED(input, J_UP) && KEY_PRESSED(input, J_A) && (!hard_mode_unlocked || !turbo_mode_unlocked)) {
         // Unlock hard and turbo modes. Note that the upgrade sprite is intentionally *not*
@@ -160,14 +174,14 @@ void show_mode_selection_screen(void) {
     } else if (KEY_FIRST_PRESS(input, prev_input, J_START) || KEY_FIRST_PRESS(input, prev_input, J_A)) {
       if (game_mode == CLEAR_DATA) {
         if (confirm_action()) {
-          play_bomb_sound();
-          clear_score_data();
-          set_sprite_data(PLAYER_BASE_SPRITE, TILE_COUNT(player_sprites), player_sprites);
-          set_sprite_data(PLAYER_BASE_SPRITE + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_shield_sprites), player_shield_sprites);
           hard_mode_unlocked = false;
           turbo_mode_unlocked = false;
           upgrade_sprite_unlocked = false;
+          using_upgrade_sprite = false;
           update_locks = true;
+          load_player_sprites();
+          clear_score_data();
+          play_bomb_sound();
         }
         prev_y = 0;                    // Updates the window.
         prev_input = (J_START | J_A);  // Makes sure these keys are released before triggering this again.

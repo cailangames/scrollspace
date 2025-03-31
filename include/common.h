@@ -230,5 +230,6 @@ extern enum GameMode game_mode;
 extern bool hard_mode_unlocked;
 extern bool turbo_mode_unlocked;
 extern bool upgrade_sprite_unlocked;
+extern bool using_upgrade_sprite;
 
 #endif

@@ -56,9 +56,10 @@ static void show_reward_screen(void) {
   play_health_sound();
 
   if (game_mode == TURBO) {
+    set_sprite_data(0, 1, player_sprites);
+    set_sprite_data(1, 1, player_upgrade_sprites);
     set_sprite_tile(0, 0);
     move_sprite(0, 9 * TILE_SIZE_PIXELS + SCREEN_L, 13 * TILE_SIZE_PIXELS + SCREEN_T);
-    set_sprite_data(1, 1, player_upgrade_sprites);
 
     wait_frames(60);
     SHOW_SPRITES;
@@ -71,6 +72,7 @@ static void show_reward_screen(void) {
     }
     play_health_sound();
     set_sprite_tile(0, 1);
+    using_upgrade_sprite = true;
   }
 
   wait_for_keys_pressed(J_START | J_A | J_B);

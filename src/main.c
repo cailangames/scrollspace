@@ -42,6 +42,7 @@ uint16_t point_score = 0;
 bool hard_mode_unlocked = false;
 bool turbo_mode_unlocked = false;
 bool upgrade_sprite_unlocked = false;
+bool using_upgrade_sprite = false;
 
 static bool rand_initialized = false;
 static bool game_paused = true;
@@ -72,9 +73,8 @@ static void load_font(void) {
 }
 
 // Loads sprite data.
+// Note: The player's ship sprites are loaded elsewhere.
 static void load_sprite_data(void) {
-  set_sprite_data(PLAYER_BASE_SPRITE, TILE_COUNT(player_sprites), player_sprites);
-  set_sprite_data(PLAYER_BASE_SPRITE + PLAYER_SHIELD_SPRITES_OFFSET, TILE_COUNT(player_shield_sprites), player_shield_sprites);
   set_sprite_data(BULLET_SPRITE, TILE_COUNT(projectile_sprites), projectile_sprites);
 }
 
@@ -160,6 +160,9 @@ void main(void) {
   // Initialize high scores.
   init_highscores();
   update_unlocks();
+  if (upgrade_sprite_unlocked) {
+    using_upgrade_sprite = true;
+  }
   // Set palette 1 colors (for bullets).
   OBP1_REG = 0xE4;  // 0b1110 0100 - black, dark gray, light gray, white
 
