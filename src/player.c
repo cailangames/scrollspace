@@ -214,7 +214,7 @@ bool handle_player_collisions(void) {
       OBP0_REG = 0xE4;  // 0b1110 0100 - black, dark gray, light gray, white
     }
     // Normal collision check for player
-    uint16_t collision_idx = check_player_collisions(false);
+    uint16_t collision_idx = check_player_collisions();
     if (collision_idx != UINT16_MAX) {
       uint8_t collision_id = collision_map[collision_idx];
       switch (collision_id) {
@@ -304,7 +304,7 @@ bool handle_player_collisions(void) {
     }
     // Check for collision with pickups only, not mines, to allow players to pick up items in the
     // iframes state.
-    uint16_t collision_idx = check_player_collisions(false);
+    uint16_t collision_idx = check_player_collisions();
     if (collision_idx != UINT16_MAX) {
       uint8_t collision_id = collision_map[collision_idx];
       if (collision_id == HEALTH_KIT_ID) {
