@@ -22,9 +22,6 @@ void clear_window(void);
 // Clears (zeroes out) the high score data in the external RAM.
 void clear_score_data(void);
 
-// Shows the screen for giving the player a reward when they've earned a high enough score.
-void show_reward_screen(void);
-
 // Checks if the high scores meet the thresholds for unlocking, e.g., harder game modes, and sets
 // the `*_unlocked` global variables accordingly. Returns true if any of the unlocked bools
 // changed, false otherwise.
