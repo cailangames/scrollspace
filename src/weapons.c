@@ -101,7 +101,7 @@ void init_weapons(void) {
     b->cb_y_offset = BULLET_COLLISION_Y_OFFSET;
     b->cb.x = b->x.h + BULLET_COLLISION_X_OFFSET;
     b->cb.y = b->y.h + BULLET_COLLISION_Y_OFFSET;
-    b->cb.w = 4;
+    b->cb.w = 6;
     b->cb.h = 4;
     b->collided = false;
     b->collided_row = 0;
