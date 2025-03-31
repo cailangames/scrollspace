@@ -16,7 +16,7 @@ enum AnimationState {
 
 static uint8_t player_base_sprite = 0;
 static bool shield_active = false;
-// Used during the damage recovery to toggle between showing and hidding the player sprite.
+// Used during the damage recovery to toggle between showing and hiding the player sprite.
 static enum AnimationState damage_animation_state = SHOWN;
 static uint8_t damage_animation_counter = 0;
 // Invincibility frames counter, either from taking damage or picking up a shield.
@@ -115,7 +115,7 @@ void init_player(void) {
   player_sprite.collided_col = 0;
   move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
 
-  player_base_sprite = 0;
+  player_base_sprite = PLAYER_BASE_SPRITE;
   shield_active = false;
   damage_animation_state = SHOWN;
   damage_animation_counter = 0;
@@ -167,7 +167,7 @@ void move_player(uint8_t input) {
       if (player_sprite.y.h < SCREEN_T) {
         player_sprite.y.w = ((uint16_t)(SCREEN_T) << 8);
       }
-      player_sprite.sprite_tile = player_base_sprite + 1;
+      player_sprite.sprite_tile += 1;
 
       // Make collision box smaller when plane is "tilted".
       player_sprite.cb_x_offset = 2;
@@ -180,7 +180,7 @@ void move_player(uint8_t input) {
       if (player_sprite.y.h > SCREEN_B) {
         player_sprite.y.w = ((uint16_t)(SCREEN_B) << 8);
       }
-      player_sprite.sprite_tile = player_base_sprite + 2;
+      player_sprite.sprite_tile += 2;
 
       // Make collision box smaller when plane is "tilted".
       player_sprite.cb_x_offset = 2;
@@ -200,114 +200,53 @@ void move_player(uint8_t input) {
 }
 
 bool handle_player_collisions(void) {
-  bool health_changed = false;
-  if (iframes_counter == 0) {
-    // The player is *not* in the invincibility frames state.
-    // First check if the damage animation or shield powerup is still active. If so, deactivate it.
-    if (shield_active) {
-      shield_active = false;
-      player_base_sprite -= PLAYER_SHIELD_SPRITES_OFFSET;
-    }
-    if (damage_animation_state == HIDDEN) {
-      move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
-      damage_animation_state = SHOWN;
-      OBP0_REG = 0xE4;  // 0b1110 0100 - black, dark gray, light gray, white
-    }
-    // Normal collision check for player
-    uint16_t collision_idx = check_player_collisions();
-    if (collision_idx != UINT16_MAX) {
-      uint8_t collision_id = collision_map[collision_idx];
-      switch (collision_id) {
-        case HEALTH_KIT_ID:
-          // Pick up health kit.
-          collision_map[collision_idx] = 0;
-          background_map[collision_idx] = 0;
-          // Update player health.
-          // When updating this code, be wary that the max value of an int8_t is 127.
-          if (player_sprite.health > PLAYER_DAMAGED_THRESHOLD) {
-            player_sprite.health += HEALTH_KIT_VALUE;
-            if (player_sprite.health > PLAYER_MAX_HEALTH) {
-              player_sprite.health = PLAYER_MAX_HEALTH;
-            }
-          } else if (player_sprite.health > PLAYER_CRITICALLY_DAMAGED_THRESHOLD) {
-            player_sprite.health += HEALTH_KIT_DAMAGED_VALUE;
-          } else {
-            player_sprite.health += HEALTH_KIT_CRITICALLY_DAMAGED_VALUE;
-          }
-          health_changed = true;
-          point_score += POINTS_PER_PICKUP;
-          play_health_sound();
-          break;
-        case SHIELD_ID:
-          // Pick up shield.
-          collision_map[collision_idx] = 0;
-          background_map[collision_idx] = 0;
-          shield_active = true;
-          iframes_counter = SHIELD_DURATION;
-          player_base_sprite += PLAYER_SHIELD_SPRITES_OFFSET;
-          point_score += POINTS_PER_PICKUP;
-          play_shield_sound();
-          break;
-        default:
-          // The player hit a wall or a mine.
-          player_sprite.health -= COLLISION_DAMAGE;
-          health_changed = true;
-          iframes_counter = IFRAMES_DURATION;
-          damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
-          knockback_counter = PLAYER_KNOCKBACK_DURATION;
-          if (collision_id <= PLAYER_COLLISION_DAMAGE) {
-            // The wall or mine is destroyed.
-            if (background_map[collision_idx] == MINE_TILE) {
-              point_score += POINTS_PER_MINE;
-            }
-            collision_map[collision_idx] = 0;
-            background_map[collision_idx] = 0;
-          } else {
-            // Apply damage to the wall or mine.
-            collision_map[collision_idx] -= PLAYER_COLLISION_DAMAGE;
-          }
-          play_collision_sound();
-          break;
-      }
-    }
-  } else {
-    // The player *is* in the invincibility frames state.
+  bool pickups_only = false;
+  // First, update animations and counters.
+  if (iframes_counter != 0) {
+    // The player *is* in the invincibility frames (iframes) state.
     --iframes_counter;
     if (!shield_active) {
-      --damage_animation_counter;
-      if (damage_animation_counter == 0) {
-        // Toggle the animation state.
-        if (damage_animation_state == HIDDEN) {
+      // When the player is in the iframes state without the shield, collisions with mines and
+      // walls are ignored.
+      pickups_only = true;
+    }
+    --damage_animation_counter;
+    if (damage_animation_counter == 0) {
+      // Toggle the animation state.
+      if (damage_animation_state == HIDDEN) {
+        if (shield_active) {
+          OBP0_REG = 0xE4;  // 0b1110 0100 - black, dark gray, light gray, white
+        } else {
           move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
-          damage_animation_state = SHOWN;
+        }
+        damage_animation_state = SHOWN;
+      } else {
+        if (shield_active) {
+          OBP0_REG = 0xD0;  // 0b1101 0000 - black, white, white, white
         } else {
           move_sprite(PLAYER_SPRITE_ID, 0, 0);
-          damage_animation_state = HIDDEN;
         }
-        damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
+        damage_animation_state = HIDDEN;
       }
-    } else if (iframes_counter <= IFRAMES_DURATION - 2 * IFRAMES_ANIMATION_CYCLE) {
-      // Toggle the sprite to signify the end of the shield powerup
-      // Use the same logic as the damage animation
-      --damage_animation_counter;
-      if (damage_animation_counter == 0) {
-        // Toggle the animation state.
-        if (damage_animation_state == HIDDEN) {
-          OBP0_REG = 0xE4;  // 0b1110 0100 - black, dark gray, light gray, white
-          damage_animation_state = SHOWN;
-        } else {
-          OBP0_REG = 0xD0;  // 0b1101 0000 - black, white, white, white
-          damage_animation_state = HIDDEN;
-        }
-        damage_animation_counter = 2 * IFRAMES_ANIMATION_CYCLE;
-      }
+      damage_animation_counter = shield_active ? SHIELD_ANIMATION_CYCLE : IFRAMES_ANIMATION_CYCLE;
     }
-    // Check for collision with pickups only, not mines, to allow players to pick up items in the
-    // iframes state.
-    uint16_t collision_idx = check_player_collisions();
-    if (collision_idx != UINT16_MAX) {
-      uint8_t collision_id = collision_map[collision_idx];
-      if (collision_id == HEALTH_KIT_ID) {
+  } else {
+    // The player is *not* in the invincibility frames (iframes) state.
+    // Check if the damage animation or shield powerup is still active. If so, deactivate it.
+    shield_active = false;
+    if (damage_animation_state == HIDDEN) {
+      move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
+      OBP0_REG = 0xE4;  // 0b1110 0100 - black, dark gray, light gray, white
+      damage_animation_state = SHOWN;
+    }
+  }
+
+  // Then, check collisions.
+  bool health_changed = false;
+  uint16_t collision_idx = check_player_collisions(pickups_only);
+  if (collision_idx != UINT16_MAX) {
+    switch (collision_map[collision_idx]) {
+      case HEALTH_KIT_ID:
         // Pick up health kit and update player health.
         // When updating this code, be wary that the max value of an int8_t is 127.
         if (player_sprite.health > PLAYER_DAMAGED_THRESHOLD) {
@@ -321,57 +260,59 @@ bool handle_player_collisions(void) {
           player_sprite.health += HEALTH_KIT_CRITICALLY_DAMAGED_VALUE;
         }
         health_changed = true;
-        play_health_sound();
-        collision_map[collision_idx] = 0;
-        background_map[collision_idx] = 0;
         point_score += POINTS_PER_PICKUP;
-      } else if (collision_id == SHIELD_ID) {
+        play_health_sound();
+        break;
+      case SHIELD_ID:
         // Pick up shield.
-        if (!shield_active) {
-          player_base_sprite += PLAYER_SHIELD_SPRITES_OFFSET;
-          shield_active = true;
-          damage_animation_counter = 2 * IFRAMES_ANIMATION_CYCLE;
-          damage_animation_state = SHOWN;
+        shield_active = true;
+        iframes_counter = SHIELD_DURATION;
+        if (damage_animation_state == HIDDEN) {
+          move_sprite(PLAYER_SPRITE_ID, player_sprite.x.h, player_sprite.y.h);
           OBP0_REG = 0xE4;  // 0b1110 0100 - black, dark gray, light gray, white
         }
-        iframes_counter = SHIELD_DURATION;
-        play_shield_sound();
-        collision_map[collision_idx] = 0;
-        background_map[collision_idx] = 0;
+        damage_animation_state = SHOWN;
+        damage_animation_counter = SHIELD_ANIMATION_START_DURATION;
         point_score += POINTS_PER_PICKUP;
-      } else if (shield_active) {
-        // The player hit a wall or a mine with the shield on
-        if (collision_id <= SHIELD_COLLISION_DAMAGE) {
-          // The wall or mine is destroyed.
-          if (background_map[collision_idx] == MINE_TILE) {
-            point_score += POINTS_PER_MINE;
-          }
-          collision_map[collision_idx] = 0;
-          background_map[collision_idx] = 0;
-        } else {
-          // Apply damage to the wall or mine.
-          collision_map[collision_idx] -= SHIELD_COLLISION_DAMAGE;
+        play_shield_sound();
+        break;
+      default:
+        // The player hit a wall or a mine.
+        if (!shield_active) {
+          player_sprite.health -= COLLISION_DAMAGE;
+          health_changed = true;
+          iframes_counter = IFRAMES_DURATION;
+          damage_animation_counter = IFRAMES_ANIMATION_CYCLE;
+          knockback_counter = PLAYER_KNOCKBACK_DURATION;
+        }
+        // The wall or mine is destroyed.
+        if (background_map[collision_idx] == MINE_TILE) {
+          point_score += POINTS_PER_MINE;
         }
         play_collision_sound();
-      }
+        break;
     }
+
+    // Remove whatever the player collided into.
+    collision_map[collision_idx] = 0;
+    background_map[collision_idx] = 0;
   }
 
+  // Lastly, update UI and sprites based on any collisions.
   if (health_changed) {
-    // Update health bar after a collision.
     update_health_bar_tiles(player_sprite.health);
-    // Update the ship sprite based on the current health.
-    if (player_sprite.health > PLAYER_DAMAGED_THRESHOLD) {
-      player_base_sprite = 0;
-    } else if (player_sprite.health > PLAYER_CRITICALLY_DAMAGED_THRESHOLD) {
-      player_base_sprite = 3;
-    } else {
-      player_base_sprite = 6;
-    }
-
-    if (shield_active) {
-      player_base_sprite += PLAYER_SHIELD_SPRITES_OFFSET;
-    }
+  }
+  // Update the ship sprite based on the current health.
+  if (player_sprite.health > PLAYER_DAMAGED_THRESHOLD) {
+    player_base_sprite = 0;
+  } else if (player_sprite.health > PLAYER_CRITICALLY_DAMAGED_THRESHOLD) {
+    player_base_sprite = 3;
+  } else {
+    player_base_sprite = 6;
+  }
+  // Additionally, update the ship sprite if the shield is active.
+  if (shield_active) {
+    player_base_sprite += PLAYER_SHIELD_SPRITES_OFFSET;
   }
 
   return health_changed;

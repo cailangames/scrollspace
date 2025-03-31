@@ -84,6 +84,8 @@
 #define POWERUP_RESERVED_IDS 235
 #define SHIELD_ID 254
 #define SHIELD_DURATION 160
+#define SHIELD_ANIMATION_START_DURATION 100
+#define SHIELD_ANIMATION_CYCLE 10
 #define HEALTH_KIT_ID 255
 #define HEALTH_KIT_VALUE 5
 // When the player is damaged enough, health kits provide more health to the player.
@@ -107,8 +109,6 @@
 // The below damage thresholds affect health pickup effectiveness and the ship's sprite tile.
 #define PLAYER_DAMAGED_THRESHOLD 50
 #define PLAYER_CRITICALLY_DAMAGED_THRESHOLD 15
-#define PLAYER_COLLISION_DAMAGE 2
-#define SHIELD_COLLISION_DAMAGE 5
 #define PLAYER_KNOCKBACK_SPEED 0x0400
 // Important: PLAYER_KNOCKBACK_DURATION should be less than IFRAMES_DURATION.
 #define PLAYER_KNOCKBACK_DURATION 2
