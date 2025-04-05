@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 extern const uint8_t block_tiles[64];
-extern const uint8_t health_bar_tiles[112];
+extern const uint8_t health_bar_tiles[144];
 extern const uint8_t powerup_tiles[144];
 extern const uint8_t lock_tiles[16];
 extern const uint8_t font_extras_tiles[80];

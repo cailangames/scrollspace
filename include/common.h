@@ -53,8 +53,8 @@
 #define BOMB_READY_ICON   0x2A
 #define SHIELD_TILE       0x2B
 #define HEALTH_KIT_TILE   0x2C
-#define HEALTH_BAR_START  0x33
-#define LOCK_TILE         0x46
+#define HEALTH_BAR_START  0x32
+#define LOCK_TILE         0x48
 // clang-format on
 
 #define INTRO_SCENE_OFFSET 0x80
@@ -185,11 +185,11 @@
 #define CHAR_X 0x22
 #define CHAR_Y 0x23
 #define CHAR_Z 0x24
-#define CHAR_COLON 0x39
-#define CHAR_CURSOR 0x3A
-#define CHAR_EXCLAMATION_MARK 0x3B
-#define CHAR_COMMA 0x3C
-#define CHAR_QUESTION_MARK 0x3D
+#define CHAR_COLON 0x3B
+#define CHAR_CURSOR 0x3C
+#define CHAR_EXCLAMATION_MARK 0x3D
+#define CHAR_COMMA 0x3E
+#define CHAR_QUESTION_MARK 0x3F
 
 /*
  * Math
@@ -200,6 +200,8 @@
 #define MOD16(n) ((n) & 0xF)
 #define MOD32(n) ((n) & 0x1F)
 #define MOD64(n) ((n) & 0x3F)
+#define MIN(n,m) ((n < m) ? n : m)
+#define MAX(n,m) ((n > m) ? n : m)
 
 /*
  * Arrays

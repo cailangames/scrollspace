@@ -237,7 +237,7 @@ void update_tiles_hit_by_weapons(void) {
 
 void update_bomb_ready_icon(void) {
   if (bomb_icon_update_needed) {
-    set_win_tile_xy(9, 0, bomb_icon);
+    set_win_tile_xy(10, 0, bomb_icon);
     bomb_icon_update_needed = false;
   }
 }

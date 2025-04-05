@@ -3,6 +3,7 @@
 #include <gb/gb.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "collision.h"
 #include "common.h"
@@ -24,7 +25,7 @@ static uint8_t iframes_counter = 0;
 // Keeps track of how many frames the player has been in the knockback state.
 static uint8_t knockback_counter = 0;
 // Tile data for the health bar.
-static uint8_t health_bar_window_tiles[8];
+static uint8_t health_bar_window_tiles[10];
 
 // Knocks back the player (i.e. pushes the player sprite in the opposite direction that the player
 // was moving).
@@ -59,40 +60,49 @@ static void handle_knockback(void) {
 }
 
 void update_health_bar_tiles(int8_t health) {
-  if (health == 100) {
-    health_bar_window_tiles[0] = HEALTH_BAR_START;  // left edge of bar
-    for (uint8_t i = 1; i < 7; ++i) {
-      health_bar_window_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
-    }
-    health_bar_window_tiles[7] = HEALTH_BAR_START + 2;  // right edge of bar
-  } else if (health >= 88) {
-    health_bar_window_tiles[0] = HEALTH_BAR_START;  // left edge of bar
-    for (uint8_t i = 1; i < 7; ++i) {
-      health_bar_window_tiles[i] = HEALTH_BAR_START + 1;  // center of bar
-    }
-    health_bar_window_tiles[7] = HEALTH_BAR_START + 5;  // right edge of bar
-  } else if (health >= 16) {
-    uint8_t idx = health / 12;
-    health_bar_window_tiles[0] = HEALTH_BAR_START;  // left edge of bar
-    for (uint8_t i = 1; i < 7; ++i) {
-      if (i < idx) {
-        health_bar_window_tiles[i] = HEALTH_BAR_START + 1;  // fill
-      } else {
-        health_bar_window_tiles[i] = HEALTH_BAR_START + 4;  // clear
-      }
-    }
-    health_bar_window_tiles[7] = HEALTH_BAR_START + 5;  // clear right edge of bar
-  } else if (health > 0) {
-    health_bar_window_tiles[1] = HEALTH_BAR_START + 4;
+  // We have tiles for 5% increments in the health
+
+  // Fill in the top part of the bar
+  if (health > 95) {
+    // Full
+    health_bar_window_tiles[9] = HEALTH_BAR_START + 2;
+  }
+  else if (health > 90) {
+    // Half filled
+    health_bar_window_tiles[9] = HEALTH_BAR_START + 5;
+  }
+  else {
+    // Empty
+    health_bar_window_tiles[9] = HEALTH_BAR_START + 8;
+  }
+
+  // Fill in the center part of the bar
+  uint8_t full_count = MAX(0, MIN(8, health/10 - 1));
+  int8_t half_count = MOD2(MIN(18, health/5));
+  memset(health_bar_window_tiles+1, HEALTH_BAR_START + 1, full_count); // Full tile
+  memset(health_bar_window_tiles+1+full_count, HEALTH_BAR_START + 7, 8-full_count); // Empty tile
+  if (half_count && (health > 5)) {
+    health_bar_window_tiles[full_count+1] = HEALTH_BAR_START + 4;
+  }
+
+  // Fill in the bottom part of the bar
+  if (health >= 10) {
+    // Full
     health_bar_window_tiles[0] = HEALTH_BAR_START;
-  } else {
-    health_bar_window_tiles[1] = HEALTH_BAR_START + 4;  // clear bottom 2 tiles
+
+  }
+  else if (health > 0) {
+    // Half filled
     health_bar_window_tiles[0] = HEALTH_BAR_START + 3;
+  }
+  else {
+    // Empty
+    health_bar_window_tiles[0] = HEALTH_BAR_START + 6;
   }
 }
 
 void write_health_bar_to_window(void) {
-  set_win_tiles(0, 0, 8, 1, health_bar_window_tiles);
+  set_win_tiles(0, 0, 10, 1, health_bar_window_tiles);
 }
 
 void init_player(void) {
