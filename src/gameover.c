@@ -20,38 +20,50 @@
 
 // Shows the screen for giving the player a reward when they've earned a high enough score.
 static void show_reward_screen(void) {
-  // Clear the background map and add borders (top, bottom, right).
-  memset(background_map, WALL_BLOCK_TILE, SCREEN_TILE_WIDTH);
-  memset(background_map + SCREEN_TILE_WIDTH, EMPTY_TILE, SCREEN_TILE_WIDTH * (SCREEN_TILE_HEIGHT - 2));
-  memset(background_map + (SCREEN_TILE_WIDTH * (SCREEN_TILE_HEIGHT - 1)), WALL_BLOCK_TILE, SCREEN_TILE_WIDTH);
-  uint8_t* bkg_map = background_map + (SCREEN_TILE_WIDTH * 2) - 1;
-  for (uint8_t i = 0; i < SCREEN_TILE_HEIGHT - 2; ++i) {
-    *bkg_map = WALL_BLOCK_TILE;
-    bkg_map += SCREEN_TILE_WIDTH;
+  // Prep the bakground map for reward screen scroll
+  memset(background_map, WALL_BLOCK_TILE, 1);
+  memset(background_map+1, EMPTY_TILE, SCREEN_TILE_HEIGHT - 2);
+  memset(background_map+SCREEN_TILE_HEIGHT-1, WALL_BLOCK_TILE, 1);
+
+  // Scroll into reward screen
+  for (uint16_t i=0; i < 19*8; ++i) {
+    scroll_bkg(1,0);
+    if (MOD8(i) == 0){
+      set_bkg_tiles(i>>3, 0, 1, SCREEN_TILE_HEIGHT, background_map);
+    }
+    vsync();
   }
+
+  memset(background_map, WALL_BLOCK_TILE, SCREEN_TILE_HEIGHT);
+  set_bkg_tiles(7, 0, 1, SCREEN_TILE_HEIGHT, background_map);
   vsync();
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
+
+  for (uint8_t i=0; i < 8; ++i) {
+    scroll_bkg(1,0);
+    vsync();
+  }
 
   // Write "CONGRATULATIONS!"
-  set_bkg_tiles(2, 6, UINT8_ARRARY_SIZE(congratulations_text), 1, congratulations_text);
+  wait_frames(10);
+  set_bkg_tiles(22, 6, UINT8_ARRARY_SIZE(congratulations_text), 1, congratulations_text);
   play_collision_sound();
   wait_frames(60);
 
   // Write "YOU UNLOCKED"
-  set_bkg_tiles(4, 8, UINT8_ARRARY_SIZE(you_unlocked_text), 1, you_unlocked_text);
+  set_bkg_tiles(24, 8, UINT8_ARRARY_SIZE(you_unlocked_text), 1, you_unlocked_text);
   play_collision_sound();
   wait_frames(60);
 
   // Write the reward's name.
   if (game_mode == NORMAL) {
     // "HARD MODE"
-    set_bkg_tiles(5, 11, UINT8_ARRARY_SIZE(hard_mode_text), 1, hard_mode_text);
+    set_bkg_tiles(25, 11, UINT8_ARRARY_SIZE(hard_mode_text), 1, hard_mode_text);
   } else if (game_mode == HARD) {
     // "TURBO MODE"
-    set_bkg_tiles(4, 11, UINT8_ARRARY_SIZE(turbo_mode_text), 1, turbo_mode_text);
+    set_bkg_tiles(24, 11, UINT8_ARRARY_SIZE(turbo_mode_text), 1, turbo_mode_text);
   } else {
     // "NEW SHIP"
-    set_bkg_tiles(6, 11, UINT8_ARRARY_SIZE(new_ship_text), 1, new_ship_text);
+    set_bkg_tiles(26, 11, UINT8_ARRARY_SIZE(new_ship_text), 1, new_ship_text);
   }
   play_health_sound();
 
@@ -90,11 +102,13 @@ static void show_gameover_screen(void) {
   const uint8_t* tip = tip_messages + (tip_index * TIP_MESSAGE_LENGTH);
 
   // Add walls at the top and bottom of the screen.
-  memset(background_map, WALL_BLOCK_TILE, SCREEN_TILE_WIDTH);
-  memset(background_map + SCREEN_TILE_WIDTH, EMPTY_TILE, SCREEN_TILE_WIDTH * (SCREEN_TILE_HEIGHT - 2));
-  memset(background_map + (SCREEN_TILE_WIDTH * (SCREEN_TILE_HEIGHT - 1)), WALL_BLOCK_TILE, SCREEN_TILE_WIDTH);
+  memset(background_map, WALL_BLOCK_TILE, ROW_WIDTH);
+  set_bkg_tiles(0, 0, ROW_WIDTH, 1, background_map);
+  set_bkg_tiles(0, 17, ROW_WIDTH, 1, background_map);
 
-  set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, background_map);
+  memset(background_map, EMPTY_TILE, ROW_WIDTH * (SCREEN_TILE_HEIGHT - 2));
+  set_bkg_tiles(0, 1, ROW_WIDTH, SCREEN_TILE_HEIGHT - 2 , background_map);
+
   set_bkg_tiles(5, 3, UINT8_ARRARY_SIZE(game_over_text), 1, game_over_text);
   set_bkg_tiles(2, 5, UINT8_ARRARY_SIZE(score_text), 1, score_text);
   set_bkg_tiles(3, 8, UINT8_ARRARY_SIZE(best_text), 1, best_text);
@@ -116,6 +130,7 @@ static void show_gameover_screen(void) {
   }
 
   fade_out();
+  move_bkg(0,0);
   HIDE_BKG;
   SHOW_WIN;
 }
