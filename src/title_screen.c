@@ -25,8 +25,8 @@ void show_title_screen(bool restart_song) BANKED {
   set_bkg_tiles(0, 0, SCREEN_TILE_WIDTH, SCREEN_TILE_HEIGHT, title_screen_map);
 
   // Add the "PRESS START" text.
-  set_bkg_tiles(6, 10, UINT8_ARRARY_SIZE(press_text), 1, press_text);
-  set_bkg_tiles(8, 11, UINT8_ARRARY_SIZE(start_text), 1, start_text);
+  set_bkg_tiles(7, 11, UINT8_ARRARY_SIZE(press_text), 1, press_text);
+  set_bkg_tiles(10, 12, UINT8_ARRARY_SIZE(start_text), 1, start_text);
 
   if (restart_song) {
     fade_in();
@@ -54,14 +54,14 @@ void show_title_screen(bool restart_song) BANKED {
 
     vsync();
     ++counter;
-    if (counter == 15) {
+    if (counter == 20) {
       // Clear the "PRESS START" text.
-      set_bkg_tiles(6, 10, 5, 1, background_map);
-      set_bkg_tiles(8, 11, 5, 1, background_map);
-    } else if (counter == 30) {
+      set_bkg_tiles(7, 11, 5, 1, background_map);
+      set_bkg_tiles(10, 12, 5, 1, background_map);
+    } else if (counter == 40) {
       // Add the "PRESS START" text.
-      set_bkg_tiles(6, 10, UINT8_ARRARY_SIZE(press_text), 1, press_text);
-      set_bkg_tiles(8, 11, UINT8_ARRARY_SIZE(start_text), 1, start_text);
+      set_bkg_tiles(7, 11, UINT8_ARRARY_SIZE(press_text), 1, press_text);
+      set_bkg_tiles(10, 12, UINT8_ARRARY_SIZE(start_text), 1, start_text);
       counter = 0;
     }
   }
