@@ -200,8 +200,8 @@
 #define MOD16(n) ((n) & 0xF)
 #define MOD32(n) ((n) & 0x1F)
 #define MOD64(n) ((n) & 0x3F)
-#define MIN(n,m) ((n < m) ? n : m)
-#define MAX(n,m) ((n > m) ? n : m)
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 /*
  * Arrays

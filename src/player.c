@@ -66,23 +66,21 @@ void update_health_bar_tiles(int8_t health) {
   if (health > 95) {
     // Full
     health_bar_window_tiles[9] = HEALTH_BAR_START + 2;
-  }
-  else if (health > 90) {
+  } else if (health > 90) {
     // Half filled
     health_bar_window_tiles[9] = HEALTH_BAR_START + 5;
-  }
-  else {
+  } else {
     // Empty
     health_bar_window_tiles[9] = HEALTH_BAR_START + 8;
   }
 
   // Fill in the center part of the bar
-  uint8_t full_count = MAX(0, MIN(8, health/10 - 1));
-  int8_t half_count = MOD2(MIN(18, health/5));
-  memset(health_bar_window_tiles+1, HEALTH_BAR_START + 1, full_count); // Full tile
-  memset(health_bar_window_tiles+1+full_count, HEALTH_BAR_START + 7, 8-full_count); // Empty tile
+  uint8_t full_count = MAX(0, MIN(8, health / 10 - 1));
+  int8_t half_count = MOD2(MIN(18, health / 5));
+  memset(health_bar_window_tiles + 1, HEALTH_BAR_START + 1, full_count);                   // Full tile
+  memset(health_bar_window_tiles + 1 + full_count, HEALTH_BAR_START + 7, 8 - full_count);  // Empty tile
   if (half_count && (health > 5)) {
-    health_bar_window_tiles[full_count+1] = HEALTH_BAR_START + 4;
+    health_bar_window_tiles[full_count + 1] = HEALTH_BAR_START + 4;
   }
 
   // Fill in the bottom part of the bar
@@ -90,12 +88,10 @@ void update_health_bar_tiles(int8_t health) {
     // Full
     health_bar_window_tiles[0] = HEALTH_BAR_START;
 
-  }
-  else if (health > 0) {
+  } else if (health > 0) {
     // Half filled
     health_bar_window_tiles[0] = HEALTH_BAR_START + 3;
-  }
-  else {
+  } else {
     // Empty
     health_bar_window_tiles[0] = HEALTH_BAR_START + 6;
   }

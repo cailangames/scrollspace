@@ -22,14 +22,14 @@
 static void show_reward_screen(void) {
   // Prep the bakground map for reward screen scroll
   memset(background_map, WALL_BLOCK_TILE, 1);
-  memset(background_map+1, EMPTY_TILE, SCREEN_TILE_HEIGHT - 2);
-  memset(background_map+SCREEN_TILE_HEIGHT-1, WALL_BLOCK_TILE, 1);
+  memset(background_map + 1, EMPTY_TILE, SCREEN_TILE_HEIGHT - 2);
+  memset(background_map + SCREEN_TILE_HEIGHT - 1, WALL_BLOCK_TILE, 1);
 
   // Scroll into reward screen
-  for (uint16_t i=0; i < 19*8; ++i) {
-    scroll_bkg(1,0);
-    if (MOD8(i) == 0){
-      set_bkg_tiles(i>>3, 0, 1, SCREEN_TILE_HEIGHT, background_map);
+  for (uint16_t i = 0; i < 19 * 8; ++i) {
+    scroll_bkg(1, 0);
+    if (MOD8(i) == 0) {
+      set_bkg_tiles(i >> 3, 0, 1, SCREEN_TILE_HEIGHT, background_map);
     }
     vsync();
   }
@@ -38,8 +38,8 @@ static void show_reward_screen(void) {
   set_bkg_tiles(7, 0, 1, SCREEN_TILE_HEIGHT, background_map);
   vsync();
 
-  for (uint8_t i=0; i < 8; ++i) {
-    scroll_bkg(1,0);
+  for (uint8_t i = 0; i < 8; ++i) {
+    scroll_bkg(1, 0);
     vsync();
   }
 
@@ -107,7 +107,7 @@ static void show_gameover_screen(void) {
   set_bkg_tiles(0, 17, ROW_WIDTH, 1, background_map);
 
   memset(background_map, EMPTY_TILE, ROW_WIDTH * (SCREEN_TILE_HEIGHT - 2));
-  set_bkg_tiles(0, 1, ROW_WIDTH, SCREEN_TILE_HEIGHT - 2 , background_map);
+  set_bkg_tiles(0, 1, ROW_WIDTH, SCREEN_TILE_HEIGHT - 2, background_map);
 
   set_bkg_tiles(5, 3, UINT8_ARRARY_SIZE(game_over_text), 1, game_over_text);
   set_bkg_tiles(2, 5, UINT8_ARRARY_SIZE(score_text), 1, score_text);
@@ -130,7 +130,7 @@ static void show_gameover_screen(void) {
   }
 
   fade_out();
-  move_bkg(0,0);
+  move_bkg(0, 0);
   HIDE_BKG;
   SHOW_WIN;
 }
