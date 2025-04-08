@@ -175,7 +175,7 @@ void move_player(uint8_t input) {
       }
       player_sprite.sprite_tile += 1;
 
-      // Make collision box smaller when plane is "tilted".
+      // Make collision box smaller when ship is "tilted".
       player_sprite.cb_x_offset = 2;
       player_sprite.cb_y_offset = 3;
       --player_sprite.cb.w;
@@ -188,7 +188,7 @@ void move_player(uint8_t input) {
       }
       player_sprite.sprite_tile += 2;
 
-      // Make collision box smaller when plane is "tilted".
+      // Make collision box smaller when ship is "tilted".
       player_sprite.cb_x_offset = 2;
       player_sprite.cb_y_offset = 4;
       --player_sprite.cb.w;

@@ -159,8 +159,11 @@ static const uint8_t intro_atmosphere_map[] = {
 
 // clang-format on
 
+#define SHIP_X (16 + SCREEN_L)
+#define SHIP_Y (68 + SCREEN_T)
+
 // Swaps in the heat shield sprites, starting at the given sprite ID.
-static void swap_in_heat_shield_sprites(uint8_t starting_id, uint8_t x, uint8_t y) {
+static void swap_in_heat_shield_sprites(uint8_t starting_id) {
   // Swap out current sprites.
   uint8_t i = (starting_id == 1) ? 0 : starting_id - 9;
   while (i < starting_id) {
@@ -169,15 +172,15 @@ static void swap_in_heat_shield_sprites(uint8_t starting_id, uint8_t x, uint8_t 
   }
 
   // Swap in new sprites.
-  move_sprite(starting_id++, x - 8, y - 8);  // top left
-  move_sprite(starting_id++, x, y - 8);      // top middle
-  move_sprite(starting_id++, x + 8, y - 8);  // top right
-  move_sprite(starting_id++, x - 8, y);      // left of player
-  move_sprite(starting_id++, x, y);          // player sprite
-  move_sprite(starting_id++, x + 8, y);      // right of player
-  move_sprite(starting_id++, x - 8, y + 8);  // bottom left
-  move_sprite(starting_id++, x, y + 8);      // bottom middle
-  move_sprite(starting_id, x + 8, y + 8);    // bottom right
+  move_sprite(starting_id++, SHIP_X - 8, SHIP_Y - 8);  // top left
+  move_sprite(starting_id++, SHIP_X, SHIP_Y - 8);      // top middle
+  move_sprite(starting_id++, SHIP_X + 8, SHIP_Y - 8);  // top right
+  move_sprite(starting_id++, SHIP_X - 8, SHIP_Y);      // left of player
+  move_sprite(starting_id++, SHIP_X, SHIP_Y);          // player sprite
+  move_sprite(starting_id++, SHIP_X + 8, SHIP_Y);      // right of player
+  move_sprite(starting_id++, SHIP_X - 8, SHIP_Y + 8);  // bottom left
+  move_sprite(starting_id++, SHIP_X, SHIP_Y + 8);      // bottom middle
+  move_sprite(starting_id, SHIP_X + 8, SHIP_Y + 8);    // bottom right
 }
 
 // Scrolls the ship through the atmosphere to the given y position, updating the color palette
@@ -201,6 +204,7 @@ void show_intro_scene(void) BANKED {
   // Fill the background map with empty tiles
   memset(background_map, 0x98, COLUMN_HEIGHT * ROW_WIDTH);
 
+  // Start playing intro song
   __critical {
     hUGE_init(&intro_song);
     add_VBL(hUGE_dosound);
@@ -223,11 +227,9 @@ void show_intro_scene(void) BANKED {
   }
 
   // Move sprite to initial position
-  uint8_t x = 24;
-  uint8_t y = 72;
-  move_sprite(0, x, y);
-  fade_in();
+  move_sprite(0, SHIP_X, SHIP_Y);
 
+  fade_in();
   SHOW_BKG;
   SHOW_SPRITES;
 
@@ -261,7 +263,7 @@ void show_intro_scene(void) BANKED {
   set_bkg_tiles(20, 0, 12, 14, background_map);
 
   // Switch to heat shield sprites
-  swap_in_heat_shield_sprites(1, x, y);
+  swap_in_heat_shield_sprites(1);
 
   hUGE_mute_channel(HT_CH4, HT_CH_MUTE);
 
@@ -277,11 +279,11 @@ void show_intro_scene(void) BANKED {
   scroll_through_atmosphere(176);
 
   // Switch to dissipated heat shield sprites
-  swap_in_heat_shield_sprites(10, x, y);
+  swap_in_heat_shield_sprites(10);
   scroll_through_atmosphere(208);
 
   // Switch to almost gone dissipated heat shield sprites
-  swap_in_heat_shield_sprites(19, x, y);
+  swap_in_heat_shield_sprites(19);
   scroll_through_atmosphere(224);
 
   set_bkg_tiles(0, 14, 20, 14, background_map);
@@ -294,11 +296,11 @@ void show_intro_scene(void) BANKED {
   // Restart channel.
   hUGE_mute_channel(HT_CH4, HT_CH_PLAY);
 
-  // Hide all sprites except the plane itself
+  // Hide all sprites except the ship itself
   for (uint8_t i = 1; i < 28; ++i) {
     move_sprite(i, 0, 0);
   }
-  move_sprite(0, x, y);
+  move_sprite(0, SHIP_X, SHIP_Y);
 
   set_bkg_tiles(0, 28, 20, 2, background_map);
   set_bkg_tiles(20, 28, 12, 2, background_map);
@@ -317,7 +319,7 @@ void show_intro_scene(void) BANKED {
   set_bkg_tiles(20, 1, 12, 12, background_map);
   set_bkg_tiles(3, 22, 9, 9, background_map);
 
-  // Set the ship sprite's priority so that background tiles are drawn on top of the sprite.
+  // Set the ship sprite's priority so that background tiles are drawn on top of the sprite
   set_sprite_prop(0, 0x80);
 
   while (SCY_REG < 8) {
@@ -330,13 +332,13 @@ void show_intro_scene(void) BANKED {
     vsync();
   }
 
-  for (uint8_t i = 0; i < 12; ++i) {
+  for (uint8_t i = 0; i < 6; ++i) {
     scroll_sprite(0, 2, 2);
     vsync();
   }
 
-  // Fly off and spell PRESS START
-  for (uint8_t i = 0; i < 116 / 4; ++i) {
+  // Fly the ship off to the right
+  for (uint8_t i = 0; i < 132 / 4; ++i) {
     scroll_sprite(0, 4, 0);
     vsync();
   }
@@ -346,5 +348,4 @@ void show_intro_scene(void) BANKED {
   move_sprite(0, 0, 0);
   HIDE_SPRITES;
   move_bkg(0, 0);
-  return;
 }
