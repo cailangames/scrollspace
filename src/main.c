@@ -179,16 +179,16 @@ void main(void) {
   uint16_t rand_seed = DIV_REG;
   rand_seed <<= 8;
 
-  fixed screen_pos_x;            // The x position of the screen (high 8 bits: pixels, low 8 bits: subpixels)
-  uint8_t input;                 // The joypad input of this frame
-  uint8_t prev_input;            // The joypad input of the previous frame
-  uint8_t prev_left_column;      // The left-most column on the screen in the previous frame. Used to track when the background has scrolled a full column's worth of pixels.
-  uint8_t column_count;          // How many columns have been scrolled in the current screen
-  uint8_t difficulty_countdown;  // A count-down of the number of screens before a difficulty increase
-  bool generated_column;         // Whether or not a column was generated this frame
-  uint8_t generated_column_idx;  // The index of the generated column
-  bool update_window_score;      // Whether or not the score in the window needs to be updated
-  uint16_t prev_point_score;     // The `point_score` of the previous frame. Used to determine whether or not to update the window score tiles.
+  fixed screen_pos_x;             // The x position of the screen (high 8 bits: pixels, low 8 bits: subpixels)
+  uint8_t input;                  // The joypad input of this frame
+  uint8_t prev_input;             // The joypad input of the previous frame
+  uint8_t prev_left_column;       // The left-most column on the screen in the previous frame. Used to track when the background has scrolled a full column's worth of pixels.
+  uint8_t column_count;           // How many columns have been scrolled in the current screen
+  uint16_t difficulty_countdown;  // A count-down of the number of frames before a difficulty increase
+  bool generated_column;          // Whether or not a column was generated this frame
+  uint8_t generated_column_idx;   // The index of the generated column
+  bool update_window_score;       // Whether or not the score in the window needs to be updated
+  uint16_t prev_point_score;      // The `point_score` of the previous frame. Used to determine whether or not to update the window score tiles.
 
   while (true) {
     /*
@@ -200,7 +200,7 @@ void main(void) {
     prev_input = 0;
     prev_left_column = 0;
     column_count = 0;
-    difficulty_countdown = DIFFICULTY_INCREASE_SCREEN_COUNT;
+    difficulty_countdown = DIFFICULTY_INCREASE_CYCLE;
     generated_column = false;
     generated_column_idx = ROW_WIDTH - 1;
     update_window_score = false;
@@ -326,13 +326,14 @@ void main(void) {
         if (column_count == COLUMNS_PER_SCREEN) {
           column_count = 0;
           point_score += POINTS_PER_SCREEN_SCROLLED;
-
-          --difficulty_countdown;
-          if (difficulty_countdown == 0) {
-            increase_difficulty();
-            difficulty_countdown = DIFFICULTY_INCREASE_SCREEN_COUNT;
-          }
         }
+      }
+
+      // Increase difficulty, if necessary.
+      --difficulty_countdown;
+      if (difficulty_countdown == 0) {
+        increase_difficulty();
+        difficulty_countdown = DIFFICULTY_INCREASE_CYCLE;
       }
 
       // Update the score tiles, if necessary.

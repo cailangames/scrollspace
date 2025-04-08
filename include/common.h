@@ -83,8 +83,8 @@
 #define MINE_HEALTH 1
 #define POWERUP_RESERVED_IDS 235
 #define SHIELD_ID 254
-#define SHIELD_DURATION 160
-#define SHIELD_ANIMATION_START_DURATION 100
+#define SHIELD_DURATION 200
+#define SHIELD_ANIMATION_START_DURATION 140
 #define SHIELD_ANIMATION_CYCLE 10
 #define HEALTH_KIT_ID 255
 #define HEALTH_KIT_VALUE 5
@@ -127,8 +127,9 @@
 #define SCROLL_SPEED_TURBO_MAX 0x0400
 #define SCROLL_SPEED_INCREASE  0x0040
 // clang-format on
-// Increase the difficulty after this many screens have been scrolled.
-#define DIFFICULTY_INCREASE_SCREEN_COUNT 10
+// Increase the difficulty after this many frames.
+#define DIFFICULTY_INCREASE_CYCLE 1600
+// IMPORTANT: If you update these point values, you must update the tip messages in text_data.c too.
 #define POINTS_PER_MINE 2
 #define POINTS_PER_PICKUP 2
 #define POINTS_PER_SCREEN_SCROLLED 5
