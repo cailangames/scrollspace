@@ -44,7 +44,7 @@ static void show_reward_screen(void) {
   }
 
   // Write "CONGRATULATIONS!"
-  wait_frames(10);
+  wait_frames(20);
   set_bkg_tiles(22, 6, UINT8_ARRARY_SIZE(congratulations_text), 1, congratulations_text);
   play_collision_sound();
   wait_frames(60);
@@ -60,32 +60,29 @@ static void show_reward_screen(void) {
     set_bkg_tiles(25, 11, UINT8_ARRARY_SIZE(hard_mode_text), 1, hard_mode_text);
   } else if (game_mode == HARD) {
     // "TURBO MODE"
-    set_bkg_tiles(24, 11, UINT8_ARRARY_SIZE(turbo_mode_text), 1, turbo_mode_text);
+    set_bkg_tiles(25, 11, UINT8_ARRARY_SIZE(turbo_mode_text), 1, turbo_mode_text);
   } else {
-    // "NEW SHIP"
-    set_bkg_tiles(26, 11, UINT8_ARRARY_SIZE(new_ship_text), 1, new_ship_text);
-  }
-  play_health_sound();
-
-  if (game_mode == TURBO) {
+    // For turbo mode's reward, show the ship being upgraded.
     set_sprite_data(0, 1, player_sprites);
     set_sprite_data(1, 1, player_upgrade_sprites);
     set_sprite_tile(0, 0);
-    move_sprite(0, 9 * TILE_SIZE_PIXELS + SCREEN_L, 13 * TILE_SIZE_PIXELS + SCREEN_T);
-
-    wait_frames(60);
+    move_sprite(0, 9 * TILE_SIZE_PIXELS + SCREEN_L + 4, 10 * TILE_SIZE_PIXELS + SCREEN_T + 4);
+    vsync();
     SHOW_SPRITES;
-    play_gameover_sound();
-    for (uint8_t i = 0; i < 5; ++i) {
-      wait_frames(10);
+    wait_frames(60);
+    play_shield_sound();
+    for (uint8_t i = 0; i < 18; ++i) {
+      wait_frames(5);
       set_sprite_tile(0, 1);
-      wait_frames(10);
+      wait_frames(5);
       set_sprite_tile(0, 0);
     }
-    play_health_sound();
     set_sprite_tile(0, 1);
+    set_bkg_tiles(24, 13, UINT8_ARRARY_SIZE(the_xenobird_text), 1, the_xenobird_text);
     using_upgrade_sprite = true;
   }
+  play_health_sound();
+  wait_frames(120);
 
   wait_for_keys_pressed(J_START | J_A | J_B);
   wait_for_keys_released(J_START | J_A | J_B);

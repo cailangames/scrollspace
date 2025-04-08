@@ -28,10 +28,10 @@ extern const uint8_t congratulations_text[16];
 extern const uint8_t you_unlocked_text[12];
 extern const uint8_t hard_mode_text[9];
 extern const uint8_t turbo_mode_text[10];
-extern const uint8_t new_ship_text[8];
-extern const uint8_t tip_messages[200];
+extern const uint8_t the_xenobird_text[12];
+extern const uint8_t tip_messages[224];
 
-#define TIP_MESSAGE_LENGTH 25
+#define TIP_MESSAGE_LENGTH 28
 #define TIP_WRAP_LENGTH 16
 
 #endif
