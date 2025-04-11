@@ -139,7 +139,9 @@
 #define UPGRADE_SPRITE_UNLOCK_POINTS 500
 // clang-format off
 // The below probabilities are out of 65,535 (uint16_t max).
-#define PICKUP_PROBABILITY          100
+#define PICKUP_PROBABILITY_NORMAL   100
+#define PICKUP_PROBABILITY_HARD     75
+#define PICKUP_PROBABILITY_TURBO    50
 #define PICKUP_PROBABILITY_MIN      5
 #define PICKUP_PROBABILITY_DECREASE 5
 #define MINE_PROBABILITY_NARROW     2000

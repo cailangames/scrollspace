@@ -19,7 +19,8 @@ void reset_generation_state(void) {
   // Start at a random biome.
   biome_id = MOD64(rand());
   biome_column_index = 0;
-  pickup_probability = PICKUP_PROBABILITY;
+  pickup_probability = (game_mode == NORMAL) ? PICKUP_PROBABILITY_NORMAL : (game_mode == HARD) ? PICKUP_PROBABILITY_HARD
+                                                                                               : PICKUP_PROBABILITY_TURBO;
 }
 
 void decrease_pickup_probability(void) {
