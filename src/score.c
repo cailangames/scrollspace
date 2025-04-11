@@ -233,11 +233,11 @@ void display_gameover_scores(void) {
 
   // Display current point-based score.
   update_point_score_tiles();
-  set_bkg_tiles(10, 5, 8, 1, score_tiles);
+  set_bkg_tiles(10, 6, 8, 1, score_tiles);
 
   // Display current timer-based score.
   update_timer_score_tiles();
-  set_bkg_tiles(10, 6, 8, 1, score_tiles);
+  set_bkg_tiles(10, 7, 8, 1, score_tiles);
 
   bool new_record = false;
   if (point_score > last_points) {
@@ -274,13 +274,13 @@ void display_gameover_scores(void) {
   // Display the last point-based high score.
   point_score = last_points;
   update_point_score_tiles();
-  set_bkg_tiles(10, 8, 8, 1, score_tiles);
+  set_bkg_tiles(10, 9, 8, 1, score_tiles);
   // Display the last timer-based high score.
   timer_hours = last_hours;
   timer_minutes = last_minutes;
   timer_seconds = last_seconds;
   update_timer_score_tiles();
-  set_bkg_tiles(10, 9, 8, 1, score_tiles);
+  set_bkg_tiles(10, 10, 8, 1, score_tiles);
 }
 
 void reset_scores(void) {
