@@ -75,7 +75,7 @@ static void load_font(void) {
 // Loads sprite data.
 // Note: The player's ship sprites are loaded elsewhere.
 static void load_sprite_data(void) {
-  set_sprite_data(BULLET_SPRITE, TILE_COUNT(projectile_sprites), projectile_sprites);
+  set_sprite_data(BULLET_SPRITE, TILE_COUNT(projectiles_sprites), projectiles_sprites);
 }
 
 // Loads background tile data.

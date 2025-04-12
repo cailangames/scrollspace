@@ -89,7 +89,12 @@ void init_weapons(void) {
   for (uint8_t i = 0; i < MAX_BULLETS; ++i) {
     b->active = false;
     b->sprite_id = i + 1;  // +1 so we don't override the player (always sprite_id 0)
-    b->sprite_tile = BULLET_SPRITE;
+    if (upgrade_sprite_unlocked) {
+      b->sprite_tile = BULLET_SPRITE + 1;
+    }
+    else{
+      b->sprite_tile = BULLET_SPRITE;
+    }
     b->lifespan = 0;
     b->health = 0;
     b->direction = RIGHT;

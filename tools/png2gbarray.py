@@ -84,8 +84,8 @@ def get_sprite_array(im, array_name, gb_code, debug=False):
     ntiles = int(im.size/(8*8))  # Total number of 8x8 tiles = npixels/64
     stride = int(im.shape[1]/8)
 
-    c_array = f"const uint8_t {array_name}_data[{ntiles*16}];\n"
-    c_array += f"const uint8_t {array_name}_data[] = "
+    c_array = f"const uint8_t {array_name}_sprites[{ntiles*16}];\n"
+    c_array += f"const uint8_t {array_name}_sprites[] = "
     c_array += "{\n"
     for i in range(ntiles):
         c_array += "  "
@@ -169,7 +169,7 @@ def get_background_data_and_map(im, name, gb_code, offset=37, debug=False):
         tilemap[:, 8*i:8*(i+1)] = unique_tiles[i]       
     
     tile_data_array = get_sprite_array(tilemap, f"{filename}", gb_code, debug=True)
-    tile_data_array = tile_data_array.replace("data", "tiles")
+    tile_data_array = tile_data_array.replace("sprites", "tiles")
 
     tile_data_array = f"/*\nNumber of tiles: {len(unique_tiles)}\n*/\n\n{tile_data_array}"
 
@@ -225,18 +225,20 @@ def get_background_data_and_map(im, name, gb_code, offset=37, debug=False):
 image_type = "background"
 tilemap_offset = 0
 #fn_path = "../assets/block.png"
-#fn_path = "../assets/projectiles.png"
 #fn_path = "../assets/powerups.png"
 #fn_path = "../assets/player.png"
 # fn_path = "../assets/player_large.png"
 #fn_path = "../assets/player_shield.png"
-fn_path = "../assets/health_bar.png"
+#fn_path = "../assets/health_bar.png"
 #fn_path = "../assets/font-extras.png" 
 #fn_path = "../assets/lock.png"
 #fn_path = "../assets/logo-cursor.png"
 #fn_path = "../assets/intro_player_heatshield_sprites.png" 
 # fn_path = "../assets/player_upgrade.png"
 # fn_path = "../assets/player_upgrade_shield.png"
+#fn_path = "../assets/projectiles_xenobird.png"
+fn_path = "../assets/projectiles.png"
+image_type = "sprite"
 
 # fn_path = "../assets/intro_stars.png"
 # tilemap_offset = 0x80
@@ -246,9 +248,9 @@ fn_path = "../assets/health_bar.png"
 # tilemap_offset = 0x80 + 0xC
 # image_type = "background"
 
-fn_path = "../assets/tutorial-screen.png" 
-tilemap_offset = 0x40
-image_type = "background"
+# fn_path = "../assets/tutorial-screen.png" 
+# tilemap_offset = 0x40
+# image_type = "background"
 
 # fn_path = "../assets/cailan-games-logo.png" 
 # tilemap_offset = 0# 68
@@ -322,63 +324,3 @@ else:
         f.write(background_tiles)
     with open(f"../src/{filename}_map.h", "w") as f:
         f.write(background_map)
-
-# ntiles = int(im.size/(8*8))  # Total number of 8x8 tiles = npixels/64
-# rowtiles = int(im.shape[0]/8)
-# coltiles = int(im.shape[1]/8)
-
-# s = ""
-# c_array = f"const uint8_t {filename}_data[] = "
-# c_array += "{\n"
-
-# for i in range(ntiles):
-  # c_array += "  "
-  # # Grab the first 8x8 tile
-  # irow = int(i / coltiles)
-  # icol = i % coltiles
-
-  # tile = im[8*irow:8*(irow+1),8*icol:8*(icol+1)]
-
-  # # Print the values in the tile
-  # for row in range(tile.shape[0]):
-      # msb = '0b'
-      # lsb = '0b'
-      # for col in range(tile.shape[1]):
-          # try:
-            # code = gb_code[tile[row,col]]
-          # except:
-              # # Find closes key to value
-              # value = tile[row, col]
-              # keys = np.array(list(gb_code.keys()))
-              # key_ind = np.argmax(1/np.abs(keys - value))
-              # code = gb_code[keys[key_ind]]
-
-          # msb += str((code & 0x2) >> 1)
-          # lsb += str((code & 0x1))
-
-      # msb = int(msb, 2)
-      # lsb = int(lsb, 2)
-
-      # if lsb < 16:
-        # s += hex(lsb).replace("0x", "0")
-        # c_array += hex(lsb).replace("0x", "0x0").upper() + ","
-      # else:  
-        # s += hex(lsb).replace("0x", "")
-        # c_array += hex(lsb).upper() + ","
-
-      # s += " "
-
-      # if msb < 16:
-        # s += hex(msb).replace("0x", "0")
-        # c_array += hex(msb).replace("0x", "0x0").upper() + ","
-      # else:  
-        # s += hex(msb).replace("0x", "")
-        # c_array += hex(msb).upper() + ","
-
-      # s += " "
-  # s += "\n"
-  # c_array = c_array + "\n"
-
-# c_array = c_array[:-1] + "\n}"
-# print(s)
-# print(c_array)
