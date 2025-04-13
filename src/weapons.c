@@ -91,19 +91,15 @@ void init_weapons(void) {
     b->sprite_id = i + 1;  // +1 so we don't override the player (always sprite_id 0)
     if (upgrade_sprite_unlocked) {
       b->sprite_tile = BULLET_SPRITE + 1;
+      b->speed.w = BULLET_SPEED_XENO;
     }
     else{
       b->sprite_tile = BULLET_SPRITE;
+      b->speed.w = BULLET_SPEED;
     }
     b->lifespan = 0;
     b->health = 0;
     b->direction = RIGHT;
-    if (upgrade_sprite_unlocked) {
-      b->speed.w = BULLET_SPEED_XENO;
-    }
-    else{
-      b->speed.w = BULLET_SPEED;
-    }
     b->x.w = 0;
     b->y.w = 0;
     // Collision box
@@ -143,7 +139,12 @@ void update_weapons(uint8_t input, uint8_t prev_input) {
         continue;
       }
       b->active = true;
-      b->lifespan = BULLET_LIFESPAN;
+      if (upgrade_sprite_unlocked) {
+        b->lifespan = BULLET_LIFESPAN;
+      } 
+      else {
+        b->lifespan = BULLET_LIFESPAN_XENO;
+      }
       b->x.w = player_sprite.x.w;
       b->cb.x = b->x.h + BULLET_COLLISION_X_OFFSET;
       b->y.w = player_sprite.y.w;
