@@ -95,6 +95,7 @@ void show_mode_selection_screen(void) {
                                                                : 88;
   set_sprite_tile(PLAYER_SPRITE_ID, PLAYER_BASE_SPRITE);
   move_sprite(PLAYER_SPRITE_ID, 32, y);
+  vsync();
   SHOW_SPRITES;
 
   uint8_t prev_input = 0;

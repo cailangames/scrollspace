@@ -146,6 +146,7 @@ static void show_gameover_screen(void) {
 
   display_gameover_scores();
 
+  vsync();
   SHOW_BKG;
   SHOW_SPRITES;
   fade_in();

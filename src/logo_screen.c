@@ -97,28 +97,26 @@ void show_logo_screen(void) BANKED {
 
   // Enable music
   play_all_channels();
+
   wait_frames(60);
   fade_in();
   SHOW_BKG;
+  play_health_sound();
 
   // The cursor has two sprites: A top half and a bottom half. The below code controls both halves
   // and blinks them while the logo screen is playing.
-  move_sprite(0, 127, 92);
-  move_sprite(1, 127, 100);
   SHOW_SPRITES;
-  play_health_sound();
-  for (uint8_t i = 0; i < 150; i++) {
-    if (i == 30 || i == 90 || i == 149) {
+  for (uint8_t i = 0; i <= 150; ++i) {
+    if (i == 30 || i == 90 || i == 150) {
       move_sprite(0, 0, 0);
       move_sprite(1, 0, 0);
-    } else if (i == 60 || i == 120) {
+    } else if (i == 0 || i == 60 || i == 120) {
       move_sprite(0, 127, 92);
       move_sprite(1, 127, 100);
     }
     vsync();
   }
 
-  vsync();
   mute_all_channels();
 
   fade_out();

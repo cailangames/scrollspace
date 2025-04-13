@@ -246,6 +246,10 @@ void main(void) {
     init_weapons();
     update_bomb_ready_icon();
 
+    // Reset scores and window tiles.
+    reset_scores();
+    write_score_to_window();
+
     mute_all_channels();
 
     wait_frames(10);
@@ -257,10 +261,6 @@ void main(void) {
     play_all_channels();
 
     wait_frames(15);
-
-    // Reset scores and window tiles.
-    reset_scores();
-    write_score_to_window();
 
     SHOW_SPRITES;
     SHOW_WIN;
