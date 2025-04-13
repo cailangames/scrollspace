@@ -26,7 +26,9 @@ extern const uint8_t new_record_text[11];
 extern const uint8_t tip_text[4];
 extern const uint8_t congratulations_text[16];
 extern const uint8_t you_unlocked_text[12];
-extern const uint8_t mode_text[4];
+extern const uint8_t normal_mode_text[11];
+extern const uint8_t hard_mode_text[9];
+extern const uint8_t turbo_mode_text[10];
 extern const uint8_t the_xenobird_text[12];
 extern const uint8_t tip_messages[224];
 

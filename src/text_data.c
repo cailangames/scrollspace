@@ -30,7 +30,9 @@ const uint8_t new_record_text[] = {CHAR_N, CHAR_E, CHAR_W, 0, CHAR_R, CHAR_E, CH
 const uint8_t tip_text[] = {CHAR_T, CHAR_I, CHAR_P, CHAR_COLON};
 const uint8_t congratulations_text[] = {CHAR_C, CHAR_O, CHAR_N, CHAR_G, CHAR_R, CHAR_A, CHAR_T, CHAR_U, CHAR_L, CHAR_A, CHAR_T, CHAR_I, CHAR_O, CHAR_N, CHAR_S, CHAR_EXCLAMATION_MARK};
 const uint8_t you_unlocked_text[] = {CHAR_Y, CHAR_O, CHAR_U, 0, CHAR_U, CHAR_N, CHAR_L, CHAR_O, CHAR_C, CHAR_K, CHAR_E, CHAR_D};
-const uint8_t mode_text[] = {CHAR_M, CHAR_O, CHAR_D, CHAR_E};
+const uint8_t normal_mode_text[] = {CHAR_N, CHAR_O, CHAR_R, CHAR_M, CHAR_A, CHAR_L, 0, CHAR_M, CHAR_O, CHAR_D, CHAR_E};
+const uint8_t hard_mode_text[] = {CHAR_H, CHAR_A, CHAR_R, CHAR_D, 0, CHAR_M, CHAR_O, CHAR_D, CHAR_E};
+const uint8_t turbo_mode_text[] = {CHAR_T, CHAR_U, CHAR_R, CHAR_B, CHAR_O, 0, CHAR_M, CHAR_O, CHAR_D, CHAR_E};
 const uint8_t the_xenobird_text[] = {CHAR_T, CHAR_H, CHAR_E, 0, CHAR_X, CHAR_E, CHAR_N, CHAR_O, CHAR_B, CHAR_I, CHAR_R, CHAR_D};
 
 // Each tip message is 28 characters wide and is wrapped to a new line after the 16th character.

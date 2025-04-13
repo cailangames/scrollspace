@@ -55,6 +55,10 @@ static void show_reward_screen(void) {
   wait_frames(60);
 
   // Show the reward.
+  const uint8_t* text;
+  uint8_t size;
+  uint8_t text_start_x = 25;
+  uint8_t text_start_y = 11;
   if (game_mode == TURBO) {
     // For turbo mode's reward, show the ship being upgraded.
     set_sprite_data(0, 1, player_sprites);
@@ -72,21 +76,20 @@ static void show_reward_screen(void) {
       set_sprite_tile(0, 0);
     }
     set_sprite_tile(0, 1);
-    set_bkg_tiles(24, 13, UINT8_ARRARY_SIZE(the_xenobird_text), 1, the_xenobird_text);
     using_upgrade_sprite = true;
+
+    text = the_xenobird_text;
+    size = UINT8_ARRARY_SIZE(the_xenobird_text);
+    text_start_x = 24;
+    text_start_y = 13;
+  } else if (game_mode == NORMAL) {
+    text = hard_mode_text;
+    size = UINT8_ARRARY_SIZE(hard_mode_text);
   } else {
-    uint8_t text_start;
-    if (game_mode == NORMAL) {
-      // "HARD MODE"
-      set_bkg_tiles(25, 11, UINT8_ARRARY_SIZE(hard_text), 1, hard_text);
-      text_start = 25 + 1 + UINT8_ARRARY_SIZE(hard_text);
-    } else {
-      // "TURBO MODE"
-      set_bkg_tiles(25, 11, UINT8_ARRARY_SIZE(turbo_text), 1, turbo_text);
-      text_start = 25 + 1 + UINT8_ARRARY_SIZE(turbo_text);
-    }
-    set_bkg_tiles(text_start, 11, UINT8_ARRARY_SIZE(mode_text), 1, mode_text);
+    text = turbo_mode_text;
+    size = UINT8_ARRARY_SIZE(turbo_mode_text);
   }
+  set_bkg_tiles(text_start_x, text_start_y, size, 1, text);
   play_health_sound();
   wait_frames(120);
 
@@ -108,31 +111,28 @@ static void show_gameover_screen(void) {
   memset(background_map, WALL_BLOCK_TILE, ROW_WIDTH);
   set_bkg_tiles(0, 0, ROW_WIDTH, 1, background_map);
   set_bkg_tiles(0, 17, ROW_WIDTH, 1, background_map);
-
   memset(background_map, EMPTY_TILE, ROW_WIDTH * (SCREEN_TILE_HEIGHT - 2));
   set_bkg_tiles(0, 1, ROW_WIDTH, SCREEN_TILE_HEIGHT - 2, background_map);
 
+  // Fill in the game over text.
   const uint8_t* text;
   uint8_t size;
-  uint8_t text_start = 5;
   switch (game_mode) {
     case NORMAL:
-      text = normal_text;
-      size = UINT8_ARRARY_SIZE(normal_text);
-      text_start = 4;
+      text = normal_mode_text;
+      size = UINT8_ARRARY_SIZE(normal_mode_text);
       break;
     case HARD:
-      text = hard_text;
-      size = UINT8_ARRARY_SIZE(hard_text);
+      text = hard_mode_text;
+      size = UINT8_ARRARY_SIZE(hard_mode_text);
       break;
     default:
-      text = turbo_text;
-      size = UINT8_ARRARY_SIZE(turbo_text);
+      text = turbo_mode_text;
+      size = UINT8_ARRARY_SIZE(turbo_mode_text);
       break;
   }
   set_bkg_tiles(5, 2, UINT8_ARRARY_SIZE(game_over_text), 1, game_over_text);
-  set_bkg_tiles(text_start, 4, size, 1, text);
-  set_bkg_tiles(text_start + size + 1, 4, UINT8_ARRARY_SIZE(mode_text), 1, mode_text);
+  set_bkg_tiles(5, 4, size, 1, text);
   set_bkg_tiles(2, 6, UINT8_ARRARY_SIZE(score_text), 1, score_text);
   set_bkg_tiles(3, 9, UINT8_ARRARY_SIZE(best_text), 1, best_text);
   set_bkg_tiles(1, 13, UINT8_ARRARY_SIZE(tip_text), 1, tip_text);
@@ -140,12 +140,18 @@ static void show_gameover_screen(void) {
   set_bkg_tiles(2, 15, TIP_MESSAGE_LENGTH - TIP_WRAP_LENGTH, 1, tip + TIP_WRAP_LENGTH);
   move_bkg(0, 0);
 
+  // Show the player's ship sprite.
+  set_sprite_tile(PLAYER_SPRITE_ID, PLAYER_BASE_SPRITE);
+  move_sprite(PLAYER_SPRITE_ID, 3 * TILE_SIZE_PIXELS + SCREEN_L, 4 * TILE_SIZE_PIXELS + SCREEN_T);
+
   display_gameover_scores();
 
   SHOW_BKG;
+  SHOW_SPRITES;
   fade_in();
   wait_for_keys_pressed(J_START | J_A | J_B);
   wait_for_keys_released(J_START | J_A | J_B);
+  HIDE_SPRITES;
 
   bool new_unlock = update_unlocks();
   if (new_unlock) {
