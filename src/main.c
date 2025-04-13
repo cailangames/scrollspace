@@ -103,22 +103,31 @@ static void increase_difficulty(void) {
     if (scroll_speed.w > SCROLL_SPEED_HARD) {
       scroll_speed.w = SCROLL_SPEED_HARD;
     }
-    if (player_sprite.speed.w > PLAYER_SPEED_HARD) {
+    if ((!upgrade_sprite_unlocked) && (player_sprite.speed.w > PLAYER_SPEED_HARD)) {
       player_sprite.speed.w = PLAYER_SPEED_HARD;
+    }
+    else if ((upgrade_sprite_unlocked) && (player_sprite.speed.w > PLAYER_SPEED_HARD_XENO)) {
+      player_sprite.speed.w = PLAYER_SPEED_HARD_XENO;
     }
   } else if (game_mode == HARD) {
     if (scroll_speed.w > SCROLL_SPEED_TURBO) {
       scroll_speed.w = SCROLL_SPEED_TURBO;
     }
-    if (player_sprite.speed.w > PLAYER_SPEED_TURBO) {
+    if ((!upgrade_sprite_unlocked) && (player_sprite.speed.w > PLAYER_SPEED_TURBO)) {
       player_sprite.speed.w = PLAYER_SPEED_TURBO;
+    }
+    else if ((upgrade_sprite_unlocked) && (player_sprite.speed.w > PLAYER_SPEED_TURBO_XENO)) {
+      player_sprite.speed.w = PLAYER_SPEED_TURBO_XENO;
     }
   } else {
     if (scroll_speed.w > SCROLL_SPEED_TURBO_MAX) {
       scroll_speed.w = SCROLL_SPEED_TURBO_MAX;
     }
-    if (player_sprite.speed.w > PLAYER_SPEED_TURBO_MAX) {
+    if ((!upgrade_sprite_unlocked) && (player_sprite.speed.w > PLAYER_SPEED_TURBO_MAX)) {
       player_sprite.speed.w = PLAYER_SPEED_TURBO_MAX;
+    }
+    else if ((upgrade_sprite_unlocked) && (player_sprite.speed.w > PLAYER_SPEED_TURBO_MAX_XENO)) {
+      player_sprite.speed.w = PLAYER_SPEED_TURBO_MAX_XENO;
     }
   }
   decrease_pickup_probability();

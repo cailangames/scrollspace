@@ -100,6 +100,7 @@
 #define BOMB_LENGTH (BOMB_RADIUS * 2 + 1)
 #define BOMB_COOLDOWN_FRAMES 420
 #define BULLET_LIFESPAN 25
+#define BULLET_LIFESPAN_XENO 20
 #define BULLET_DAMAGE 1
 #define BULLET_COLLISION_X_OFFSET 0
 #define BULLET_COLLISION_Y_OFFSET 2
@@ -115,18 +116,22 @@
 // clang-format off
 // The speeds are 16-bit fixed point numbers, where the high 8 bits are the pixels
 // (per frame) and the low 8 bits are the subpixels.
-#define PLAYER_SPEED_NORMAL    0x0100
-#define PLAYER_SPEED_HARD      0x0140
-#define PLAYER_SPEED_TURBO     0x0180
-#define PLAYER_SPEED_TURBO_MAX 0x01C0
-#define PLAYER_SPEED_INCREASE  0x0010
-#define BULLET_SPEED           0x0400
-#define BULLET_SPEED_XENO      0x0500
-#define SCROLL_SPEED_NORMAL    0x0100
-#define SCROLL_SPEED_HARD      0x0200
-#define SCROLL_SPEED_TURBO     0x0300
-#define SCROLL_SPEED_TURBO_MAX 0x0400
-#define SCROLL_SPEED_INCREASE  0x0040
+#define PLAYER_SPEED_NORMAL           0x0100
+#define PLAYER_SPEED_HARD             0x0140
+#define PLAYER_SPEED_TURBO            0x0180
+#define PLAYER_SPEED_TURBO_MAX        0x01C0
+#define PLAYER_SPEED_NORMAL_XENO      0x0140
+#define PLAYER_SPEED_HARD_XENO        0x0180
+#define PLAYER_SPEED_TURBO_XENO       0x01C0
+#define PLAYER_SPEED_TURBO_MAX_XENO   0x0200
+#define PLAYER_SPEED_INCREASE         0x0010
+#define BULLET_SPEED                  0x0400
+#define BULLET_SPEED_XENO             0x0500
+#define SCROLL_SPEED_NORMAL           0x0100
+#define SCROLL_SPEED_HARD             0x0200
+#define SCROLL_SPEED_TURBO            0x0300
+#define SCROLL_SPEED_TURBO_MAX        0x0400
+#define SCROLL_SPEED_INCREASE         0x0040
 // clang-format on
 // Increase the difficulty after this many frames.
 #define DIFFICULTY_INCREASE_CYCLE 1600

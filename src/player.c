@@ -131,11 +131,26 @@ void init_player(void) {
   update_health_bar_tiles(PLAYER_MAX_HEALTH);
 
   if (game_mode == NORMAL) {
-    player_sprite.speed.w = PLAYER_SPEED_NORMAL;
+    if (upgrade_sprite_unlocked) {
+      player_sprite.speed.w = PLAYER_SPEED_NORMAL_XENO;
+    }
+    else {
+      player_sprite.speed.w = PLAYER_SPEED_NORMAL;
+    }
   } else if (game_mode == HARD) {
-    player_sprite.speed.w = PLAYER_SPEED_HARD;
+    if (upgrade_sprite_unlocked) {
+      player_sprite.speed.w = PLAYER_SPEED_HARD_XENO;
+    }
+    else {
+      player_sprite.speed.w = PLAYER_SPEED_HARD;
+    }
   } else {
-    player_sprite.speed.w = PLAYER_SPEED_TURBO;
+    if (upgrade_sprite_unlocked) {
+      player_sprite.speed.w = PLAYER_SPEED_TURBO_XENO;
+    }
+    else {
+      player_sprite.speed.w = PLAYER_SPEED_TURBO;
+    }
   }
 }
 
