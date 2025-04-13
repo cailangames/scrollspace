@@ -140,10 +140,10 @@ void update_weapons(uint8_t input, uint8_t prev_input) {
       }
       b->active = true;
       if (upgrade_sprite_unlocked) {
-        b->lifespan = BULLET_LIFESPAN;
+        b->lifespan = BULLET_LIFESPAN_XENO;
       } 
       else {
-        b->lifespan = BULLET_LIFESPAN_XENO;
+        b->lifespan = BULLET_LIFESPAN;
       }
       b->x.w = player_sprite.x.w;
       b->cb.x = b->x.h + BULLET_COLLISION_X_OFFSET;
