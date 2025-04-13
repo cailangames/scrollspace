@@ -98,7 +98,12 @@ void init_weapons(void) {
     b->lifespan = 0;
     b->health = 0;
     b->direction = RIGHT;
-    b->speed.w = BULLET_SPEED;
+    if (upgrade_sprite_unlocked) {
+      b->speed.w = BULLET_SPEED_XENO;
+    }
+    else{
+      b->speed.w = BULLET_SPEED;
+    }
     b->x.w = 0;
     b->y.w = 0;
     // Collision box
