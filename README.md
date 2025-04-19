@@ -1,6 +1,7 @@
 # Scroll Space
-**Scroll Space** is a fast-paced, 2D infinite scroller for the original Game Boy (the "DMG" from 1989) with procedurally generated maps and destructible terrain. The goal is to avoid obstacles and destroy mines in order to collect the most points and beat your high score. The game features:
+**[Scroll Space](https://cailangames.itch.io/scrollspace)** is a fast-paced, 2D infinite scroller for the original Game Boy (the "DMG" from 1989) with procedurally generated maps and destructible terrain. The goal is to avoid obstacles and destroy mines in order to collect the most points and beat your high score. 
 
+The game features:
 * two weapons: bullets and bombs
 * pickup items: health packs and shields
 * randomly generated maps
@@ -8,6 +9,8 @@
 * progressively faster and more challenging maps
 * 2 unlockable difficulty levels with different scroll speeds
 * a special bonus after beating all difficulty levels
+
+Play it on our [itch.io](https://cailangames.itch.io/scrollspace) page.
 
 The game was written in C using GDBK with original art and music. The music was created in hUGETracker and runs with the hUGEDriver library. The source code can be found in this GitHub repo.
 
