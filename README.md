@@ -25,7 +25,29 @@ Note: Due to the fast-paced nature of the game, for best controls we recommend p
 * START: pause game
 * SELECT: switch score between points and time played
 
+ 
 # Compilation Instructions
+## Use containers
+### macOS container
+1. Clone this repo
+``` bash
+git clone https://github.com/cailangames/scrollspace.git
+cd scrollspace
+```
+2. Build container
+```bash
+container build -f Containerfile -t scrollspace
+```
+3. Run container
+```bash
+container run -it --rm -v $(pwd):/home/root/scrollspace --name scrollspace-dev scrollspace
+```
+4. Compile
+```bash
+/home/root/scrollspace$ make all
+```
+
+## Manual
 Required tools:
 * macOS, Linux, or Windows with WSL
 * gbdk-2020 v4.2.0 or higher
